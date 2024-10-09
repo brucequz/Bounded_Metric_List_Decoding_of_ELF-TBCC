@@ -1,36 +1,33 @@
-
 #ifndef FEEDFORWARDTRELLIS_H
 #define FEEDFORWARDTRELLIS_H
-
 #include <vector>
-#include "mla_types.h"
+#include <string>
 
-struct FeedForwardTrellis{
-  FeedForwardTrellis(CodeInformation code);
+class FeedForwardTrellis {
+public:
+	FeedForwardTrellis(int k, int n, int v, std::vector<int> numerators);
+	std::vector<int> encode(std::vector<int> originalMessage);
+	std::vector<std::vector<int>> getNextStates();
+	std::vector<std::vector<int>> getOutputs();
+	int getNumInputSymbols();
+	int getNumOutputSymbols();
+	int getNumStates();
+	int getV();
+	int getN();
+private:
+	int k;
+	int n;
+	int v;
+	int numInputSymbols;
+	int numOutputSymbols;
+	int numStates;
+	std::vector<int> numerators;
+	std::vector<std::vector<int>> nextStates;
+	std::vector<std::vector<int>> outputs;
 
-  std::vector<int> encode(const std::vector<int>& message);
+	void computeNextStates();
 
-  std::vector<std::vector<int>> getNextStates() {return nextStates_;};
-  std::vector<std::vector<int>> getOutputs() {return output_;};
-  int getNumStates() {return numStates_;};
-  int getN() {return n_;};
-  int getV() {return v_;};
-
-
-  private:
-    int k_;
-    int n_;
-    int v_;
-    int numInputSymbols_;
-    int numOutputSymbols_;
-    int numStates_;
-    int code_rate_;
-    std::vector<int> polynomials_;  // generator polynomial in octal
-    std::vector<std::vector<int>> nextStates_;
-    std::vector<std::vector<int>> output_;
-
-    void computeNextStates();
-    void computeOutput();
+	std::vector<int> dec2Bin(int decimal, int length);
+    int bin2Dec(std::vector<int> binary);
 };
-
 #endif

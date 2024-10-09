@@ -20,8 +20,10 @@ namespace crc {
 // binary sum, used in crc_check
 int bin_sum(int i, int j);
 
-
+// converts decimal input to binary output, with a given number of bits
 void dec_to_binary(int input, std::vector<int>& output, int bit_number);
+
+// converts decimal output to n-bit BPSK
 std::vector<int> get_point(int output, int n);
 
 // checks the decoded message against the crc
@@ -31,7 +33,7 @@ void crc_calculation(std::vector<int>& input_data, int crc_bits_num, int crc_dec
 
 } // namespace crc
 
-namespace turbo_elf_utils {
+namespace utils {
 
 // prints a vector of doubles, with commas seperating elements
 void print_double_vector(std::vector<double> vector);

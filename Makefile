@@ -1,6 +1,6 @@
 OBJS = src/main.o src/feedForwardTrellis.o src/lowRateListDecoder.o
 CXX = clang++
-CXXFLAGS = -std=c++14 -I include
+CXXFLAGS = -std=c++14 -I include -O2
 
 
 # Directories
@@ -16,7 +16,7 @@ OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRC_FILES))
 TARGET = main
 
 # Default rule
-all: $(TARGET)
+all: clean $(TARGET)
 
 # Rule to link object files and create the final
 $(TARGET): $(OBJ_FILES)

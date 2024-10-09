@@ -15,10 +15,10 @@ LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, in
 	int v = feedforwardTrellis.getV();
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding(std::vector<double> receivedMessage){
+MessageInformation LowRateListDecoder::lowRateDecoding(std::vector<double> receivedMessage, std::vector<int> punctured_indices){
 	// trellisInfo is indexed [state][stage]
 	std::vector<std::vector<cell>> trellisInfo;
-	trellisInfo = constructLowRateTrellis(receivedMessage);
+	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
 
 	// start search
 	MessageInformation output;
@@ -38,6 +38,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding(std::vector<double> recei
 
 	int numPathsSearched = 0;
 	int TBPathsSearched = 0;
+  
 	while(numPathsSearched < this->listSize){
 		DetourObject detour = detourTree.pop();
 		std::vector<int> path(lowrate_pathLength);
@@ -279,6 +280,6 @@ std::vector<int> LowRateListDecoder::pathToCodeword(std::vector<int> path){
 			}
 		}
 	}
-  
+
 	return nopunc_codeword;
 }

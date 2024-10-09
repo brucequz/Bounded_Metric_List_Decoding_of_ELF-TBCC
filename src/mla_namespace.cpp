@@ -87,7 +87,7 @@ void crc_calculation(std::vector<int>& input_data, int crc_bits_num, int crc_dec
 
 } // namespace crc
 
-namespace turbo_elf_utils {
+namespace utils {
 
 // prints a vector of doubles, with commas seperating elements
 void print_double_vector(std::vector<double> vector){

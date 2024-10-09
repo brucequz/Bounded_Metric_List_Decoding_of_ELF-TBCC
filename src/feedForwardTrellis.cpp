@@ -1,150 +1,151 @@
 #include "../include/feedForwardTrellis.h"
 
-#include <algorithm>
-#include <cmath>
+#include "../include/mla_namespace.h"
+
 #include <iostream>
+#include <string>
+#include <cmath>
+#include <queue>
+#include <algorithm>
 
-namespace {
-int octToDec(int octal) {
-  int base = 1;
-  int decNum = 0;
+static const int V = 8;
 
-  while (octal > 0) {
-    int digit = octal % 10;
-    decNum += digit * base;
-    base *= 8;
-    octal /= 10;
-  }
+FeedForwardTrellis::FeedForwardTrellis(int k, int n, int v, std::vector<int> numerators){
+	this->k = k;
+	this->n = n;
+	this->v = v;
+	for (int i = 0; i < numerators.size(); i++){
+		this->numerators.push_back(numerators[i]);
+	}
+	this->numInputSymbols = pow(2.0, k);
+	this->numOutputSymbols = pow(2.0, n);
+	this->numStates = pow(2.0, v);
+	this->nextStates = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
+	this->outputs = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
 
-  return decNum;
+
+	if(v != V){
+		std::cout << "MAJOR ISSUE: CONST V DOES NOT MATCH v. EDIT IN FeedForwardTrellis" << std::endl;
+		exit(1);
+	}
+	computeNextStates();
 }
 
-int decToOct(int decimal) {
-  int octal = 0;
-  int base = 1;  // Initialize the base for the rightmost digit
-
-  while (decimal > 0) {
-    int remainder = decimal % 8;  // Get the remainder when dividing by 8
-    octal += remainder * base;    // Add the remainder to the octal result
-    decimal /= 8;  // Divide the decimal number by 8 to move to the next digit
-    base *= 10;    // Update the base for the next digit position
-  }
-
-  return octal;
-}
-
-template <typename T>
-void print(const std::vector<T>& vec) {
-  for (const T& element : vec) {
-    std::cout << element << " ";
-  }
-  std::cout << std::endl;
-}
-
-template <typename T>
-void print(const std::vector<std::vector<T>>& matrix) {
-  for (const std::vector<T>& row : matrix) {
-    for (const T& element : row) {
-      std::cout << element << " ";
-    }
-    std::cout << ";" << std::endl;
-  }
-}
-
-}  // namespace
-
-FeedForwardTrellis::FeedForwardTrellis(CodeInformation code) {
-  k_ = code.k;
-  n_ = code.n;
-  v_ = code.v;
-  numInputSymbols_ = std::pow(2, code.k);
-  numOutputSymbols_ = std::pow(2, code.n);
-  numStates_ = std::pow(2, code.v);
-
-  polynomials_ = code.numerators;
-  if (polynomials_.size() != n_) {
-    std::cerr << "v = " << code.v << std::endl;
-    std::cerr << "INVALID POLYNOMIAL: mismatch between number of output "
-                 "symbols and polynomials"
-              << std::endl;
-  }
-  int min_poly = 0;
-  int max_poly = decToOct(static_cast<int>(std::pow(2.0, code.v + 1)));
-  for (int poly_oct : polynomials_) {
-    if (poly_oct <= min_poly || poly_oct >= max_poly) {
-      std::cerr << "INVALID POLYNOMIAL: too large or small" << std::endl;
-    }
-  }
-  nextStates_.resize(numStates_, std::vector<int>(numInputSymbols_));
-  output_.resize(numStates_, std::vector<int>(numInputSymbols_));
-
-  computeNextStates();
-  computeOutput();
-}
-
-std::vector<int> FeedForwardTrellis::encode(const std::vector<int>& message) {
-  // encode assuming zero states
-  std::vector<int> encoded(message.size() * (n_ / k_), 0);
-  int cur_state = 0;
-  for (int i = 0; i < message.size(); ++i) {
-    if (message[i] >= 2) {
-      std::cerr << "INVALID INPUT MESSAGE: bit input greater than 1"
-                << std::endl;
-    }
-    int output = output_[cur_state][message[i]];
-    int j = n_;
-    while (j != 0 && output > 0) {
-      int remainder = output % 2;
-      encoded[i * n_ + j - 1] = remainder;
-      output /= 2;
-      j--;
-    }
-    if (output != 0) {
-      std::cerr << "INVALID OUTPUT MATRIX: TOO LARGE" << std::endl;
-    }
-    cur_state = nextStates_[cur_state][message[i]];
-  }
-  return encoded;
-}
-
-void FeedForwardTrellis::computeNextStates() {
-  // compute the trellis based on polynomial
-  // save the result in nextStates_
-  // convert polynomial to decimal
-
-  for (int input = 0; input < numInputSymbols_; ++input) {
-    for (int state = 0; state < numStates_; ++state) {
-      int power = std::log2(numStates_) - 1;
-      nextStates_[state][input] =
-          static_cast<int>(state / 2 + input * std::pow(2, power));
-    }
-  }
-
-  // std::cout << "printing trellis next state" << std::endl;
-  // print(nextStates_);
-}
-
-void FeedForwardTrellis::computeOutput() {
-  std::vector<int> poly_in_dec;
-  for (int octal : polynomials_) {
-    poly_in_dec.push_back(octToDec(octal));
-  }
-  for (int input = 0; input < numInputSymbols_; ++input) {
-    for (int state = 0; state < numStates_; ++state) {
-      int cur_state = state + input * static_cast<int>(
-                                          std::pow(2.0, std::log2(numStates_)));
-      for (int poly_id = 0; poly_id < poly_in_dec.size(); ++poly_id) {
-        int result = poly_in_dec[poly_id] & cur_state;
-        int count = 0;
-        while (result > 0) {
-          if (result & 1) {
-            count++;
-          }
-          result >>= 1;
+void FeedForwardTrellis::computeNextStates(){
+    // convert to binary numerators
+    std::vector<std::vector<int>> bin_numerators(n, std::vector<int>(v + 1)) ;
+    for (int i = 0; i < n; i++){
+		int tempNum = numerators[i];//octal number in numerator(135)
+		int decIn = 0;
+		std::string in = std::to_string(tempNum);
+		for (int p = (in.length() - 1); p >= 0; p--)
+			decIn += (int)(in[p] - '0') * pow(8, (in.length() - p - 1));
+		for (int j = v; j >= 0; j--) {
+			if (decIn % 2 == 0)
+				bin_numerators[i][j] = 0;
+			else
+				bin_numerators[i][j] = 1;
+			decIn = decIn / 2;
+		}
+	}
+    // calculate next states and outputs
+    for (int currentState = 0; currentState < numStates; currentState++){
+		std::vector<int> mem_elements = dec2Bin(currentState, v+1);
+		for (int input = 0; input < numInputSymbols; input++){
+			mem_elements[0] = input;
+            std::vector<int> output(n);
+            for (int i=0; i<n; i++){
+                output[i] = 0;
+            }
+            for (int x_bit = 0; x_bit < n; x_bit ++){
+                for (int m_bit = 0; m_bit < V+1; m_bit ++){
+                    if (bin_numerators[x_bit][m_bit] == 1){
+                        output[x_bit] ^= mem_elements[m_bit];
+                    }
+                }
+            }
+            outputs[currentState][input] = bin2Dec(output);
+            std::vector<int> temp(V);
+            for (int i=0; i<V; i++){
+                temp[i] = mem_elements[i];
+                // std::cout << temp[i] << std::endl;
+            }
+            nextStates[currentState][input] = bin2Dec(temp);
         }
-        output_[state][input] += static_cast<int>(
-            (count % 2) * std::pow(2.0, poly_in_dec.size() - poly_id - 1));
-      }
     }
-  }
+}
+
+
+std::vector<int> FeedForwardTrellis::encode(std::vector<int> originalMessage){
+	// brute force approach, there is a better way to do this assuming invertibility
+	// that allows us to precompute starting / ending states, reducing complexity in
+	// each encoding from O(numStates) to O(2). revisit when available
+
+	for (int m = 0; m < numStates; m++){
+		std::vector<int> output;
+		int State = m;
+		for (int i = 0; i < originalMessage.size(); i += k){
+			int decimal = 0;
+			for (int j = 0; j < k; j++){
+				decimal += (originalMessage[i + j] * pow(2, k - j - 1));
+			}
+			std::vector<int> outputBinary = crc::get_point(outputs[State][decimal], n);
+			State = nextStates[State][decimal];
+			for (int j = 0; j < n; j++){
+				output.push_back(outputBinary[j]);
+			}
+		}
+		if (m == State) {
+			return output;
+		}
+	}
+	return originalMessage;
+}
+
+std::vector<int> FeedForwardTrellis::dec2Bin(int decimal, int length){
+	std::vector<int> binary(length);
+	for (int j = (length - 1); j >= 0; j--) {
+		if (decimal % 2 == 0)
+			binary[j] = 0;
+		else
+			binary[j] = 1;
+		decimal = decimal / 2;
+	}
+	return binary;
+}
+
+int FeedForwardTrellis::bin2Dec(std::vector<int> binary){
+	int decimal = 0;
+	for (int i = (binary.size() - 1); i >= 0; i--){
+		decimal += (binary[i] * pow(2, (binary.size() - i - 1)));
+	}
+	return decimal;
+}
+
+std::vector<std::vector<int>> FeedForwardTrellis::getNextStates(){
+	return nextStates;
+}
+
+std::vector<std::vector<int>> FeedForwardTrellis::getOutputs(){
+	return outputs;
+}
+
+int FeedForwardTrellis::getNumInputSymbols(){
+	return numInputSymbols;
+}
+
+int FeedForwardTrellis::getNumOutputSymbols(){
+	return numOutputSymbols;
+}
+
+int FeedForwardTrellis::getNumStates(){
+	return numStates;
+}
+
+int FeedForwardTrellis::getV(){
+	return v;
+}
+
+int FeedForwardTrellis::getN(){
+	return n;
 }
