@@ -53,38 +53,10 @@ void print(const std::vector<std::vector<T>>& matrix) {
 
 }  // namespace
 
-FeedForwardTrellis::FeedForwardTrellis(int k, int n, int v,
-                                       std::vector<int> poly)
-    : k_(k),
-      n_(n),
-      numInputSymbols_(std::pow(2, k)),
-      numOutputSymbols_(std::pow(2, n)),
-      numStates_(std::pow(2, v)) {
-  polynomials_ = poly;
-
-  if (polynomials_.size() != n) {
-    std::cerr << "n = " << n_ << std::endl;
-    std::cerr << "INVALID POLYNOMIAL: mismatch between number of output "
-                 "symbols and polynomials"
-              << std::endl;
-  }
-  int min_poly = 0;
-  int max_poly = decToOct(static_cast<int>(std::pow(2.0, v + 1)));
-  for (int poly_oct : poly) {
-    if (poly_oct <= min_poly || poly_oct >= max_poly) {
-      std::cerr << "INVALID POLYNOMIAL: too large or small" << std::endl;
-    }
-  }
-  nextStates_.resize(numStates_, std::vector<int>(numInputSymbols_));
-  output_.resize(numStates_, std::vector<int>(numInputSymbols_));
-
-  computeNextStates();
-  computeOutput();
-}
-
 FeedForwardTrellis::FeedForwardTrellis(CodeInformation code) {
   k_ = code.k;
   n_ = code.n;
+  v_ = code.v;
   numInputSymbols_ = std::pow(2, code.k);
   numOutputSymbols_ = std::pow(2, code.n);
   numStates_ = std::pow(2, code.v);
@@ -107,13 +79,7 @@ FeedForwardTrellis::FeedForwardTrellis(CodeInformation code) {
   output_.resize(numStates_, std::vector<int>(numInputSymbols_));
 
   computeNextStates();
-  // std::cout << "v = " << code.v << std::endl;
-  // print(nextStates_);
-  // std::cout << std::endl;
   computeOutput();
-  // std::cout << "v = " << code.v << std::endl;
-  // print(output_);
-  // std::cout << std::endl;
 }
 
 std::vector<int> FeedForwardTrellis::encode(const std::vector<int>& message) {
@@ -181,7 +147,4 @@ void FeedForwardTrellis::computeOutput() {
       }
     }
   }
-
-  // std::cout << "printing trellis output matrix" << std::endl;
-  // print(output_);
 }

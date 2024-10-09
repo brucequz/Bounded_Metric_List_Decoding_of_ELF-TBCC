@@ -45,7 +45,7 @@ void ISTC_sim(CodeInformation code){
 	for (int i=0; i< EbN0.size(); i++)
 		SNR.push_back(EbN0[i] + offset);
 
-  FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
+  FeedForwardTrellis encodingTrellis(code);
 	LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc);
 
 // 	// running the simulations. in this example, we are simulation to collect TFR data
