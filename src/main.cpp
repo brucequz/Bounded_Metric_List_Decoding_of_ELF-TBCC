@@ -35,7 +35,7 @@ int main() {
 
 void ISTC_sim(CodeInformation code){
 	std::ofstream outFile;
-  outFile.open("output/ISTC_sim.txt");
+  outFile.open("output/ISTC_sim_mla_listsize.txt");
 
   // Check if the file was opened successfully
   if (!outFile.is_open()) {
@@ -61,6 +61,7 @@ void ISTC_sim(CodeInformation code){
 	for (int i=0; i< EbN0.size(); i++)
 		SNR.push_back(EbN0[i] + offset);
 	std::vector<double> correct_decoding_metrics;
+  std::vector<int> listsize_mla;
 	
 
 	// the below are the relevant initializations for low rate
@@ -82,9 +83,12 @@ void ISTC_sim(CodeInformation code){
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<double> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
 
-			#define MAX_METRIC 10
-			MessageInformation standardDecoding = listDecoder.lowRateDecoding(transmittedMessage, puncturedIndices);
-			#undef MAX_METRIC
+			// MessageInformation standardDecoding = listDecoder.lowRateDecoding(transmittedMessage, puncturedIndices);
+      MessageInformation standardDecoding = listDecoder.lowRateDecoding_mla(transmittedMessage, puncturedIndices, TARGET_METRIC);
+
+      // mla append the list size
+      listsize_mla.push_back(standardDecoding.listSize);
+      std::cout << "decoding metric: " << standardDecoding.metric << std::endl;
 			
 			if(standardDecoding.listSizeExceeded){
 				standardListSizeExceeded++;
@@ -108,8 +112,8 @@ void ISTC_sim(CodeInformation code){
 		std::cout << "TFR: " << (double)(standardNumErrors + standardListSizeExceeded)/MAX_ITERATIONS << std::endl;
 
 
-		for (double metric : correct_decoding_metrics){
-			outFile << metric << std::endl;
+		for (int listsize : listsize_mla){
+			outFile << listsize << std::endl;
 		}
 
 	} // for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++)

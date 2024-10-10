@@ -22,14 +22,16 @@ const std::vector<int> PUNCTURING_INDICES
        118, 124, 135, 138, 145, 151}; /* 2023 ISTC paper puncturing pattern */
 
 /* --- List Decoder Parameters --- */
-constexpr int MAX_LISTSIZE = 1e4;       /* Maximum list size */
+constexpr int MAX_LISTSIZE = 2e6;       /* Maximum list size */
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ITERATIONS = 1e4;  /* Maximum number of iterations */
+const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
+constexpr int MAX_ITERATIONS = 10;  /* Maximum number of iterations */
 constexpr int MAX_ERASURES = 100;     /* Maximum number of erasures */
 constexpr int MAX_ERRORS = 100;       /* Maximum number of errors */
 constexpr bool NOISELESS = false;     /* Noiseless simulation */
 
-const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
+/* --- Metric-listsize Analysis Parameters --- */
+constexpr double TARGET_METRIC = 105;     /* Maximum metric value */
 
 #endif
