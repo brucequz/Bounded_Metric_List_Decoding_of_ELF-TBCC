@@ -44,6 +44,10 @@ void print_int_vector(std::vector<int> vector);
 // outputs a vector of ints to a file
 void output_int_vector(std::vector<int> vector, std::ofstream& file);
 
+// outputs a vector of doubles to a file
+double euclidean_distance_metric(std::vector<double> receivedMessage, std::vector<int> output_point, std::vector<int> punctured_indices);
+
+double euclidean_distance_TM_DC(std::vector<int> transmittedMessage, std::vector<int> decodedCandidate, std::vector<int> punctured_indices);
 } // namespace turbo_elf_utils
 
 

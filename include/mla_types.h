@@ -29,6 +29,7 @@ struct MessageInformation{
   int TBListSize;
 	bool listSizeExceeded;
 	double metric;
+	std::vector<double> decodeToTrasmittedHistory;
 };
 
 #endif

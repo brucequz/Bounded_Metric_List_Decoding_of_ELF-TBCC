@@ -39,7 +39,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding(std::vector<double> recei
 	int numPathsSearched = 0;
 	int TBPathsSearched = 0;
   
-	while(numPathsSearched < this->listSize){
+	while(numPathsSearched < this->listSize) {
 		DetourObject detour = detourTree.pop();
 		std::vector<int> path(lowrate_pathLength);
 
@@ -71,7 +71,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding(std::vector<double> recei
 		path[newTracebackStage] = currentState;
 
 		// actually tracing back
-		for(int stage = newTracebackStage; stage > 0; stage--){
+		for(int stage = newTracebackStage; stage > 0; stage--) {
 			double suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
 			double currPathMetric = trellisInfo[currentState][stage].pathMetric;
 
@@ -89,7 +89,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding(std::vector<double> recei
 			double prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
 			forwardPartialPathMetric += currPathMetric - prevPathMetric;
 			path[stage - 1] = currentState;
-		}
+		} // for(int stage = newTracebackStage; stage > 0; stage--)
 		
 		previousPaths.push_back(path);
 
@@ -109,8 +109,14 @@ MessageInformation LowRateListDecoder::lowRateDecoding(std::vector<double> recei
 		numPathsSearched++;
 		if(path[0] == path[lowrate_pathLength - 1])
 			TBPathsSearched++;
-	}
+
+		if (numPathsSearched == this->listSize){
+			output.metric = forwardPartialPathMetric;
+		}
+
+	} // while(numPathsSearched < this->listSize)
 	output.listSizeExceeded = true;
+	output.listSize = numPathsSearched;
 	return output;
 }
 

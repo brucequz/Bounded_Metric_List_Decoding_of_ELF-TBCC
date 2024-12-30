@@ -4,8 +4,7 @@
 
 
 
-MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> receivedMessage, std::vector<int> punctured_indices, double target_metric){
-
+MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> receivedMessage, std::vector<int> punctured_indices, std::vector<int> transmittedMessage){
 	// trellisInfo is indexed [state][stage]
 	std::vector<std::vector<cell>> trellisInfo;
 	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
@@ -61,7 +60,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> r
 		path[newTracebackStage] = currentState;
 
 		// actually tracing back
-		for(int stage = newTracebackStage; stage > 0; stage--){
+		for(int stage = newTracebackStage; stage > 0; stage--) {
 			double suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
 			double currPathMetric = trellisInfo[currentState][stage].pathMetric;
 
@@ -79,15 +78,18 @@ MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> r
 			double prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
 			forwardPartialPathMetric += currPathMetric - prevPathMetric;
 			path[stage - 1] = currentState;
-		}
+		} // for(int stage = newTracebackStage; stage > 0; stage--)
 		
 		previousPaths.push_back(path);
 
 		std::vector<int> message = pathToMessage(path);
 		std::vector<int> codeword = pathToCodeword(path);
+
+		double decodedPathToTransmittedCodeword = utils::euclidean_distance_TM_DC(transmittedMessage, codeword, punctured_indices);
+		output.decodeToTrasmittedHistory.push_back(decodedPathToTransmittedCodeword);
 		
 		// one trellis decoding requires both a tb and crc check
-		if(forwardPartialPathMetric >= target_metric){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc)){
 			output.message = message;
 			output.path = path;
 		 	output.listSize = numPathsSearched + 1;
@@ -96,21 +98,16 @@ MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> r
 		 	return output;
 		}
 
-
 		numPathsSearched++;
 		if(path[0] == path[lowrate_pathLength - 1])
 			TBPathsSearched++;
 
-    if(numPathsSearched >= this->listSize) {
-      std::cout << "List size exceeded" << std::endl;
-      std::cout << "setting metric: " << forwardPartialPathMetric << std::endl;
-      output.metric = forwardPartialPathMetric;
-    }
+		if (numPathsSearched == this->listSize){
+			output.metric = forwardPartialPathMetric;
+		}
+
 	} // while(numPathsSearched < this->listSize)
-
-  std::cout << "returning default output metric: " << output.metric << std::endl;
-
 	output.listSizeExceeded = true;
-  output.listSize = numPathsSearched;
+	output.listSize = numPathsSearched;
 	return output;
 }

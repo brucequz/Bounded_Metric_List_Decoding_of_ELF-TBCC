@@ -12,7 +12,7 @@ public:
 	MessageInformation lowRateDecoding(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
 
   /* metric-listsize analysis */
-  MessageInformation lowRateDecoding_mla(std::vector<double> receivedMessage, std::vector<int> punctured_indices, double target_metric);
+  MessageInformation lowRateDecoding_mla(std::vector<double> receivedMessage, std::vector<int> punctured_indices, std::vector<int> transmittedMessage);
 
 
 private:
