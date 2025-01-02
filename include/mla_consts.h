@@ -27,7 +27,7 @@ constexpr int MAX_XL_LISTSIZE = 1e6;    /* Maximum XL list size */
 
 /* --- Simulation Parameters --- */
 const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
-constexpr int MAX_ITERATIONS = 10;   /* Maximum number of iterations */
+constexpr int MAX_ITERATIONS = 20;   /* Maximum number of iterations */
 constexpr int MAX_ERASURES = 100;     /* Maximum number of erasures */
 constexpr int MAX_ERRORS = 100;       /* Maximum number of errors */
 constexpr bool NOISELESS = false;     /* Noiseless simulation */

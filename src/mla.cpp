@@ -85,7 +85,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> r
 		std::vector<int> message = pathToMessage(path);
 		std::vector<int> codeword = pathToCodeword(path);
 
-		double decodedPathToTransmittedCodeword = utils::euclidean_distance_TM_DC(transmittedMessage, codeword, punctured_indices);
+		double decodedPathToTransmittedCodeword = utils::euclidean_distance(transmittedMessage, codeword, punctured_indices);
 		output.decodeToTrasmittedHistory.push_back(decodedPathToTransmittedCodeword);
 		
 		// one trellis decoding requires both a tb and crc check

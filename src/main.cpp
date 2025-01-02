@@ -108,10 +108,19 @@ void ISTC_sim(CodeInformation code){
       return;
   }
 
+
+	// History
 	std::ofstream PRVtoTransmittedCodeword_PathHistoryFile;
   PRVtoTransmittedCodeword_PathHistoryFile.open("output/history/PRVtoTC.txt");
   if (!PRVtoTransmittedCodeword_PathHistoryFile.is_open()) {
       std::cerr << "Error: Could not open the file output/history/PRVtoTC.txt" << std::endl;
+      return;
+  }
+
+	std::ofstream RRVtoPRV_ScalingFactorFile;
+  RRVtoPRV_ScalingFactorFile.open("output/history/RRVtoPRVscaling.txt");
+  if (!RRVtoPRV_ScalingFactorFile.is_open()) {
+      std::cerr << "Error: Could not open the file output/history/RRVtoPRVscaling.txt" << std::endl;
       return;
   }
 
@@ -152,6 +161,9 @@ void ISTC_sim(CodeInformation code){
 	// Projected Received Value to Transmitted Codeword History
 	std::vector<std::vector<double>> PRVtoTC_History(MAX_ITERATIONS, std::vector<double>());
 
+	// RRV to PRV Scaling Factor History
+	std::vector<double> RRVtoPRV_ScalingFactor(MAX_ITERATIONS);
+
 	/* ==== SIMULATION begins ==== */
 	for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++) {
 		double snr = SNR[snrIndex];
@@ -168,19 +180,31 @@ void ISTC_sim(CodeInformation code){
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
 			std::vector<double> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
-			std::vector<int> all_zeros(receivedMessage.size(), 0);
-
+			std::vector<int> zero_point(receivedMessage.size(), 0);
+			
+			
+			int sum_abs = std::accumulate(transmittedMessage.begin(), transmittedMessage.end(), 0, [](int sum, int x) {
+        return sum + std::abs(x);
+			});
+			
 			// Normalize the received signals to 128 and decode
-			double original_metric_mag = utils::euclidean_distance_metric(receivedMessage, all_zeros, puncturedIndices);
-			double scale_factor = sqrt(original_metric_mag);
+			double origial_mag_sqrt = utils::euclidean_distance(receivedMessage, zero_point, puncturedIndices);
+			
 			std::vector<double> normalized_receivedMessage(receivedMessage.size(), 0);
 			for (int i = 0; i < receivedMessage.size(); i++) {
-				normalized_receivedMessage[i] = sqrt(128) * receivedMessage[i] / scale_factor;
+				if (std::find(puncturedIndices.begin(), puncturedIndices.end(), i) == puncturedIndices.end()) {
+					normalized_receivedMessage[i] = sqrt(128) * receivedMessage[i] / origial_mag_sqrt;
+				}
 			}
+			
+			
+			// RRV to PRV Scaling Factor
+			RRVtoPRV_ScalingFactor[numTrials] = sqrt(128) / origial_mag_sqrt;
+			
 
 			// TRANSMITTED
-			RRVtoTransmitted_Metric[numTrials] = (utils::euclidean_distance_metric(receivedMessage, transmittedMessage, puncturedIndices));
-			PRVtoTransmitted_Metric[numTrials] = (utils::euclidean_distance_metric(normalized_receivedMessage, transmittedMessage, puncturedIndices));
+			RRVtoTransmitted_Metric[numTrials] = (utils::euclidean_distance(receivedMessage, transmittedMessage, puncturedIndices));
+			PRVtoTransmitted_Metric[numTrials] = (utils::euclidean_distance(normalized_receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// DECODED
       MessageInformation standardDecoding = listDecoder.lowRateDecoding(receivedMessage, puncturedIndices);
@@ -281,6 +305,11 @@ void ISTC_sim(CodeInformation code){
 			PRVtoTransmittedCodeword_PathHistoryFile << std::endl;
 		}
 
+		// RRV to PRV Scaling Factor Write to file
+		for (int i = 0; i < RRVtoPRV_ScalingFactor.size(); i++) {
+			RRVtoPRV_ScalingFactorFile << RRVtoPRV_ScalingFactor[i] << std::endl;
+		}
+
 
 		
 	} // for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++)
@@ -301,6 +330,7 @@ void ISTC_sim(CodeInformation code){
 
 	// Path History
 	PRVtoTransmittedCodeword_PathHistoryFile.close();
+	RRVtoPRV_ScalingFactorFile.close();
 
 	std::cout << "concluded simulation" << std::endl;
 }

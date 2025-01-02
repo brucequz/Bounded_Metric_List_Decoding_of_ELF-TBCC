@@ -119,32 +119,4 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file){
 	file << vector[vector.size() - 1] << std::endl;
 }
 
-double euclidean_distance_metric(std::vector<double> receivedMessage, std::vector<int> output_point, std::vector<int> punctured_indices){
-	double branchMetric = 0;
-	assert(receivedMessage.size() == output_point.size());
-	for(int i = 0; i < receivedMessage.size(); i++){
-		if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()){
-			branchMetric += 0;
-		} else {
-			branchMetric += std::pow(receivedMessage[i] - (double)output_point[i], 2);
-		}
-	}
-	return branchMetric;
-}
-
-double euclidean_distance_TM_DC(std::vector<int> transmittedMessage, std::vector<int> decodedCandidate, std::vector<int> punctured_indices){
-	double sum = 0;
-	assert(transmittedMessage.size() == decodedCandidate.size());
-	for(int i = 0; i < transmittedMessage.size(); i++){
-		if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()){
-			sum += 0;
-		} else {
-			sum += std::pow((double)transmittedMessage[i] - (double)decodedCandidate[i], 2);
-		}
-	}
-	return std::sqrt(sum);
-}
-
-
-
-} // namespace turbo_elf_utils
+} // namespace utils

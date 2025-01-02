@@ -44,11 +44,29 @@ void print_int_vector(std::vector<int> vector);
 // outputs a vector of ints to a file
 void output_int_vector(std::vector<int> vector, std::ofstream& file);
 
-// outputs a vector of doubles to a file
-double euclidean_distance_metric(std::vector<double> receivedMessage, std::vector<int> output_point, std::vector<int> punctured_indices);
+// Euclidean distance metric
+template <typename T1, typename T2>
+double euclidean_distance(
+    const std::vector<T1>& v1, 
+    const std::vector<T2>& v2, 
+    const std::vector<int>& punctured_indices) 
+{
+    if (v1.size() != v2.size()) {
+        throw std::invalid_argument("Vectors must be of the same size");
+    }
 
-double euclidean_distance_TM_DC(std::vector<int> transmittedMessage, std::vector<int> decodedCandidate, std::vector<int> punctured_indices);
-} // namespace turbo_elf_utils
+    double sum = 0.0;
+    for (size_t i = 0; i < v1.size(); i++) {
+        // Skip if index is in punctured_indices
+        if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()) {
+            continue;
+        }
+        sum += std::pow(static_cast<double>(v1[i]) - static_cast<double>(v2[i]), 2);
+    }
+    return std::sqrt(sum);
+}
+
+} // namespace utils
 
 
 int make_file_interleaver(char interleaver_file[],
