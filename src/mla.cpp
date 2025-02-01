@@ -85,8 +85,10 @@ MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> r
 		std::vector<int> message = pathToMessage(path);
 		std::vector<int> codeword = pathToCodeword(path);
 
-		double decodedPathToTransmittedCodeword = utils::euclidean_distance(transmittedMessage, codeword, punctured_indices);
-		output.decodeToTrasmittedHistory.push_back(decodedPathToTransmittedCodeword);
+		double pathToTransmittedCodewordMetric = utils::euclidean_distance(transmittedMessage, codeword, punctured_indices);
+
+		// MLA Extra Information
+		output.pathToTransmittedCodewordHistory.push_back(pathToTransmittedCodewordMetric);
 		
 		// one trellis decoding requires both a tb and crc check
 		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc)){
@@ -95,6 +97,9 @@ MessageInformation LowRateListDecoder::lowRateDecoding_mla(std::vector<double> r
 		 	output.listSize = numPathsSearched + 1;
 			output.metric = forwardPartialPathMetric;
 			output.TBListSize = TBPathsSearched + 1;
+			std::vector<double> squaredNoiseMag = utils::elementwise_squared_distance(receivedMessage, transmittedMessage, punctured_indices);
+			output.decodedCodewordSquaredNoiseMag = squaredNoiseMag;
+			
 		 	return output;
 		}
 

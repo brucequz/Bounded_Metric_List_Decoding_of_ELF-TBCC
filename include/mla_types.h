@@ -22,6 +22,10 @@ struct MessageInformation{
     TBListSize        = -1;
 		listSizeExceeded 	= false;
 		metric 						= -1.0;
+
+		// History
+		pathToTransmittedCodewordHistory = std::vector<double>();
+		decodedCodewordSquaredNoiseMag 	= std::vector<double>();
 	};
 	std::vector<int> message;
 	std::vector<int> path;
@@ -29,7 +33,8 @@ struct MessageInformation{
   int TBListSize;
 	bool listSizeExceeded;
 	double metric;
-	std::vector<double> decodeToTrasmittedHistory;
+	std::vector<double> pathToTransmittedCodewordHistory;
+	std::vector<double> decodedCodewordSquaredNoiseMag;
 };
 
 #endif

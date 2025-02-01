@@ -88,6 +88,29 @@ double sum_of_squares(
     return sum;
 }
 
+
+// Element-wise Squared Distance
+template <typename T1, typename T2>
+std::vector<double> elementwise_squared_distance(
+    const std::vector<T1>& v1, 
+    const std::vector<T2>& v2, 
+    const std::vector<int>& punctured_indices) 
+{
+    if (v1.size() != v2.size()) {
+        throw std::invalid_argument("Vectors must be of the same size");
+    }
+
+    std::vector<double> distances;
+    for (size_t i = 0; i < v1.size(); i++) {
+        // Skip if index is in punctured_indices
+        if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()) {
+            continue;
+        }
+        distances.push_back(std::pow(static_cast<double>(v1[i]) - static_cast<double>(v2[i]), 2));
+    }
+    return distances;
+}
+
 } // namespace utils
 
 

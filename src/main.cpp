@@ -124,6 +124,13 @@ void ISTC_sim(CodeInformation code){
       return;
   }
 
+	std::ofstream DecodedCodewordNoiseMagFile;
+	DecodedCodewordNoiseMagFile.open("output/history/decodedCodewordNoiseMag.txt");
+	if (!DecodedCodewordNoiseMagFile.is_open()) {
+			std::cerr << "Error: Could not open the file output/history/decodedCodewordNoiseMag.txt" << std::endl;
+			return;
+	}
+
 	std::cout << "running the ISTC sim" << std::endl;
 	srand(42);
 	if ((code.numInfoBits + code.crcDeg - 1) % code.k != 0) {
@@ -164,6 +171,9 @@ void ISTC_sim(CodeInformation code){
 	// RRV to PRV Scaling Factor History
 	std::vector<double> RRVtoPRV_ScalingFactor(MAX_ITERATIONS);
 
+	// Decoding Noise Magnitude
+	std::vector<std::vector<double>> DecodedCodewordNoiseMag(MAX_ITERATIONS, std::vector<double>());
+
 	/* ==== SIMULATION begins ==== */
 	for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++) {
 		double snr = SNR[snrIndex];
@@ -196,6 +206,7 @@ void ISTC_sim(CodeInformation code){
 					normalized_receivedMessage[i] = sqrt(128) * receivedMessage[i] / origial_mag_sqrt;
 				}
 			}
+
 			
 			
 			// RRV to PRV Scaling Factor
@@ -203,8 +214,8 @@ void ISTC_sim(CodeInformation code){
 			
 
 			// TRANSMITTED
-			RRVtoTransmitted_Metric[numTrials] = (utils::euclidean_distance(receivedMessage, transmittedMessage, puncturedIndices));
-			PRVtoTransmitted_Metric[numTrials] = (utils::euclidean_distance(normalized_receivedMessage, transmittedMessage, puncturedIndices));
+			RRVtoTransmitted_Metric[numTrials] = (utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
+			PRVtoTransmitted_Metric[numTrials] = (utils::sum_of_squares(normalized_receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// DECODED
       MessageInformation standardDecoding = listDecoder.lowRateDecoding(receivedMessage, puncturedIndices);
@@ -240,7 +251,7 @@ void ISTC_sim(CodeInformation code){
 				PRVtoDecoded_ListSize[numTrials] 	= normalizedDecoding.listSize;
 				PRVtoDecoded_Metric[numTrials] 		= normalizedDecoding.metric;
 				if (normalizedDecoding.metric >= 71 && normalizedDecoding.listSize < 1600) {
-					std::cout << "Large list size correct decoding: ----------" << std::endl;
+					std::cout << "Large metric but small list size correct decoding: ----------" << std::endl;
 					std::cout << "metric: " << normalizedDecoding.metric << std::endl;
 					std::cout << "list size: " << normalizedDecoding.listSize << std::endl;
 					std::cout << "TB list size: " << normalizedDecoding.TBListSize << std::endl;
@@ -252,11 +263,14 @@ void ISTC_sim(CodeInformation code){
 				// incorrect decoding
 				PRV_DecodedType[numTrials] 				= 2;
 				PRVtoDecoded_ListSize[numTrials] 	= normalizedDecoding.listSize;
-				PRVtoDecoded_Metric[numTrials]		=normalizedDecoding.metric;
+				PRVtoDecoded_Metric[numTrials]		= normalizedDecoding.metric;
 			}
 
-			PRVtoTC_History[numTrials] = normalizedDecoding.decodeToTrasmittedHistory;
-			
+			// PRV to TC History
+			PRVtoTC_History[numTrials] = normalizedDecoding.pathToTransmittedCodewordHistory;
+
+			// Decoded Codeword Noise Magnitude
+			DecodedCodewordNoiseMag[numTrials] = normalizedDecoding.decodedCodewordSquaredNoiseMag;
 			
 		} // for(int numTrials = 0; numTrials < MAX_ITERATIONS; numTrials++)
 
@@ -268,6 +282,8 @@ void ISTC_sim(CodeInformation code){
 		std::cout << "UER: " << (double)standardNumErrors/(MAX_ITERATIONS - standardListSizeExceeded) << std::endl;
 		std::cout << "TFR: " << (double)(standardNumErrors + standardListSizeExceeded)/MAX_ITERATIONS << std::endl;
 		
+		double scaling_average = std::accumulate(RRVtoPRV_ScalingFactor.begin(), RRVtoPRV_ScalingFactor.end(), 0.0) / RRVtoPRV_ScalingFactor.size();
+		std::cout << "scaling average: " << scaling_average << std::endl;
 
 		// RRV Write to file
 		for (int i = 0; i < RRVtoTransmitted_Metric.size(); i++) {
@@ -297,7 +313,7 @@ void ISTC_sim(CodeInformation code){
 			PRVtoDecoded_DecodeTypeFile << PRV_DecodedType[i] << std::endl;
 		}
 
-		// History Write to file
+		// PRV to TC History Write to file
 		for (int i_trial = 0; i_trial < MAX_ITERATIONS; i_trial++) {
 			for (int i = 0; i < PRVtoTC_History[i_trial].size(); i++) {
 				PRVtoTransmittedCodeword_PathHistoryFile << PRVtoTC_History[i_trial][i] << ", ";
@@ -310,8 +326,20 @@ void ISTC_sim(CodeInformation code){
 			RRVtoPRV_ScalingFactorFile << RRVtoPRV_ScalingFactor[i] << std::endl;
 		}
 
+		// Decoded Codeword Noise Magnitude Write to file
+		for (int i = 0; i < DecodedCodewordNoiseMag.size(); i++) {
+			if (DecodedCodewordNoiseMag[i].size() == 0) {
+				for (int j = 0; j < 2*NUM_INFO_BITS; j++) {
+					DecodedCodewordNoiseMagFile << 0.0 << ", ";
+				}
+			} else {
+				for (int j = 0; j < DecodedCodewordNoiseMag[i].size(); j++) {
+					DecodedCodewordNoiseMagFile << DecodedCodewordNoiseMag[i][j] << ", ";
+				}
+			}
+			DecodedCodewordNoiseMagFile << std::endl;
+		}
 
-		
 	} // for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++)
 
 	// RRV
@@ -331,6 +359,7 @@ void ISTC_sim(CodeInformation code){
 	// Path History
 	PRVtoTransmittedCodeword_PathHistoryFile.close();
 	RRVtoPRV_ScalingFactorFile.close();
+	DecodedCodewordNoiseMagFile.close();
 
 	std::cout << "concluded simulation" << std::endl;
 }
