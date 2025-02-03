@@ -12,6 +12,8 @@
 namespace awgn {
 
 std::vector<double> addNoise(std::vector<int> encodedMsg, double SNR);
+std::vector<double> generateStandardNormalNoise(size_t l);
+std::vector<double> scaleNoise(std::vector<double> input, double target_noise_power);
 
 } // namespace awgn
 
@@ -45,11 +47,5 @@ void print_int_vector(std::vector<int> vector);
 void output_int_vector(std::vector<int> vector, std::ofstream& file);
 
 } // namespace turbo_elf_utils
-
-
-int make_file_interleaver(char interleaver_file[],
-                          unsigned short int interleaver[], int n);
-
-void elf_turbo_simulation(CodeInformation code);
 
 #endif

@@ -18,6 +18,34 @@ std::vector<double> addNoise(std::vector<int> encodedMsg, double SNR) {
   return noisyMsg;
 }
 
+std::vector<double> generateStandardNormalNoise(size_t l) {
+	/* Generate I.I.D Standard Normal Noise of vector length l */
+	std::vector<double> out(l, 0.0);
+	std::normal_distribution<double> standard_normal_distribution(0.0, 1);
+	for (size_t i = 0; i < l; i++) {
+		out[i] = standard_normal_distribution(generator);
+	}
+	return out;
+}
+
+std::vector<double> scaleNoise(std::vector<double> input, double target_noise_power) {
+	/* Scales input noise vector to have target_noise_power */
+	int l = input.size();
+	double input_sum_of_squares = 0.0;
+	for (size_t i = 0; i < l; i++) {
+		input_sum_of_squares += input[i] * input[i];
+	}
+	double input_noise_power = std::sqrt(input_sum_of_squares);
+	double scale = target_noise_power / input_noise_power;
+	
+	std::vector<double> out(l, 0.0);
+	for (size_t i = 0; i < input.size(); i++) {
+		out[i] = input[i] * scale;
+	}
+
+	return out;
+}
+
 } // namespace awgn
 
 namespace crc {

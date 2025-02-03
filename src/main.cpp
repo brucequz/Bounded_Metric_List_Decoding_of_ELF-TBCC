@@ -8,9 +8,10 @@
 #include "../include/feedForwardTrellis.h"
 #include "../include/lowRateListDecoder.h"
 
-void ISTC_sim(CodeInformation code);
+void Noise_injection_sim(CodeInformation code, double injected_power);
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
-std::vector<double> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, double snr, std::vector<int> puncturedIndices, bool noiseless);
+std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis);
+std::vector<double> addAWNGNoiseAndPuncture(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless);
 
 int main() {
 
@@ -28,96 +29,30 @@ int main() {
   code.numInfoBits = NUM_INFO_BITS; // number of information bits
   code.numerators = {POLY1, POLY2};
 
-  ISTC_sim(code);
+  Noise_injection_sim(code, TARGET_NOISE_POWER_SQRD);
 
   return 0;
 }
 
-void ISTC_sim(CodeInformation code){
-	std::ofstream outFile;
-  outFile.open("output/ISTC_sim.txt");
+void Noise_injection_sim(CodeInformation code, double injected_power) {
+	/** Injecting noise with certain power to a fixed codeword and observe list size
+	 * 
+	 * Input:
+	 * 	- code: code information such as K, N, V, etc
+	 * 	- injected_noise_power: 
+	 */
 
-  // Check if the file was opened successfully
-  if (!outFile.is_open()) {
-      std::cerr << "Error: Could not open the file ../output/ISTC_sim.txt" << std::endl;
-      return;
-  }
-	std::cout << "running the ISTC sim" << std::endl;
-
-	// set random seed for message generation
 	srand(42);
 
-	// check to make sure the code has valid values
-	if ((code.numInfoBits + code.crcDeg - 1) % code.k != 0) {
-		std::cout << "invalid msg + crc length" << std::endl;
-		return;
-	}
+	/// starting with all zero message bits 
+	std::vector<int> all_zero_m_bits(K, 0);
 
-	std::vector<double> EbN0 = EBN0;
-  std::vector<int> puncturedIndices = PUNCTURING_INDICES;
-
-	std::vector<double> SNR;
-	double offset = 10 * log10((double)2*64 / (128));
-	for (int i=0; i< EbN0.size(); i++)
-		SNR.push_back(EbN0[i] + offset);
-	std::vector<double> correct_decoding_metrics;
-	
-
-	// the below are the relevant initializations for low rate
-	// decoding, this will be altered for high rate or ZTCC, for example
 	FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
-	LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc);
 
-	/* ---- SIMULATION begins ---- */
-	for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++) {
-		double snr = SNR[snrIndex];
-		double standardMeanListSize = 0;
-		int standardNumErrors = 0;
-		int standardListSizeExceeded = 0;
-
-		for(int numTrials = 0; numTrials < MAX_ITERATIONS; numTrials++) {
-
-			if (numTrials % 100 == 0) { std::cout << "currently at " << numTrials << std::endl; }
-			
-			std::vector<int> originalMessage = generateRandomCRCMessage(code);
-			std::vector<double> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
-
-			#define MAX_METRIC 10
-			MessageInformation standardDecoding = listDecoder.lowRateDecoding(transmittedMessage, puncturedIndices);
-			#undef MAX_METRIC
-			
-			if(standardDecoding.listSizeExceeded){
-				standardListSizeExceeded++;
-			}
-			else if (standardDecoding.message != originalMessage){
-				standardNumErrors ++;
-				standardMeanListSize += (double)standardDecoding.listSize;
-			} else {
-				// save the metrics for the correct decodings
-				correct_decoding_metrics.push_back(standardDecoding.metric);
-			}
-			
-		} // for(int numTrials = 0; numTrials < MAX_ITERATIONS; numTrials++)
-
-
-		std::cout << "at Eb/N0 = " << EbN0[snrIndex] << std::endl;
-		std::cout << "mean list size: " << (double)standardMeanListSize/(MAX_ITERATIONS - standardListSizeExceeded) << std::endl;
-		std::cout << "number of times list size exceeded: " << standardListSizeExceeded << std::endl;
-		std::cout << "number of errors: " << standardNumErrors << std::endl;
-		std::cout << "UER: " << (double)standardNumErrors/(MAX_ITERATIONS - standardListSizeExceeded) << std::endl;
-		std::cout << "TFR: " << (double)(standardNumErrors + standardListSizeExceeded)/MAX_ITERATIONS << std::endl;
-
-
-		for (double metric : correct_decoding_metrics){
-			outFile << metric << std::endl;
-		}
-
-	} // for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++)
-
-  outFile.close();
-	std::cout << "concluded simulation" << std::endl;
+	/// generate transmitted message
+	std::vector<int> transmitted_message = generateTransmittedMessage(all_zero_m_bits, encodingTrellis);
+	
 }
-
 
 // this generates a random binary string of length code.numInfoBits, and appends the appropriate CRC bits
 std::vector<int> generateRandomCRCMessage(CodeInformation code){
@@ -129,22 +64,35 @@ std::vector<int> generateRandomCRCMessage(CodeInformation code){
 	return message;
 }
 
-// this takes the message bits, including the CRC, and encodes them using the trellis,
-// then adds noise and punctures the result
-std::vector<double> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, double snr, std::vector<int> puncturedIndices, bool noiseless){
+// this takes the message bits, including the CRC, and encodes them using the trellis
+std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis){
 	// encode the message
 	std::vector<int> encodedMessage = encodingTrellis.encode(originalMessage);
-	// add noise
-	std::vector<double> finalMessage;
+
+	return encodedMessage;
+}
+
+// this takes the transmitted message and adds AWGN noise to it
+// it also punctures the bits that are not used in the trellis
+std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless){
+	std::vector<double> receivedMessage;
 	if(noiseless){
-		for(int i = 0; i < encodedMessage.size(); i++)
-			finalMessage.push_back((double)encodedMessage[i]);
+		for(int i = 0; i < transmittedMessage.size(); i++)
+			receivedMessage.push_back((double)transmittedMessage[i]);
+	} else {
+		receivedMessage = awgn::addNoise(transmittedMessage, snr);
 	}
-	else
-		finalMessage = awgn::addNoise(encodedMessage, snr);
+
 	// puncture the bits. it is more convenient to puncture on this side than on the 
 	// decoder, so we insert zeros which provide no information to the decoder
-	for(int index = 0; index < puncturedIndices.size(); index++)
-		finalMessage[puncturedIndices[index]] = 0;
-	return finalMessage;
+	for(int index = 0; index < puncturedIndices.size(); index++) {
+		if (puncturedIndices[index] > receivedMessage.size()) {
+			std::cout << "out of bounds index: " << puncturedIndices[index] << std::endl;
+			std::cerr << "Puncturing index out of bounds" << std::endl;
+			exit(1);
+		}
+		receivedMessage[puncturedIndices[index]] = 0;
+	}
+
+	return receivedMessage;
 }

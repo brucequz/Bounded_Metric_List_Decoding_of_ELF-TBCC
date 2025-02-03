@@ -32,4 +32,9 @@ constexpr bool NOISELESS = false;     /* Noiseless simulation */
 
 const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
 
+/* --- Noise Injection Simulation Parameters --- */
+constexpr double TARGET_NOISE_POWER_SQRD = 100;  /* Squared Power of injected Noise */
+constexpr char STOPPING_RULE[] = "METRIC";  /* Can only be "METRIC" or "LISTSIZE" */
+
+
 #endif
