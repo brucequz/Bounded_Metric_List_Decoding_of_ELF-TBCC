@@ -3,7 +3,8 @@
 
 namespace awgn {
 
-std::default_random_engine generator;
+std::default_random_engine generator(41);
+
 
 std::vector<double> addNoise(std::vector<int> encodedMsg, double SNR) {
   std::vector<double> noisyMsg;
@@ -35,8 +36,9 @@ std::vector<double> scaleNoise(std::vector<double> input, double target_noise_po
 	for (size_t i = 0; i < l; i++) {
 		input_sum_of_squares += input[i] * input[i];
 	}
-	double input_noise_power = std::sqrt(input_sum_of_squares);
-	double scale = target_noise_power / input_noise_power;
+	
+	double scale = std::sqrt(target_noise_power / input_sum_of_squares);
+	std::cout << "printing scale: " << scale << std::endl;
 	
 	std::vector<double> out(l, 0.0);
 	for (size_t i = 0; i < input.size(); i++) {
@@ -145,6 +147,16 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file){
 		file << vector[i] << ", ";
 	}
 	file << vector[vector.size() - 1] << std::endl;
+}
+
+// computes vector energy
+double compute_vector_energy ( std::vector<double> v) {
+	double sum_of_squares = 0.0;
+	for ( int i = 0; i < v.size(); i++ ) {
+		sum_of_squares += v[i] * v[i];
+	}
+	
+	return std::sqrt(sum_of_squares);
 }
 
 } // namespace turbo_elf_utils

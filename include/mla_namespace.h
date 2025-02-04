@@ -46,6 +46,9 @@ void print_int_vector(std::vector<int> vector);
 // outputs a vector of ints to a file
 void output_int_vector(std::vector<int> vector, std::ofstream& file);
 
+// compute vector energy (sum of squares)
+double compute_vector_energy(std::vector<double> v);
+
 } // namespace turbo_elf_utils
 
 #endif

@@ -1,6 +1,6 @@
 OBJS = src/main.o src/feedForwardTrellis.o src/lowRateListDecoder.o
 CXX = clang++
-CXXFLAGS = -std=c++14 -I include -O2
+CXXFLAGS = -std=c++14 -I include -g
 
 
 # Directories

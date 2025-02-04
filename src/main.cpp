@@ -9,7 +9,7 @@
 #include "../include/lowRateListDecoder.h"
 
 void Noise_injection_sim(CodeInformation code, double injected_power);
-std::vector<int> generateRandomCRCMessage(CodeInformation code);
+std::vector<int> generateRandomCRCMessage(CodeInformation code, bool noiseless);
 std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis);
 std::vector<double> addAWNGNoiseAndPuncture(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless);
 
@@ -29,7 +29,7 @@ int main() {
   code.numInfoBits = NUM_INFO_BITS; // number of information bits
   code.numerators = {POLY1, POLY2};
 
-  Noise_injection_sim(code, TARGET_NOISE_POWER_SQRD);
+  Noise_injection_sim(code, TARGET_NOISE_ENERGY);
 
   return 0;
 }
@@ -42,23 +42,43 @@ void Noise_injection_sim(CodeInformation code, double injected_power) {
 	 * 	- injected_noise_power: 
 	 */
 
-	srand(42);
 
 	/// starting with all zero message bits 
 	std::vector<int> all_zero_m_bits(K, 0);
 
 	FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
 
-	/// generate transmitted message
-	std::vector<int> transmitted_message = generateTransmittedMessage(all_zero_m_bits, encodingTrellis);
+	std::vector<int> message_with_crc = generateRandomCRCMessage( code, NOISELESS );
+	std::vector<int> transmitted_message = generateTransmittedMessage( message_with_crc, encodingTrellis );
+	
+	std::cout << "transmitted message size: " << transmitted_message.size() << std::endl;
+
+	/// inject random noise with fixed energy (sum of squares)
+	for ( int i = 0; i < 10; i++ ) {
+		std::vector<double> standard_noise = awgn::generateStandardNormalNoise( (N/K) * NUM_INFO_BITS );
+		std::vector<double> scaled_noise 	 = awgn::scaleNoise(standard_noise, injected_power);
+	}
+
+	// std::vector<double> noisy_message = 
+	
+
+	// hard-decoding
+
+	// comparing with soft-decoding
 	
 }
 
 // this generates a random binary string of length code.numInfoBits, and appends the appropriate CRC bits
-std::vector<int> generateRandomCRCMessage(CodeInformation code){
-	std::vector<int> message;
-	for(int i = 0; i < code.numInfoBits; i++)
-		message.push_back(rand()%2);
+std::vector<int> generateRandomCRCMessage(CodeInformation code, bool noiseless){
+	
+	std::vector<int> message ( code.numInfoBits );
+
+	if (noiseless == 0) {
+		for(int i = 0; i < code.numInfoBits; i++)
+			message[i] = (rand()%2);
+	} else {
+		std::fill( message.begin(), message.end(), 0 ); // noiseless
+	}
 	// compute the CRC
 	crc::crc_calculation(message, code.crcDeg, code.crc);
 	return message;
@@ -74,7 +94,7 @@ std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, Fe
 
 // this takes the transmitted message and adds AWGN noise to it
 // it also punctures the bits that are not used in the trellis
-std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless){
+std::vector<double> addAWNGNoiseAndPuncture(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless){
 	std::vector<double> receivedMessage;
 	if(noiseless){
 		for(int i = 0; i < transmittedMessage.size(); i++)
