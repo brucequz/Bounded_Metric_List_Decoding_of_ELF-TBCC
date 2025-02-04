@@ -38,7 +38,7 @@ std::vector<double> scaleNoise(std::vector<double> input, double target_noise_po
 	}
 	
 	double scale = std::sqrt(target_noise_power / input_sum_of_squares);
-	std::cout << "printing scale: " << scale << std::endl;
+	
 	
 	std::vector<double> out(l, 0.0);
 	for (size_t i = 0; i < input.size(); i++) {

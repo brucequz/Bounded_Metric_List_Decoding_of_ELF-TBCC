@@ -12,6 +12,7 @@ void Noise_injection_sim(CodeInformation code, double injected_power);
 std::vector<int> generateRandomCRCMessage(CodeInformation code, bool noiseless);
 std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis);
 std::vector<double> addAWNGNoiseAndPuncture(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless);
+std::vector<double> addArtificialNoiseAndPuncture(std::vector<int> transmittedMessage, std::vector<double> artificialNoise, std::vector<int> puncturedIndices);
 
 int main() {
 
@@ -54,12 +55,14 @@ void Noise_injection_sim(CodeInformation code, double injected_power) {
 	std::cout << "transmitted message size: " << transmitted_message.size() << std::endl;
 
 	/// inject random noise with fixed energy (sum of squares)
-	for ( int i = 0; i < 10; i++ ) {
+	for ( int i = 0; i < 1; i++ ) {
 		std::vector<double> standard_noise = awgn::generateStandardNormalNoise( (N/K) * NUM_INFO_BITS );
 		std::vector<double> scaled_noise 	 = awgn::scaleNoise(standard_noise, injected_power);
-	}
 
-	// std::vector<double> noisy_message = 
+		std::vector<double> noisy_message = addArtificialNoiseAndPuncture(transmitted_message, scaled_noise, PUNCTURING_INDICES);
+
+		
+	}
 	
 
 	// hard-decoding
@@ -115,4 +118,34 @@ std::vector<double> addAWNGNoiseAndPuncture(std::vector<int> transmittedMessage,
 	}
 
 	return receivedMessage;
+}
+
+
+std::vector<double> addArtificialNoiseAndPuncture(std::vector<int> transmittedMessage, std::vector<double> artificialNoise, std::vector<int> puncturedIndices) {
+	/** Noise injection experiment ONLY
+	 * Input: 
+	 * 	- transmittedMessage: 
+	 *  - artificialNoise:
+	 *  - puncturedIndices: 
+	 * 
+	 */
+
+	std::vector<double> out(transmittedMessage.size(), 0.0);
+	int j = 0;
+
+	for ( int i = 0; i < out.size(); i++ ) {
+
+		auto result = std::find( puncturedIndices.begin(), puncturedIndices.end(), i );
+
+		if (result != puncturedIndices.end()) {
+			continue; // if this symbol is punctured
+		} else {
+			out[i] = transmittedMessage[i] + artificialNoise[j];
+			j++;
+		}
+	}
+
+	assert(j == transmittedMessage.size() - puncturedIndices.size());
+
+	return out;
 }
