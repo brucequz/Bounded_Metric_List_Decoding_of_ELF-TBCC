@@ -49,6 +49,12 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file);
 // compute vector energy (sum of squares)
 double compute_vector_energy(std::vector<double> v);
 
+// compute hamming distance between two integer vectors
+int compute_hamming_distance(std::vector<int> v1, std::vector<int> v2);
+
+int compute_hamming_distance_with_puncturing(std::vector<int> v1, std::vector<int> v2, std::vector<int> punctured_indices);
+
+
 } // namespace turbo_elf_utils
 
 #endif

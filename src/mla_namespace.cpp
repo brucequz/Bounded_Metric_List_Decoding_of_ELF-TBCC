@@ -159,4 +159,47 @@ double compute_vector_energy ( std::vector<double> v) {
 	return std::sqrt(sum_of_squares);
 }
 
-} // namespace turbo_elf_utils
+// computes hamming distance between two int vectors
+int compute_hamming_distance(std::vector<int> v1, std::vector<int> v2) {
+	assert(v1.size() == v2.size());
+	int l = v1.size();
+
+	int hamming_distance = 0;
+	
+	for (int i = 0; i < l; i++) {
+		if (v1[i] != v2[i]) {
+			hamming_distance++;
+		}
+	}
+
+	if (hamming_distance == l) { std::cerr << "[WARNING] HAMMING WEIGHT = VECTOR LENGTH" << std::endl; } 
+	return hamming_distance;
+}
+
+int compute_hamming_distance_with_puncturing(std::vector<int> v1, std::vector<int> v2, std::vector<int> punctured_indices) {
+	assert(v1.size() == v2.size());
+	int l = v1.size();
+	assert(!punctured_indices.empty());
+
+	
+	int largest_puncturing_id = punctured_indices.back();
+	assert(largest_puncturing_id < l);
+
+	int hamming_distance = 0;
+
+	for (int i = 0; i < l; i++) {
+		auto result = std::find(punctured_indices.begin(), punctured_indices.end(), i);
+		if (result != punctured_indices.end()) { continue; }
+		
+		if (v1[i] != v2[i]) {
+			hamming_distance++;
+		}
+	}
+
+	if (hamming_distance == l) { std::cerr << "[WARNING] HAMMING WEIGHT = VECTOR LENGTH" << std::endl; } 
+	
+	return hamming_distance;
+	
+}
+
+} // namespace utils

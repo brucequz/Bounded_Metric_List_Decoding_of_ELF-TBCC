@@ -43,32 +43,102 @@ void Noise_injection_sim(CodeInformation code, double injected_power) {
 	 * 	- injected_noise_power: 
 	 */
 
+	/* - Output files setup - */
+	std::ofstream hamming_distance_file;
+  hamming_distance_file.open("output/hamming_and_listsize/hamming_distance.txt");
+  if (!hamming_distance_file.is_open()) {
+      std::cerr << "Error: Could not open the file output/hamming_and_listsize/hamming_distance.txt" << std::endl;
+      return;
+  }
 
-	/// starting with all zero message bits 
-	std::vector<int> all_zero_m_bits(K, 0);
+	std::ofstream list_size_file;
+  list_size_file.open("output/hamming_and_listsize/list_size.txt");
+  if (!list_size_file.is_open()) {
+      std::cerr << "Error: Could not open the file output/hamming_and_listsize/list_size.txt" << std::endl;
+      return;
+  }
+
+	std::ofstream decoding_correctness_file;
+  decoding_correctness_file.open("output/hamming_and_listsize/correctness.txt");
+  if (!decoding_correctness_file.is_open()) {
+      std::cerr << "Error: Could not open the file output/hamming_and_listsize/correctness.txt" << std::endl;
+      return;
+  }
+
+	/* - Recorder Setup - */
+	std::vector<int> hamming_distance_recorder( MC_ITERS );
+	std::vector<int> list_size_recorder( MC_ITERS );
+	std::vector<int> decoding_correctness_recorder( MC_ITERS );
 
 	FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
 
 	std::vector<int> message_with_crc = generateRandomCRCMessage( code, NOISELESS );
 	std::vector<int> transmitted_message = generateTransmittedMessage( message_with_crc, encodingTrellis );
-	
-	std::cout << "transmitted message size: " << transmitted_message.size() << std::endl;
 
-	/// inject random noise with fixed energy (sum of squares)
-	for ( int i = 0; i < 1; i++ ) {
+	/* - Simulation Begin - */
+	for ( int iter = 0; iter < MC_ITERS; iter++ ) {
+
+		if (iter % 10 == 0) {std::cout << "Logging: " << iter << " iterations" << std::endl;}
+
 		std::vector<double> standard_noise = awgn::generateStandardNormalNoise( (N/K) * NUM_INFO_BITS );
 		std::vector<double> scaled_noise 	 = awgn::scaleNoise(standard_noise, injected_power);
 
 		std::vector<double> noisy_message = addArtificialNoiseAndPuncture(transmitted_message, scaled_noise, PUNCTURING_INDICES);
 
+		double sum = 0.0;
+		for (int i = 0; i < scaled_noise.size(); i++) {
+			sum += scaled_noise[i];
+		}
+
+		// hard-decoding
+		std::vector<int> hard_decoding;
+		int hamming_distance = 0;
+
+		for (int i = 0; i < noisy_message.size(); i++) {
+			if (noisy_message[i] == 0.0) {
+				hard_decoding.push_back(0);
+				continue;
+			}
+			if (noisy_message[i] > 0.0) { hard_decoding.push_back(1); }
+			if (noisy_message[i] < 0.0) { hard_decoding.push_back(-1); }
+		}
+
+		assert(hard_decoding.size() == transmitted_message.size());
+		hamming_distance = utils::compute_hamming_distance_with_puncturing(hard_decoding, transmitted_message, PUNCTURING_INDICES);
+		hamming_distance_recorder[iter] = hamming_distance;
+
+		// comparing with listsize using soft-decoding
+		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
+
+		MessageInformation b_hat = listDecoder.decode(noisy_message, PUNCTURING_INDICES);
+		if (b_hat.listSize == 68) {std::cout << "special case with iter = " << iter << std::endl;}
+		list_size_recorder[iter] = b_hat.listSize;
+
+		// evaluate correctness
+		assert(b_hat.message.size() == message_with_crc.size());
+		if (b_hat.message == message_with_crc) {decoding_correctness_recorder[iter] = 1; }
+		if (b_hat.message != message_with_crc) {decoding_correctness_recorder[iter] = 0; }
 		
+	} // for ( int iter = 0; iter < 1; iter++ )
+
+
+	/* - Write values in recorders to file - */
+	for (size_t i = 0; i < hamming_distance_recorder.size(); i++ ) {
+		hamming_distance_file << hamming_distance_recorder[i] << std::endl;
 	}
-	
 
-	// hard-decoding
+	for (size_t i = 0; i < list_size_recorder.size(); i++ ) {
+		list_size_file << list_size_recorder[i] << std::endl;
+	}
 
-	// comparing with soft-decoding
-	
+	for (size_t i = 0; i < decoding_correctness_recorder.size(); i++ ) {
+		decoding_correctness_file << decoding_correctness_recorder[i] << std::endl;
+	}
+
+	/* - close files - */
+	hamming_distance_file.close();
+	list_size_file.close();
+	decoding_correctness_file.close();
 }
 
 // this generates a random binary string of length code.numInfoBits, and appends the appropriate CRC bits
@@ -149,3 +219,4 @@ std::vector<double> addArtificialNoiseAndPuncture(std::vector<int> transmittedMe
 
 	return out;
 }
+

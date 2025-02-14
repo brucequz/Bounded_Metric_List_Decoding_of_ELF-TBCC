@@ -25,16 +25,16 @@ const std::vector<int> PUNCTURING_INDICES
 constexpr int MAX_LISTSIZE = 1e4;       /* Maximum list size */
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ITERATIONS = 1e4;  /* Maximum number of iterations */
+constexpr int MC_ITERS = 1000;         /* Monte Carlo number of iterations */
 constexpr int MAX_ERASURES = 100;     /* Maximum number of erasures */
 constexpr int MAX_ERRORS = 100;       /* Maximum number of errors */
-constexpr bool NOISELESS = true;     /* Noiseless simulation */
+constexpr bool NOISELESS = true;      /* Noiseless simulation */
 
 const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
-
 /* --- Noise Injection Simulation Parameters --- */
 constexpr double TARGET_NOISE_ENERGY = 100;  /* Squared Power of injected Noise */
-constexpr char STOPPING_RULE[] = "METRIC";  /* Can only be "METRIC" or "LISTSIZE" */
+constexpr char   STOPPING_RULE = 'M';  /* Can only be 'M' or 'L */
+constexpr double MAX_METRIC = 100;
 
 
 #endif

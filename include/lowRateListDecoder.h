@@ -7,9 +7,11 @@
 
 class LowRateListDecoder{
 public:
-	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc);
-	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc, std::vector<std::vector<int>> neighboring_cwds, std::vector<std::vector<int>> neighboring_msgs, std::vector<std::vector<int>> path_ie_state);
-	MessageInformation lowRateDecoding(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
+	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc, char stopping_rule);
+	MessageInformation lowRateDecoding_MaxListsize(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation lowRateDecoding_MaxMetric(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
+
+	MessageInformation decode(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
 
 
 private:
@@ -18,6 +20,7 @@ private:
 	int crcDegree;
 	int crc;
 	int n;
+	char stopping_rule;
 
 	std::vector<std::vector<int>> lowrate_nextStates;
 	std::vector<std::vector<int>> lowrate_outputs;
