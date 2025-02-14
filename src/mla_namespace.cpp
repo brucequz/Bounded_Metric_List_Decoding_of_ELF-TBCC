@@ -119,4 +119,4 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file){
 	file << vector[vector.size() - 1] << std::endl;
 }
 
-} // namespace turbo_elf_utils
+} // namespace utils

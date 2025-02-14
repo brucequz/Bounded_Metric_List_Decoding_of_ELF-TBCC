@@ -44,7 +44,74 @@ void print_int_vector(std::vector<int> vector);
 // outputs a vector of ints to a file
 void output_int_vector(std::vector<int> vector, std::ofstream& file);
 
-} // namespace turbo_elf_utils
+// Euclidean distance metric
+template <typename T1, typename T2>
+double euclidean_distance(
+    const std::vector<T1>& v1, 
+    const std::vector<T2>& v2, 
+    const std::vector<int>& punctured_indices) 
+{
+    if (v1.size() != v2.size()) {
+        throw std::invalid_argument("Vectors must be of the same size");
+    }
+
+    double sum = 0.0;
+    for (size_t i = 0; i < v1.size(); i++) {
+        // Skip if index is in punctured_indices
+        if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()) {
+            continue;
+        }
+        sum += std::pow(static_cast<double>(v1[i]) - static_cast<double>(v2[i]), 2);
+    }
+    return std::sqrt(sum);
+}
+
+// Euclidean distance metric
+template <typename T1, typename T2>
+double sum_of_squares(
+    const std::vector<T1>& v1, 
+    const std::vector<T2>& v2, 
+    const std::vector<int>& punctured_indices) 
+{
+    if (v1.size() != v2.size()) {
+        throw std::invalid_argument("Vectors must be of the same size");
+    }
+
+    double sum = 0.0;
+    for (size_t i = 0; i < v1.size(); i++) {
+        // Skip if index is in punctured_indices
+        if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()) {
+            continue;
+        }
+        sum += std::pow(static_cast<double>(v1[i]) - static_cast<double>(v2[i]), 2);
+    }
+    return sum;
+}
+
+
+// Element-wise Squared Distance
+template <typename T1, typename T2>
+std::vector<double> elementwise_squared_distance(
+    const std::vector<T1>& v1, 
+    const std::vector<T2>& v2, 
+    const std::vector<int>& punctured_indices) 
+{
+    if (v1.size() != v2.size()) {
+        throw std::invalid_argument("Vectors must be of the same size");
+    }
+
+    std::vector<double> distances;
+    for (size_t i = 0; i < v1.size(); i++) {
+        // Skip if index is in punctured_indices
+        if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()) {
+            continue;
+        }
+        distances.push_back(std::pow(static_cast<double>(v1[i]) - static_cast<double>(v2[i]), 2));
+    }
+    return distances;
+}
+
+} // namespace utils
 
 
 int make_file_interleaver(char interleaver_file[],
