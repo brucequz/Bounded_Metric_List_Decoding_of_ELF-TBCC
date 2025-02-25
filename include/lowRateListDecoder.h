@@ -2,6 +2,8 @@
 #ifndef LOWRATELISTDECODER_H
 #define LOWRATELISTDECODER_H
 
+#include <climits>
+
 #include "feedForwardTrellis.h"
 #include "minHeap.h"
 #include "mla_types.h"

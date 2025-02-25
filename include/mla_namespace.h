@@ -6,6 +6,8 @@
 #include <fstream>
 #include <vector>
 #include <random>
+#include <stdexcept>
+#include <algorithm>
 
 #include "mla_types.h"
 
