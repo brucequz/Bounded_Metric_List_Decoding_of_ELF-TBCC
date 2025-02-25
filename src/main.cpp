@@ -94,16 +94,13 @@ void ISTC_sim(CodeInformation code){
 
 		/* ==== SIMULATION begins ==== */
 		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -**" << std::endl;
-		double standardMeanListSize = 0;
-		int standardNumErrors = 0;
-		int standardListSizeExceeded = 0;
+		int num_mistakes 	= 0;
+		int num_failures 	= 0;
+		int num_errors 	 	= 0; // num_mistakes + num_failures
+		int num_trials	 	= 0;
 
+		while (num_errors < MAX_ERRORS) {
 
-
-		for(int numTrials = 0; numTrials < MC_ITERS; numTrials++) {
-
-			if (numTrials % 1000 == 0) { std::cout << "currently at " << numTrials << std::endl; }
-			
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
 			std::vector<double> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
@@ -111,7 +108,7 @@ void ISTC_sim(CodeInformation code){
 		
 
 			// Transmitted statistics
-			RRVtoTransmitted_Metric[numTrials] = (utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
+			RRVtoTransmitted_Metric[num_trials] = (utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// Decoding
 			MessageInformation standardDecoding = listDecoder.decode(receivedMessage, puncturedIndices);
@@ -120,30 +117,35 @@ void ISTC_sim(CodeInformation code){
 			// RRV
 			if (standardDecoding.message == originalMessage) {
 				// correct decoding
-				RRV_DecodedType[numTrials] 				= 0;
-				RRVtoDecoded_ListSize[numTrials] 	= standardDecoding.listSize;
-				RRVtoDecoded_Metric[numTrials] 		= standardDecoding.metric;
+				RRV_DecodedType[num_trials] 				= 0;
+				RRVtoDecoded_ListSize[num_trials] 	= standardDecoding.listSize;
+				RRVtoDecoded_Metric[num_trials] 		= standardDecoding.metric;
 			} else if(standardDecoding.listSizeExceeded) {
 				// list size exceeded
-				RRV_DecodedType[numTrials] = 1;
-				standardListSizeExceeded++;
+				RRV_DecodedType[num_trials] = 1;
+				num_failures++;
 			} else { 
 				// incorrect decoding
-				RRV_DecodedType[numTrials] 				= 2;
-				RRVtoDecoded_ListSize[numTrials] 	= standardDecoding.listSize;
-				RRVtoDecoded_Metric[numTrials] 		= standardDecoding.metric;
-				standardNumErrors++;
-				standardMeanListSize += (double)standardDecoding.listSize;
+				RRV_DecodedType[num_trials] 				= 2;
+				RRVtoDecoded_ListSize[num_trials] 	= standardDecoding.listSize;
+				RRVtoDecoded_Metric[num_trials] 		= standardDecoding.metric;
+				num_mistakes++;
 			}
 
-		} // for(int numTrials = 0; numTrials < MC_ITERS; numTrials++)
+			// Increment errors and trials
+			num_errors = num_failures + num_mistakes;
+			num_trials += 1;
+
+			if (num_trials % 1000 == 0) { std::cout << "numTrials = " << num_trials << ", numErrors = " << num_errors << std::endl; }
+		} // while (num_errors <= MAX_ERRORS) 
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(1) << EbN0 << std::endl;
-		std::cout << "number of erasures: " << standardListSizeExceeded << std::endl;
-		std::cout << "number of errors: " << standardNumErrors << std::endl;
-		std::cout << "Erasures Error Rate: " << std::scientific << (double)standardListSizeExceeded/MC_ITERS << std::endl;
-		std::cout << "Undetected Error Rate: " << std::scientific << (double)standardNumErrors/MC_ITERS << std::endl;
-		std::cout << "TFR: " << (double)(standardNumErrors + standardListSizeExceeded)/MC_ITERS << std::endl;
+		std::cout << "number of errors: " << num_errors << std::endl;
+		std::cout << "number of mistakes: " << num_mistakes << std::endl;
+		std::cout << "number of failures: " << num_failures << std::endl;
+		std::cout << "Mistakes Error Rate: " << std::scientific << (double)num_mistakes/num_trials << std::endl;
+		std::cout << "Failures Error Rate: " << std::scientific << (double)num_failures/num_trials << std::endl;
+		std::cout << "TFR: " << (double)num_errors/num_trials << std::endl;
 		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -*" << std::endl;
 
 		// RRV Write to file
