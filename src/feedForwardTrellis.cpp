@@ -1,5 +1,5 @@
 #include "../include/feedForwardTrellis.h"
-
+#include "../include/mla_consts.h"
 #include "../include/mla_namespace.h"
 
 #include <iostream>
@@ -7,8 +7,6 @@
 #include <cmath>
 #include <queue>
 #include <algorithm>
-
-static const int V = 8;
 
 FeedForwardTrellis::FeedForwardTrellis(int k, int n, int v, std::vector<int> numerators){
 	this->k = k;

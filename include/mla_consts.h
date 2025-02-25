@@ -13,8 +13,6 @@ constexpr unsigned int CRC = 0x1565;    /* CRC polynomial */
 constexpr int POLY1 = 561;              /* Polynomial 1 */
 constexpr int POLY2 = 753;              /* Polynomial 2 */
 constexpr int NUM_INFO_BITS = 64;       /* Number of information bits */
-
-/* --- Puncturing Parameters --- */
 const std::vector<int> PUNCTURING_INDICES 
     = {4, 10, 21, 24, 31, 37, 
        42, 48, 59, 62, 69, 75, 
@@ -22,20 +20,16 @@ const std::vector<int> PUNCTURING_INDICES
        118, 124, 135, 138, 145, 151};   /* 2023 ISTC paper puncturing pattern */
 
 /* --- List Decoder Parameters --- */
-constexpr int MAX_LISTSIZE = 1e5;       /* Maximum list size */
-constexpr int MAX_XL_LISTSIZE = 1e6;    /* Maximum XL list size */
+constexpr int MAX_LISTSIZE = 1024;      /* Maximum list size */
+constexpr int MAX_METRIC = 100;         /* Maximum decoding metric */
+constexpr char STOPPING_RULE = 'M';     /* Stopping rule */
 
 /* --- Simulation Parameters --- */
-const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
-constexpr int MAX_ITERATIONS = 20000;   /* Maximum number of iterations */
-constexpr int MAX_ERASURES = 100;       /* Maximum number of erasures */
+constexpr int MC_ITERS = 1e5;           /* Monte Carlo number of iterations */
+constexpr int MAX_ERASURES = 10;        /* Maximum number of erasures */
 constexpr int MAX_ERRORS = 100;         /* Maximum number of errors */
 constexpr bool NOISELESS = false;       /* Noiseless simulation */
+const std::vector<double> EBN0 = {3.5}; /* Eb/N0 values */
 
-/* --- Metric-listsize Analysis Parameters --- */
-constexpr double TARGET_METRIC = 110;     /* Maximum metric value */
-
-/* --- Large Correct Metric Voronoi Region Analysis --- */
-constexpr double LARGE_METRIC = 100;      /* Large metric value */
 
 #endif
