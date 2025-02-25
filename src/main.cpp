@@ -86,11 +86,11 @@ void ISTC_sim(CodeInformation code){
 		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
 
 		/* - Output Temporary Holder setup - */
-		std::vector<double> RRVtoTransmitted_Metric(MC_ITERS);
-		std::vector<int> 		RRVtoTransmitted_ListSize(MC_ITERS);
-		std::vector<double> RRVtoDecoded_Metric(MC_ITERS);
-		std::vector<int> 		RRVtoDecoded_ListSize(MC_ITERS);
-		std::vector<int>		RRV_DecodedType(MC_ITERS);
+		std::vector<double> RRVtoTransmitted_Metric;
+		std::vector<int> 		RRVtoTransmitted_ListSize;
+		std::vector<double> RRVtoDecoded_Metric;
+		std::vector<int> 		RRVtoDecoded_ListSize;
+		std::vector<int>		RRV_DecodedType;
 
 		/* ==== SIMULATION begins ==== */
 		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -**" << std::endl;
@@ -108,7 +108,7 @@ void ISTC_sim(CodeInformation code){
 		
 
 			// Transmitted statistics
-			RRVtoTransmitted_Metric[num_trials] = (utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
+			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// Decoding
 			MessageInformation standardDecoding = listDecoder.decode(receivedMessage, puncturedIndices);
@@ -117,18 +117,18 @@ void ISTC_sim(CodeInformation code){
 			// RRV
 			if (standardDecoding.message == originalMessage) {
 				// correct decoding
-				RRV_DecodedType[num_trials] 				= 0;
-				RRVtoDecoded_ListSize[num_trials] 	= standardDecoding.listSize;
-				RRVtoDecoded_Metric[num_trials] 		= standardDecoding.metric;
+				RRV_DecodedType.push_back(0);
+				RRVtoDecoded_ListSize.push_back(standardDecoding.listSize);
+				RRVtoDecoded_Metric.push_back(standardDecoding.metric);
 			} else if(standardDecoding.listSizeExceeded) {
 				// list size exceeded
-				RRV_DecodedType[num_trials] = 1;
+				RRV_DecodedType.push_back(1);
 				num_failures++;
 			} else { 
 				// incorrect decoding
-				RRV_DecodedType[num_trials] 				= 2;
-				RRVtoDecoded_ListSize[num_trials] 	= standardDecoding.listSize;
-				RRVtoDecoded_Metric[num_trials] 		= standardDecoding.metric;
+				RRV_DecodedType.push_back(2);
+				RRVtoDecoded_ListSize.push_back(standardDecoding.listSize);
+				RRVtoDecoded_Metric.push_back(standardDecoding.metric);
 				num_mistakes++;
 			}
 
