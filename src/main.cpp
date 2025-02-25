@@ -11,7 +11,7 @@
 #include "../include/feedForwardTrellis.h"
 #include "../include/lowRateListDecoder.h"
 
-void ISTC_sim(CodeInformation code, std::string folder_name);
+void ISTC_sim(CodeInformation code);
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
 std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, double snr, std::vector<int> puncturedIndices, bool noiseless);
 std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless);
@@ -32,70 +32,67 @@ int main() {
   code.numInfoBits = NUM_INFO_BITS; // number of information bits
   code.numerators = {POLY1, POLY2};
 
+	srand(42);
 
 	/* Check */
 	assert( (N/K) * (NUM_INFO_BITS + M) - PUNCTURING_INDICES.size() == NUM_CODED_SYMBOLS);
-	
-	for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) {
-		double EbN0 = EBN0[ebn0_id];
-		std::ostringstream snr_str;
-		snr_str.precision(1);
-		snr_str << std::fixed << EbN0;
-		
-		std::string folder_name = "output/EbN0_" + snr_str.str();
-		system(("mkdir -p " + folder_name).c_str());
-		
-		ISTC_sim(code, folder_name);
-		
+	if ((code.numInfoBits + code.crcDeg - 1) % code.k != 0) {
+		std::cerr << "invalid msg + crc length" << std::endl;
+		exit(1);
 	}
-
+	
+		
+	ISTC_sim(code);
+		
   return 0;
 }
 
-void ISTC_sim(CodeInformation code, std::string EbN0_folder){
-	
-	/* - Output files setup - */
-	std::string RtoT_Metric_filename = EbN0_folder + "/transmitted_metric.txt";
-	std::ofstream RRVtoTransmitted_MetricFile(RtoT_Metric_filename.c_str());
+void ISTC_sim(CodeInformation code){
 
-	std::string RtoD_Metric_filename = EbN0_folder + "/decoded_metric.txt";
-	std::ofstream RRVtoDecoded_MetricFile(RtoD_Metric_filename.c_str());
+	for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) {
 
-	std::string RtoD_LS_filename = EbN0_folder + "/decoded_listsize.txt";
-	std::ofstream RRVtoDecoded_ListSizeFile(RtoD_LS_filename.c_str());
-  
-	std::string RtoD_Type_filename = EbN0_folder + "/decoded_type.txt";
-	std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
+		/* - Output files setup - */
+		double EbN0 = EBN0[ebn0_id];
+		std::ostringstream ebn0_str;
+		ebn0_str.precision(1);
+		ebn0_str << std::fixed << EbN0;
+		
+		std::string folder_name = "output/EbN0_" + ebn0_str.str();
+		system(("mkdir -p " + folder_name).c_str());
+		
+		std::string RtoT_Metric_filename = folder_name + "/transmitted_metric.txt";
+		std::ofstream RRVtoTransmitted_MetricFile(RtoT_Metric_filename.c_str());
 
-	std::cout << "running the ISTC sim" << std::endl;
-	srand(42);
-	if ((code.numInfoBits + code.crcDeg - 1) % code.k != 0) {
-		std::cout << "invalid msg + crc length" << std::endl;
-		return;
-	}
+		std::string RtoD_Metric_filename = folder_name + "/decoded_metric.txt";
+		std::ofstream RRVtoDecoded_MetricFile(RtoD_Metric_filename.c_str());
 
-	std::vector<double> EbN0 = EBN0;
-  std::vector<int> puncturedIndices = PUNCTURING_INDICES;
+		std::string RtoD_LS_filename = folder_name + "/decoded_listsize.txt";
+		std::ofstream RRVtoDecoded_ListSizeFile(RtoD_LS_filename.c_str());
+		
+		std::string RtoD_Type_filename = folder_name + "/decoded_type.txt";
+		std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
+		
+		/* - Simulation SNR setup - */
+		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
+		double snr = 0.0;
+		double offset = 10 * log10((double)N/K *NUM_INFO_BITS / (NUM_CODED_SYMBOLS));
+		snr = EbN0 + offset;
+		
+		/* - Trellis setup - */
+		FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
 
-	std::vector<double> SNR;
-	double offset = 10 * log10((double)N/K *NUM_INFO_BITS / (NUM_CODED_SYMBOLS));
-	for (int i=0; i< EbN0.size(); i++)
-		SNR.push_back(EbN0[i] + offset);
+		/* - Decoder setup - */
+		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
 
-	std::cout << "code.v = " << code.v << std::endl;
-	FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
+		/* - Output Temporary Holder setup - */
+		std::vector<double> RRVtoTransmitted_Metric(MC_ITERS);
+		std::vector<int> 		RRVtoTransmitted_ListSize(MC_ITERS);
+		std::vector<double> RRVtoDecoded_Metric(MC_ITERS);
+		std::vector<int> 		RRVtoDecoded_ListSize(MC_ITERS);
+		std::vector<int>		RRV_DecodedType(MC_ITERS);
 
-	// Raw Received Value (RRV) List Decoder
-	LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
-	std::vector<double> RRVtoTransmitted_Metric(MC_ITERS);
-	std::vector<int> 		RRVtoTransmitted_ListSize(MC_ITERS);
-	std::vector<double> RRVtoDecoded_Metric(MC_ITERS);
-	std::vector<int> 		RRVtoDecoded_ListSize(MC_ITERS);
-	std::vector<int>		RRV_DecodedType(MC_ITERS);
-
-	/* ==== SIMULATION begins ==== */
-	for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++) {
-		double snr = SNR[snrIndex];
+		/* ==== SIMULATION begins ==== */
+		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -**" << std::endl;
 		double standardMeanListSize = 0;
 		int standardNumErrors = 0;
 		int standardListSizeExceeded = 0;
@@ -112,11 +109,11 @@ void ISTC_sim(CodeInformation code, std::string EbN0_folder){
 			std::vector<int> zero_point(receivedMessage.size(), 0);
 		
 
-			// TRANSMITTED
+			// Transmitted statistics
 			RRVtoTransmitted_Metric[numTrials] = (utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
-			// DECODED
-      MessageInformation standardDecoding = listDecoder.decode(receivedMessage, puncturedIndices);
+			// Decoding
+			MessageInformation standardDecoding = listDecoder.decode(receivedMessage, puncturedIndices);
 			
 
 			// RRV
@@ -138,16 +135,15 @@ void ISTC_sim(CodeInformation code, std::string EbN0_folder){
 				standardMeanListSize += (double)standardDecoding.listSize;
 			}
 
-			
 		} // for(int numTrials = 0; numTrials < MC_ITERS; numTrials++)
 
-		std::cout << std::endl << "****--- Simulation Concluded ---****" << std::endl;
-		std::cout << "at Eb/N0 = " << EbN0[snrIndex] << std::endl;
+		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(1) << EbN0 << std::endl;
 		std::cout << "number of erasures: " << standardListSizeExceeded << std::endl;
 		std::cout << "number of errors: " << standardNumErrors << std::endl;
 		std::cout << "Erasures Error Rate: " << std::scientific << (double)standardListSizeExceeded/MC_ITERS << std::endl;
 		std::cout << "Undetected Error Rate: " << std::scientific << (double)standardNumErrors/MC_ITERS << std::endl;
 		std::cout << "TFR: " << (double)(standardNumErrors + standardListSizeExceeded)/MC_ITERS << std::endl;
+		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -*" << std::endl;
 
 		// RRV Write to file
 		if (RRVtoTransmitted_MetricFile.is_open()) {
@@ -171,16 +167,14 @@ void ISTC_sim(CodeInformation code, std::string EbN0_folder){
 			}
 		}
 
+		// RRV
+		RRVtoTransmitted_MetricFile.close();
+		RRVtoDecoded_MetricFile.close();
+		RRVtoDecoded_ListSizeFile.close();
+		RRVtoDecoded_DecodeTypeFile.close();
+	} // for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) 
 
-	} // for(int snrIndex = 0; snrIndex < SNR.size(); snrIndex++)
-
-	// RRV
-	RRVtoTransmitted_MetricFile.close();
-	RRVtoDecoded_MetricFile.close();
-	RRVtoDecoded_ListSizeFile.close();
-	RRVtoDecoded_DecodeTypeFile.close();
-
-	std::cout << "concluded simulation" << std::endl;
+	std::cout << "***--- Simulation Concluded ---***" << std::endl;
 }
 
 

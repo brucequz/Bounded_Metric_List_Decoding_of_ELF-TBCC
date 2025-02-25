@@ -31,7 +31,7 @@ constexpr int MC_ITERS = 10000;           /* Monte Carlo number of iterations */
 constexpr int MAX_ERASURES = 10;        /* Maximum number of erasures */
 constexpr int MAX_ERRORS = 100;         /* Maximum number of errors */
 constexpr bool NOISELESS = false;       /* Noiseless simulation */
-const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
+const std::vector<double> EBN0 = {3, 3.5}; /* Eb/N0 values */
 
 
 #endif
