@@ -55,7 +55,7 @@ void ISTC_sim(CodeInformation code){
 		/* - Output files setup - */
 		double EbN0 = EBN0[ebn0_id];
 		std::ostringstream ebn0_str;
-		ebn0_str.precision(1);
+		ebn0_str.precision(2);
 		ebn0_str << std::fixed << EbN0;
 		
 		std::string folder_name = "output/EbN0_" + ebn0_str.str();
