@@ -1,5 +1,5 @@
 OBJS = src/main.o src/feedForwardTrellis.o src/lowRateListDecoder.o
-CXX = clang++
+CXX = mpicxx
 CXXFLAGS = -std=c++14 -I include -O2
 
 

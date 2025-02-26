@@ -27,9 +27,9 @@ constexpr int MAX_METRIC = 100;         /* Maximum decoding metric */
 constexpr char STOPPING_RULE = 'L';     /* Stopping rule */
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ERRORS = 100;         /* Maximum number of errors */
+constexpr int MAX_ERRORS = 10;         /* Maximum number of errors */
 constexpr bool NOISELESS = false;       /* Noiseless simulation */
-const std::vector<double> EBN0 = {2.5, 3}; /* Eb/N0 values */
+const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
 
 
 #endif

@@ -3,8 +3,11 @@
 #include <fstream>
 #include <vector>
 #include <cstdlib>
+#include <numeric>
 #include <string>
 #include <sstream>
+#include "/opt/homebrew/Cellar/open-mpi/5.0.7/include/mpi.h"
+// #include "mpi.h"
 
 #include "../include/mla_consts.h"
 #include "../include/mla_types.h"
@@ -12,12 +15,12 @@
 #include "../include/feedForwardTrellis.h"
 #include "../include/lowRateListDecoder.h"
 
-void ISTC_sim(CodeInformation code);
+void ISTC_sim(CodeInformation code, int rank);
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
 std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, double snr, std::vector<int> puncturedIndices, bool noiseless);
 std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless);
 
-int main() {
+int main(int argc, char *argv[]) {
 
   std::cout << "K: " << K << std::endl;
   std::cout << "N: " << N << std::endl;
@@ -33,7 +36,23 @@ int main() {
   code.numInfoBits = NUM_INFO_BITS; // number of information bits
   code.numerators = {POLY1, POLY2};
 
-	srand(42);
+	
+
+	/* MPI Init */
+	MPI_Init(&argc, &argv);
+	int world_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+	int world_size;
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+	std::vector<int> send_idx_buffer(world_size);
+
+	constexpr int elements_per_proc = 1;
+	int recv_buffer;
+	if (world_rank == 0) {
+		std::iota(send_idx_buffer.begin(), send_idx_buffer.end(), 1);
+	}
+
 
 	/* Check */
 	assert( (N/K) * (NUM_INFO_BITS + M) - PUNCTURING_INDICES.size() == NUM_CODED_SYMBOLS);
@@ -42,13 +61,14 @@ int main() {
 		exit(1);
 	}
 	
-		
-	ISTC_sim(code);
-		
+	srand(world_rank);
+	ISTC_sim(code, world_rank);
+	
+	MPI_Finalize();
   return 0;
 }
 
-void ISTC_sim(CodeInformation code){
+void ISTC_sim(CodeInformation code, int rank){
 
 	for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) {
 
@@ -58,7 +78,7 @@ void ISTC_sim(CodeInformation code){
 		ebn0_str.precision(2);
 		ebn0_str << std::fixed << EbN0;
 		
-		std::string folder_name = "output/EbN0_" + ebn0_str.str();
+		std::string folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str();
 		system(("mkdir -p " + folder_name).c_str());
 		
 		std::string RtoT_Metric_filename = folder_name + "/transmitted_metric.txt";
