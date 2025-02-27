@@ -107,7 +107,6 @@ void ISTC_sim(CodeInformation code, int rank){
 
 		/* - Output Temporary Holder setup - */
 		std::vector<double> RRVtoTransmitted_Metric;
-		std::vector<int> 		RRVtoTransmitted_ListSize;
 		std::vector<double> RRVtoDecoded_Metric;
 		std::vector<int> 		RRVtoDecoded_ListSize;
 		std::vector<int>		RRV_DecodedType;
@@ -156,7 +155,35 @@ void ISTC_sim(CodeInformation code, int rank){
 			num_errors = num_failures + num_mistakes;
 			num_trials += 1;
 
-			if (num_trials % 1000 == 0) { std::cout << "numTrials = " << num_trials << ", numErrors = " << num_errors << std::endl; }
+			if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS) {
+				 std::cout << "numTrials = " << num_trials << ", numErrors = " << num_errors << std::endl; 
+
+				// RRV Write to file
+				if (RRVtoTransmitted_MetricFile.is_open()) {
+					for (int i = 0; i < RRVtoTransmitted_Metric.size(); i++) {
+						RRVtoTransmitted_MetricFile << RRVtoTransmitted_Metric[i] << std::endl;
+					}
+					RRVtoTransmitted_Metric.clear();
+				}
+				if (RRVtoDecoded_MetricFile.is_open()) {
+					for (int i = 0; i < RRVtoDecoded_Metric.size(); i++) {
+						RRVtoDecoded_MetricFile << RRVtoDecoded_Metric[i] << std::endl;
+					}
+					RRVtoDecoded_Metric.clear();
+				}
+				if (RRVtoDecoded_ListSizeFile.is_open()) {
+					for (int i = 0; i < RRVtoDecoded_ListSize.size(); i++) {
+						RRVtoDecoded_ListSizeFile << RRVtoDecoded_ListSize[i] << std::endl;
+					}
+					RRVtoDecoded_ListSize.clear();
+				}
+				if (RRVtoDecoded_DecodeTypeFile.is_open()) {
+					for (int i = 0; i < RRV_DecodedType.size(); i++) {
+						RRVtoDecoded_DecodeTypeFile << RRV_DecodedType[i] << std::endl;
+					}
+					RRV_DecodedType.clear();
+				}
+			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
 		} // while (num_errors <= MAX_ERRORS) 
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(1) << EbN0 << std::endl;
@@ -168,27 +195,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::cout << "TFR: " << (double)num_errors/num_trials << std::endl;
 		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -*" << std::endl;
 
-		// RRV Write to file
-		if (RRVtoTransmitted_MetricFile.is_open()) {
-			for (int i = 0; i < RRVtoTransmitted_Metric.size(); i++) {
-				RRVtoTransmitted_MetricFile << RRVtoTransmitted_Metric[i] << std::endl;
-			}
-		}
-		if (RRVtoDecoded_MetricFile.is_open()) {
-			for (int i = 0; i < RRVtoDecoded_Metric.size(); i++) {
-				RRVtoDecoded_MetricFile << RRVtoDecoded_Metric[i] << std::endl;
-			}
-		}
-		if (RRVtoDecoded_ListSizeFile.is_open()) {
-			for (int i = 0; i < RRVtoDecoded_ListSize.size(); i++) {
-				RRVtoDecoded_ListSizeFile << RRVtoDecoded_ListSize[i] << std::endl;
-			}
-		}
-		if (RRVtoDecoded_DecodeTypeFile.is_open()) {
-			for (int i = 0; i < RRV_DecodedType.size(); i++) {
-				RRVtoDecoded_DecodeTypeFile << RRV_DecodedType[i] << std::endl;
-			}
-		}
+		
 
 		// RRV
 		RRVtoTransmitted_MetricFile.close();
