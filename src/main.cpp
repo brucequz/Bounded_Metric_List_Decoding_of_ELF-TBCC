@@ -112,7 +112,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::vector<int>		RRV_DecodedType;
 
 		/* ==== SIMULATION begins ==== */
-		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -**" << std::endl;
+		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -**" << std::endl;
 		int num_mistakes 	= 0;
 		int num_failures 	= 0;
 		int num_errors 	 	= 0; // num_mistakes + num_failures
@@ -186,14 +186,14 @@ void ISTC_sim(CodeInformation code, int rank){
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
 		} // while (num_errors <= MAX_ERRORS) 
 
-		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(1) << EbN0 << std::endl;
+		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
 		std::cout << "number of errors: " << num_errors << std::endl;
 		std::cout << "number of mistakes: " << num_mistakes << std::endl;
 		std::cout << "number of failures: " << num_failures << std::endl;
 		std::cout << "Mistakes Error Rate: " << std::scientific << (double)num_mistakes/num_trials << std::endl;
 		std::cout << "Failures Error Rate: " << std::scientific << (double)num_failures/num_trials << std::endl;
 		std::cout << "TFR: " << (double)num_errors/num_trials << std::endl;
-		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(1) << EbN0 << " -*" << std::endl;
+		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -*" << std::endl;
 
 		
 
