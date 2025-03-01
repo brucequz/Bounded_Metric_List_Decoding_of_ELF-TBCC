@@ -40,31 +40,22 @@ int main(int argc, char *argv[]) {
 
 	/* MPI Init */
 	MPI_Init(&argc, &argv);
-	int world_rank;
+	int world_rank, world_size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-	std::vector<int> send_idx_buffer(world_size);
-
-	constexpr int elements_per_proc = 1;
-	int recv_buffer;
-	if (world_rank == 0) {
-		std::iota(send_idx_buffer.begin(), send_idx_buffer.end(), 1);
-	}
-
-
 	/* Check */
-	assert( (N/K) * (NUM_INFO_BITS + M) - PUNCTURING_INDICES.size() == NUM_CODED_SYMBOLS);
 	if ((code.numInfoBits + code.crcDeg - 1) % code.k != 0) {
-		std::cerr << "invalid msg + crc length" << std::endl;
-		exit(1);
+			std::cerr << "invalid msg + crc length" << std::endl;
+			exit(1);
 	}
-	
-	srand(world_rank+BASE_SEED);
-	ISTC_sim(code, world_rank);
-	
+
+	srand(BASE_SEED + world_rank);  // Reproducible random seed
+
+	ISTC_sim(code, world_rank);  // Run simulation
+
 	MPI_Finalize();
+
   return 0;
 }
 
