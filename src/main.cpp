@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 	
-	srand(world_rank);
+	srand(world_rank+BASE_SEED);
 	ISTC_sim(code, world_rank);
 	
 	MPI_Finalize();

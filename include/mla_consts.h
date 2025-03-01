@@ -27,9 +27,10 @@ constexpr int MAX_METRIC = 100;         /* Maximum decoding metric */
 constexpr char STOPPING_RULE = 'L';     /* Stopping rule */
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ERRORS = 2;          /* Maximum number of errors */
+constexpr int MAX_ERRORS = 2;           /* Maximum number of errors */
 constexpr bool NOISELESS = false;       /* Noiseless simulation */
 const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
-constexpr int LOGGING_ITERS = 1000;    /* Logging Interval*/
+constexpr int LOGGING_ITERS = 1000;     /* Logging Interval*/
+constexpr int BASE_SEED = 42;           /* Fixed base seed for simulation */
 
 #endif
