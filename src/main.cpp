@@ -68,8 +68,12 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::ostringstream ebn0_str;
 		ebn0_str.precision(2);
 		ebn0_str << std::fixed << EbN0;
+
+		std::ostringstream ude_error_cnt_str;
+		ude_error_cnt_str.precision(1);
+		ude_error_cnt_str << std::fixed << MAX_ERRORS;
 		
-		std::string folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str();
+		std::string folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		system(("mkdir -p " + folder_name).c_str());
 		
 		std::string RtoT_Metric_filename = folder_name + "/transmitted_metric.txt";
