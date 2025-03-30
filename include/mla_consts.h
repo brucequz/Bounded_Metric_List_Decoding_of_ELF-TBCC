@@ -23,13 +23,13 @@ const std::vector<int> PUNCTURING_INDICES
 
 /* --- List Decoder Parameters --- */
 constexpr int MAX_LISTSIZE = 1e7;      /* Maximum list size */
-constexpr int MAX_METRIC = 100;         /* Maximum decoding metric */
-constexpr char STOPPING_RULE = 'L';     /* Stopping rule */
+constexpr int MAX_METRIC = 84.5;         /* Maximum decoding metric */
+constexpr char STOPPING_RULE = 'M';     /* Stopping rule */
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ERRORS = 2;           /* Maximum number of errors */
+constexpr int MAX_ERRORS = 20;           /* Maximum number of errors */
 constexpr bool NOISELESS = false;       /* Noiseless simulation */
-const std::vector<double> EBN0 = {2.5}; /* Eb/N0 values */
+const std::vector<double> EBN0 = {3.35}; /* Eb/N0 values */
 constexpr int LOGGING_ITERS = 1000;     /* Logging Interval*/
 constexpr int BASE_SEED = 42;           /* Fixed base seed for simulation */
 

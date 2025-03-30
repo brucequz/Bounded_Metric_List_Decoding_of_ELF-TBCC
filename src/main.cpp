@@ -147,7 +147,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			}
 
 			// Increment errors and trials
-			num_errors = num_failures + num_mistakes;
+			num_errors = num_mistakes;
 			num_trials += 1;
 
 			if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS) {
