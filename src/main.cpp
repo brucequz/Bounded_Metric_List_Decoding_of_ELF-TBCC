@@ -19,13 +19,9 @@ void ISTC_sim(CodeInformation code, int rank);
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
 std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, double snr, std::vector<int> puncturedIndices, bool noiseless);
 std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless);
+void logSimulationParams();
 
 int main(int argc, char *argv[]) {
-
-  std::cout << "K: " << K << std::endl;
-  std::cout << "N: " << N << std::endl;
-  std::cout << "V: " << V << std::endl;
-  std::cout << "M: " << M << std::endl;
     
   CodeInformation code;
   code.k = K;         // numerator of the rate
@@ -37,12 +33,17 @@ int main(int argc, char *argv[]) {
   code.numerators = {POLY1, POLY2};
 
 	
-
 	/* MPI Init */
 	MPI_Init(&argc, &argv);
 	int world_rank, world_size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+	if (world_rank == 0) {
+		logSimulationParams();
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	/* Check */
 	if ((code.numInfoBits + code.crcDeg - 1) % code.k != 0) {
@@ -244,4 +245,41 @@ std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vecto
 	}
 
 	return receivedMessage;
+}
+
+void logSimulationParams() {
+	std::cout << "+----------------------+------------+\n";
+	std::cout << "| Parameter           | Value      |\n";
+	std::cout << "+----------------------+------------+\n";
+
+	/// ---------------- CODE INFO ----------------
+	std::cout << "| " << std::left << std::setw(20) << "K"
+						<< "| " << std::setw(10) << NUM_INFO_BITS << "|\n";
+	std::cout << "| " << std::left << std::setw(20) << "N"
+						<< "| " << std::setw(10) << NUM_CODED_SYMBOLS << "|\n";
+	std::cout << "| " << std::left << std::setw(20) << "GEN POLY"
+						<< "| " << "{" << POLY1 << ", " << POLY2 << "}" << "|\n";
+	std::cout << "| " << std::left << std::setw(20) << "ELF"
+						<< "| " << "0x" << std::setw(10) << std::hex << CRC << std::dec << "|\n";
+	std::cout << "| " << std::left << std::setw(20) << "STOPPING RULE"
+						<< "| " << std::setw(10) << STOPPING_RULE << "|\n";
+	/// ---------------- STOPPING RULE ----------------
+	if (STOPPING_RULE == 'M') {
+		std::cout << "| " << std::left << std::setw(20) << "MAX METRIC"
+						<< "| " << std::setw(10) << MAX_METRIC << "|\n";
+	} else if (STOPPING_RULE == 'L') {
+		std::cout << "| " << std::left << std::setw(20) << "MAX LISTSIZE"
+						<< "| " << std::setw(10) << MAX_LISTSIZE << "|\n";
+	} else {std::cerr << "INCORRECT STOPPING RULE! ABORT!"; exit(1);}
+	/// ---------------- SIMULATION PARAMS ----------------
+	std::cout << "| " << std::left << std::setw(20) << "MAX ERRORS"
+						<< "| " << std::setw(10) << MAX_ERRORS << "|\n";
+	std::cout << "| " << std::left << std::setw(20) << "NOISELESS?"
+						<< "| " << std::setw(10) << NOISELESS << "|\n";
+	std::cout << "| " << std::left << std::setw(20) << "LOGGING ITERS"
+						<< "| " << std::setw(10) << LOGGING_ITERS << "|\n";
+	std::cout << "| " << std::left << std::setw(20) << "BASE SEED"
+	<< "| " << std::setw(10) << BASE_SEED << "|\n";
+
+	std::cout << "+----------------------+------------+\n";
 }

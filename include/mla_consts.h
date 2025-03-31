@@ -10,8 +10,8 @@ constexpr int N = 2;                    /* Number of output bits */
 constexpr int V = 8;                    /* Number of memory elements */
 constexpr int M = 12;                   /* Degree of CRC - 1 */
 constexpr unsigned int CRC = 0x1565;    /* CRC polynomial */
-constexpr int POLY1 = 561;              /* Polynomial 1, in octal*/
-constexpr int POLY2 = 753;              /* Polynomial 2 */
+constexpr int POLY1 = 561;              /* Polynomial 1, in decimal*/
+constexpr int POLY2 = 753;              /* Polynomial 2, in decimal*/
 constexpr int NUM_INFO_BITS = 64;       /* Number of information bits */
 constexpr int NUM_CODED_SYMBOLS = 128;  /* Number of coded symbols */
 
@@ -23,7 +23,7 @@ const std::vector<int> PUNCTURING_INDICES
 
 /* --- List Decoder Parameters --- */
 constexpr int MAX_LISTSIZE = 1e7;      /* Maximum list size */
-constexpr int MAX_METRIC = 84.5;         /* Maximum decoding metric */
+constexpr double MAX_METRIC = 84.5;         /* Maximum decoding metric */
 constexpr char STOPPING_RULE = 'M';     /* Stopping rule */
 
 /* --- Simulation Parameters --- */
