@@ -138,20 +138,20 @@ void ISTC_sim(CodeInformation code, int rank){
 			
 
 			// RRV
-			if (standardDecoding.message == originalMessage) {
+			if (projectedDecoding.message == originalMessage) {
 				// correct decoding
 				RRV_DecodedType.push_back(0);
-				RRVtoDecoded_ListSize.push_back(standardDecoding.listSize);
-				RRVtoDecoded_Metric.push_back(standardDecoding.metric);
-			} else if(standardDecoding.listSizeExceeded) {
+				RRVtoDecoded_ListSize.push_back(projectedDecoding.listSize);
+				RRVtoDecoded_Metric.push_back(projectedDecoding.metric);
+			} else if(projectedDecoding.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
 				num_failures++;
 			} else { 
 				// incorrect decoding
 				RRV_DecodedType.push_back(2);
-				RRVtoDecoded_ListSize.push_back(standardDecoding.listSize);
-				RRVtoDecoded_Metric.push_back(standardDecoding.metric);
+				RRVtoDecoded_ListSize.push_back(projectedDecoding.listSize);
+				RRVtoDecoded_Metric.push_back(projectedDecoding.metric);
 				num_mistakes++;
 			}
 
