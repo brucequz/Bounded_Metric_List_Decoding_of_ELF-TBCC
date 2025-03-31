@@ -113,7 +113,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		int num_errors 	 	= 0; // num_mistakes + num_failures
 		int num_trials	 	= 0;
 
-		while (num_errors < MAX_ERRORS) {
+		while (num_mistakes < MAX_ERRORS) {
 
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
@@ -147,7 +147,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			}
 
 			// Increment errors and trials
-			num_errors = num_mistakes;
+			num_errors = num_mistakes + num_failures;
 			num_trials += 1;
 
 			if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS) {
@@ -179,7 +179,7 @@ void ISTC_sim(CodeInformation code, int rank){
 					RRV_DecodedType.clear();
 				}
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-		} // while (num_errors <= MAX_ERRORS) 
+		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
 		std::cout << "number of errors: " << num_errors << std::endl;
