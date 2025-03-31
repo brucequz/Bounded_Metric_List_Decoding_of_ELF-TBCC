@@ -125,8 +125,16 @@ void ISTC_sim(CodeInformation code, int rank){
 			// Transmitted statistics
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
+			// Received Message Normalization
+			double received_word_energy = utils::compute_vector_energy(receivedMessage);
+			double energy_normalize_factor = std::sqrt(128.0 / received_word_energy);  // normalizing received message
+			std::vector<double> projected_received_word(receivedMessage.size(), 0.0);
+			for (size_t i = 0; i < receivedMessage.size(); i++) {
+				projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
+			}
+			
 			// Decoding
-			MessageInformation standardDecoding = listDecoder.decode(receivedMessage, puncturedIndices);
+			MessageInformation projectedDecoding = listDecoder.decode(projected_received_word, puncturedIndices);
 			
 
 			// RRV

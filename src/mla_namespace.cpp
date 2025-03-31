@@ -119,4 +119,13 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file){
 	file << vector[vector.size() - 1] << std::endl;
 }
 
+double compute_vector_energy(std::vector<double> vector){
+	if (vector.size() == 0) std::cerr << "EMPTY VECTOR!" << std::endl;
+	double sum_of_squares = 0.0;
+	for (int i = 0; i < vector.size(); i++) {
+		sum_of_squares += vector[i] * vector[i];
+	}
+	return sum_of_squares;
+}
+
 } // namespace utils

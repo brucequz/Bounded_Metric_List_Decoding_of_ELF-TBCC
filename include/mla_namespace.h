@@ -46,6 +46,9 @@ void print_int_vector(std::vector<int> vector);
 // outputs a vector of ints to a file
 void output_int_vector(std::vector<int> vector, std::ofstream& file);
 
+// computes vector energy, aka sum of squares
+double compute_vector_energy(std::vector<double> vector);
+
 // Euclidean distance metric
 template <typename T1, typename T2>
 double euclidean_distance(
@@ -114,11 +117,5 @@ std::vector<double> elementwise_squared_distance(
 }
 
 } // namespace utils
-
-
-int make_file_interleaver(char interleaver_file[],
-                          unsigned short int interleaver[], int n);
-
-void elf_turbo_simulation(CodeInformation code);
 
 #endif
