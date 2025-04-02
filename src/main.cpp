@@ -119,39 +119,40 @@ void ISTC_sim(CodeInformation code, int rank){
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
 			std::vector<double> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
-			std::vector<int> zero_point(receivedMessage.size(), 0);
 		
-
 			// Transmitted statistics
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
-			// Received Message Normalization
-			double received_word_energy = utils::compute_vector_energy(receivedMessage);
-			double energy_normalize_factor = std::sqrt(128.0 / received_word_energy);  // normalizing received message
-			std::vector<double> projected_received_word(receivedMessage.size(), 0.0);
-			for (size_t i = 0; i < receivedMessage.size(); i++) {
-				projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
+			// Project Received Message onto the codeword sphere
+			if (DECODING_RULE == 'P') {
+				double received_word_energy = utils::compute_vector_energy(receivedMessage);
+				double energy_normalize_factor = std::sqrt(128.0 / received_word_energy);  // normalizing received message
+				std::vector<double> projected_received_word(receivedMessage.size(), 0.0);
+				for (size_t i = 0; i < receivedMessage.size(); i++) {
+					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
+				}
+				// Decoding
+				MessageInformation decodingResult = listDecoder.decode(projected_received_word, puncturedIndices);
+			} else if (DECODING_RULE == 'N') {
+				MessageInformation decodingResult = listDecoder.decode(receivedMessage, puncturedIndices);
 			}
-			
-			// Decoding
-			MessageInformation projectedDecoding = listDecoder.decode(projected_received_word, puncturedIndices);
 			
 
 			// RRV
-			if (projectedDecoding.message == originalMessage) {
+			if (decodingResult.message == originalMessage) {
 				// correct decoding
 				RRV_DecodedType.push_back(0);
-				RRVtoDecoded_ListSize.push_back(projectedDecoding.listSize);
-				RRVtoDecoded_Metric.push_back(projectedDecoding.metric);
-			} else if(projectedDecoding.listSizeExceeded) {
+				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
+				RRVtoDecoded_Metric.push_back(decodingResult.metric);
+			} else if(decodingResult.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
 				num_failures++;
 			} else { 
 				// incorrect decoding
 				RRV_DecodedType.push_back(2);
-				RRVtoDecoded_ListSize.push_back(projectedDecoding.listSize);
-				RRVtoDecoded_Metric.push_back(projectedDecoding.metric);
+				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
+				RRVtoDecoded_Metric.push_back(decodingResult.metric);
 				num_mistakes++;
 			}
 
@@ -279,6 +280,10 @@ void logSimulationParams() {
 		std::cout << "| " << std::left << std::setw(20) << "MAX LISTSIZE"
 						<< "| " << std::setw(10) << MAX_LISTSIZE << "|\n";
 	} else {std::cerr << "INCORRECT STOPPING RULE! ABORT!"; exit(1);}
+	if (DECODING_RULE == 'P' || DECODING_RULE == 'N') {
+		std::cout << "| " << std::left << std::setw(20) << "DECODING RULE"
+						<< "| " << std::setw(10) << DECODING_RULE << "|\n";
+	} else {std::cerr << "INCORRECT DECODING RULE! ABORT!"; exit(1);}
 	/// ---------------- SIMULATION PARAMS ----------------
 	std::cout << "| " << std::left << std::setw(20) << "MAX ERRORS"
 						<< "| " << std::setw(10) << MAX_ERRORS << "|\n";
