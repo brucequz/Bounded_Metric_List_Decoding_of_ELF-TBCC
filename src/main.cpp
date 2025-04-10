@@ -74,7 +74,12 @@ void ISTC_sim(CodeInformation code, int rank){
 		ude_error_cnt_str.precision(1);
 		ude_error_cnt_str << std::fixed << MAX_ERRORS;
 		
-		std::string folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
+		std::string folder_name;
+		if (STOPPING_RULE == 'A') {
+			folder_name = "output/BALD/EbN0_" + ebn0_str.str() + "_Proc" + std::to_string(rank) + "_ude_" + ude_error_cnt_str.str();
+		} else {
+			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
+		}
 		system(("mkdir -p " + folder_name).c_str());
 		
 		std::string RtoT_Metric_filename = folder_name + "/transmitted_metric.txt";
@@ -85,6 +90,9 @@ void ISTC_sim(CodeInformation code, int rank){
 
 		std::string RtoD_LS_filename = folder_name + "/decoded_listsize.txt";
 		std::ofstream RRVtoDecoded_ListSizeFile(RtoD_LS_filename.c_str());
+
+		std::string RtoD_Angle_filename = folder_name + "/decoded_angle.txt";
+		std::ofstream RRVtoDecoded_AngleFile(RtoD_Angle_filename);
 		
 		std::string RtoD_Type_filename = folder_name + "/decoded_type.txt";
 		std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
@@ -105,6 +113,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::vector<double> RRVtoTransmitted_Metric;
 		std::vector<double> RRVtoDecoded_Metric;
 		std::vector<int> 		RRVtoDecoded_ListSize;
+		std::vector<double> RRVtoDecoded_Angle;
 		std::vector<int>		RRV_DecodedType;
 
 		/* ==== SIMULATION begins ==== */
@@ -124,6 +133,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// Project Received Message onto the codeword sphere
+			MessageInformation decodingResult;
 			if (DECODING_RULE == 'P') {
 				double received_word_energy = utils::compute_vector_energy(receivedMessage);
 				double energy_normalize_factor = std::sqrt(128.0 / received_word_energy);  // normalizing received message
@@ -132,9 +142,9 @@ void ISTC_sim(CodeInformation code, int rank){
 					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
 				}
 				// Decoding
-				MessageInformation decodingResult = listDecoder.decode(projected_received_word, puncturedIndices);
+				decodingResult = listDecoder.decode(projected_received_word, puncturedIndices);
 			} else if (DECODING_RULE == 'N') {
-				MessageInformation decodingResult = listDecoder.decode(receivedMessage, puncturedIndices);
+				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices);
 			}
 			
 
@@ -144,6 +154,7 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRV_DecodedType.push_back(0);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
+				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
 			} else if(decodingResult.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
@@ -153,6 +164,7 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRV_DecodedType.push_back(2);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
+				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
 				num_mistakes++;
 			}
 
@@ -182,6 +194,12 @@ void ISTC_sim(CodeInformation code, int rank){
 					}
 					RRVtoDecoded_ListSize.clear();
 				}
+				if (RRVtoDecoded_AngleFile.is_open()) {
+					for (int i = 0; i < RRVtoDecoded_Angle.size(); i++) {
+						RRVtoDecoded_AngleFile << RRVtoDecoded_Angle[i] << std::endl;
+					}
+					RRVtoDecoded_Angle.clear();
+				}
 				if (RRVtoDecoded_DecodeTypeFile.is_open()) {
 					for (int i = 0; i < RRV_DecodedType.size(); i++) {
 						RRVtoDecoded_DecodeTypeFile << RRV_DecodedType[i] << std::endl;
@@ -207,6 +225,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		RRVtoDecoded_MetricFile.close();
 		RRVtoDecoded_ListSizeFile.close();
 		RRVtoDecoded_DecodeTypeFile.close();
+		RRVtoDecoded_AngleFile.close();
 	} // for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) 
 
 	std::cout << "***--- Simulation Concluded ---***" << std::endl;
@@ -279,6 +298,9 @@ void logSimulationParams() {
 	} else if (STOPPING_RULE == 'L') {
 		std::cout << "| " << std::left << std::setw(20) << "MAX LISTSIZE"
 						<< "| " << std::setw(10) << MAX_LISTSIZE << "|\n";
+	} else if (STOPPING_RULE == 'A') {
+		std::cout << "| " << std::left << std::setw(20) << "MAX ANGLE"
+						<< "| " << std::setw(10) << MAX_ANGLE << "|\n";
 	} else {std::cerr << "INCORRECT STOPPING RULE! ABORT!"; exit(1);}
 	if (DECODING_RULE == 'P' || DECODING_RULE == 'N') {
 		std::cout << "| " << std::left << std::setw(20) << "DECODING RULE"

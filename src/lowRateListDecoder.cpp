@@ -14,7 +14,7 @@ LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, in
   this->crc                   = crc;
 	this->stopping_rule					= stopping_rule;
 
-	if (this->stopping_rule != 'M' && this->stopping_rule != 'L') {
+	if (this->stopping_rule != 'M' && this->stopping_rule != 'L' && this->stopping_rule != 'A') {
 		std::cerr << "[ERROR] INVALID STOPPING RULE" << std::endl;
 	}
 	
@@ -32,6 +32,9 @@ MessageInformation LowRateListDecoder::decode(std::vector<double> receivedMessag
 	} else if (this->stopping_rule == 'M') {
 		// max metric restriction
 		return lowRateDecoding_MaxMetric(receivedMessage, punctured_indices);
+	} else if (this->stopping_rule == 'A') {
+		// max angle restriction
+		return lowRateDecoding_MaxAngle(receivedMessage, punctured_indices);
 	}
 	throw std::invalid_argument("INVALID DECODING CHOICE!");
 }
@@ -235,6 +238,110 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<dou
 		if(path[0] == path[lowrate_pathLength - 1])
 			TBPathsSearched++;
 	} // while(currentMetricExplored < MAX_METRIC)
+
+	output.listSizeExceeded = true;
+	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
+	return output;
+}
+
+MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<double> receivedMessage, std::vector<int> punctured_indices) {
+	// trellisInfo is indexed [state][stage]
+	std::vector<std::vector<cell>> trellisInfo;
+	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
+
+	// start search
+	MessageInformation output;
+	//RBTree detourTree;
+	MinHeap detourTree;
+	std::vector<std::vector<int>> previousPaths;
+	
+
+	// create nodes for each valid ending state with no detours
+	// std::cout<< "end path metrics:" <<std::endl;
+	for(int i = 0; i < lowrate_numStates; i++){
+		DetourObject detour;
+		detour.startingState = i;
+		detour.pathMetric = trellisInfo[i][lowrate_pathLength - 1].pathMetric;
+		detourTree.insert(detour);
+	}
+
+	int numPathsSearched = 0;
+	int TBPathsSearched = 0;
+	double currentAngleExplored = 0.0;
+	
+	while(currentAngleExplored < MAX_ANGLE){
+		DetourObject detour = detourTree.pop();
+		std::vector<int> path(lowrate_pathLength);
+
+		int newTracebackStage = lowrate_pathLength - 1;
+		double forwardPartialPathMetric = 0;
+		int currentState = detour.startingState;
+
+		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
+		// detour from the previous path
+		if(detour.originalPathIndex != -1){
+			forwardPartialPathMetric = detour.forwardPathMetric;
+			newTracebackStage = detour.detourStage;
+
+			// while we only need to copy the path from the detour to the end, this simplifies things,
+			// and we'll write over the earlier data in any case
+			path = previousPaths[detour.originalPathIndex];
+			currentState = path[newTracebackStage];
+
+			double suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
+
+			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
+			newTracebackStage--;
+			
+			double prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
+
+			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
+			
+		}
+		path[newTracebackStage] = currentState;
+
+		// actually tracing back
+		for(int stage = newTracebackStage; stage > 0; stage--){
+			double suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
+			double currPathMetric = trellisInfo[currentState][stage].pathMetric;
+
+			// if there is a detour we add to the detourTree
+			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
+				DetourObject localDetour;
+				localDetour.detourStage = stage;
+				localDetour.originalPathIndex = numPathsSearched;
+				localDetour.pathMetric = suboptimalPathMetric + forwardPartialPathMetric;
+				localDetour.forwardPathMetric = forwardPartialPathMetric;
+				localDetour.startingState = detour.startingState;
+				detourTree.insert(localDetour);
+			}
+			currentState = trellisInfo[currentState][stage].optimalFatherState;
+			double prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
+			forwardPartialPathMetric += currPathMetric - prevPathMetric;
+			path[stage - 1] = currentState;
+		} // for(int stage = newTracebackStage; stage > 0; stage--)
+		
+		previousPaths.push_back(path);
+
+		std::vector<int> message = pathToMessage(path);
+		std::vector<int> codeword = pathToCodeword(path);
+		currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword);
+		
+		// one trellis decoding requires both a tb and crc check
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc)){
+			output.message = message;
+			output.path = path;
+			output.listSize = numPathsSearched + 1;
+			output.metric = forwardPartialPathMetric;
+			output.TBListSize = TBPathsSearched + 1;
+			output.angle_received_decoded_rad = currentAngleExplored;
+			return output;
+		}
+
+		numPathsSearched++;
+		if(path[0] == path[lowrate_pathLength - 1])
+			TBPathsSearched++;
+	} // while(currentAngleExplored < MAX_ANGLE)
 
 	output.listSizeExceeded = true;
 	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;

@@ -24,7 +24,8 @@ const std::vector<int> PUNCTURING_INDICES
 /* --- List Decoder Parameters --- */
 constexpr int MAX_LISTSIZE = 1e7;       /* Maximum list size */
 constexpr double MAX_METRIC = 84.5;     /* Maximum decoding metric */
-constexpr char STOPPING_RULE = 'M';     /* Stopping rule */
+constexpr double MAX_ANGLE = 0.7286;    /* Maximum angle for the list decoder */
+constexpr char STOPPING_RULE = 'A';     /* Stopping rule */
 constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
 
 /* --- Simulation Parameters --- */

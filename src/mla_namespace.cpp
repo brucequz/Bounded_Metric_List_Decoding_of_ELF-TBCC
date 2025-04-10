@@ -128,4 +128,15 @@ double compute_vector_energy(std::vector<double> vector){
 	return sum_of_squares;
 }
 
+double compute_angle_between_vectors_rad(std::vector<double> vec1, std::vector<int> vec2) {
+	// computes the angle (in radians) between a double vector and an integer vector
+	// assumes the energy of the integer vector is 128.
+	if (vec1.size() != vec2.size()) {std::cerr << "INVALID INNER PRODUCT DUE TO UNCOMPATIBLE SHAPE! ABORT!" << std::endl; exit(1);}
+	double inner_product = std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0);
+	double vec1_energy_sqrt = std::sqrt(compute_vector_energy(vec1));
+	double vec2_energy_sqrt = std::sqrt(128);
+	double angle_rad = std::acos( inner_product/(vec1_energy_sqrt * vec2_energy_sqrt) );
+	return angle_rad;
+}
+
 } // namespace utils

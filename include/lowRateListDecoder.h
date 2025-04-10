@@ -13,6 +13,7 @@ public:
 	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc, char stopping_rule);
 	MessageInformation lowRateDecoding_MaxListsize(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxMetric(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation lowRateDecoding_MaxAngle(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
 
 	MessageInformation decode(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
 

@@ -49,6 +49,9 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file);
 // computes vector energy, aka sum of squares
 double compute_vector_energy(std::vector<double> vector);
 
+// computes angle (radians) between two vectors
+double compute_angle_between_vectors_rad(std::vector<double> vec1, std::vector<int> vec2);
+
 // Euclidean distance metric
 template <typename T1, typename T2>
 double euclidean_distance(
