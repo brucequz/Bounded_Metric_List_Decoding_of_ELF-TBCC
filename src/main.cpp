@@ -173,7 +173,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			num_trials += 1;
 
 			if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS) {
-				 std::cout << "numTrials = " << num_trials << ", numErrors = " << num_errors << std::endl; 
+				 std::cout << "numTrials = " << num_trials << ", number of UDE = " << num_mistakes << std::endl; 
 
 				// RRV Write to file
 				if (RRVtoTransmitted_MetricFile.is_open()) {
