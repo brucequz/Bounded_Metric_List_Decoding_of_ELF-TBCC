@@ -76,7 +76,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		
 		std::string folder_name;
 		if (STOPPING_RULE == 'A') {
-			folder_name = "output/BALD/EbN0_" + ebn0_str.str() + "_Proc" + std::to_string(rank) + "_ude_" + ude_error_cnt_str.str();
+			folder_name = "output/BALD/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank) + "_ude_" + ude_error_cnt_str.str();
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		}
