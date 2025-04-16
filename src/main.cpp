@@ -177,7 +177,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			num_errors = num_mistakes + num_failures;
 			num_trials += 1;
 
-			if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS) {
+			if (num_trials % LOGGING_ITERS == 0 || num_mistakes == MAX_ERRORS) {
 				 std::cout << "numTrials = " << num_trials << ", number of UDE = " << num_mistakes << std::endl; 
 
 				// RRV Write to file
