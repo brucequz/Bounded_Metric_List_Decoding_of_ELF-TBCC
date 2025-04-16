@@ -344,6 +344,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<doub
 	} // while(currentAngleExplored < MAX_ANGLE)
 
 	output.listSizeExceeded = true;
+	output.listSize = numPathsSearched;
 	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
 	return output;
 }

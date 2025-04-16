@@ -70,13 +70,17 @@ void ISTC_sim(CodeInformation code, int rank){
 		ebn0_str.precision(2);
 		ebn0_str << std::fixed << EbN0;
 
+		std::ostringstream thetad_str;
+		thetad_str.precision(4);
+		thetad_str << std::fixed << MAX_ANGLE;
+
 		std::ostringstream ude_error_cnt_str;
 		ude_error_cnt_str.precision(1);
 		ude_error_cnt_str << std::fixed << MAX_ERRORS;
 		
 		std::string folder_name;
 		if (STOPPING_RULE == 'A') {
-			folder_name = "output/BALD/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank) + "_ude_" + ude_error_cnt_str.str();
+			folder_name = "output/BALD/EbN0_" + ebn0_str.str() + "_thetad_" + thetad_str.str() + "/Proc" + std::to_string(rank) + "_ude_" + ude_error_cnt_str.str();
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		}
@@ -158,6 +162,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			} else if(decodingResult.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
+				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				num_failures++;
 			} else { 
 				// incorrect decoding
@@ -210,11 +215,11 @@ void ISTC_sim(CodeInformation code, int rank){
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
-		std::cout << "number of errors: " << num_errors << std::endl;
-		std::cout << "number of mistakes: " << num_mistakes << std::endl;
-		std::cout << "number of failures: " << num_failures << std::endl;
-		std::cout << "Mistakes Error Rate: " << std::scientific << (double)num_mistakes/num_trials << std::endl;
-		std::cout << "Failures Error Rate: " << std::scientific << (double)num_failures/num_trials << std::endl;
+		std::cout << "number of total errors: " << num_errors << std::endl;
+		std::cout << "number of undetected errors: " << num_mistakes << std::endl;
+		std::cout << "number of detected errors: " << num_failures << std::endl;
+		std::cout << "Undetected Error Rate: " << std::scientific << (double)num_mistakes/num_trials << std::endl;
+		std::cout << "Detected Error Rate: " << std::scientific << (double)num_failures/num_trials << std::endl;
 		std::cout << "TFR: " << (double)num_errors/num_trials << std::endl;
 		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -*" << std::endl;
 
