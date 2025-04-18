@@ -80,7 +80,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		
 		std::string folder_name;
 		if (STOPPING_RULE == 'A') {
-			folder_name = "output/BALD/EbN0_" + ebn0_str.str() + "_thetad_" + thetad_str.str() + "/Proc" + std::to_string(rank) + "_ude_" + ude_error_cnt_str.str();
+			folder_name = "output/BALD/Curve_Sim/EbN0_" + ebn0_str.str() + "_thetad_" + thetad_str.str() + "/Proc" + std::to_string(rank);
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		}
@@ -127,7 +127,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		int num_errors 	 	= 0; // num_mistakes + num_failures
 		int num_trials	 	= 0;
 
-		while (num_mistakes < MAX_ERRORS) {
+		while (num_errors < MAX_ERRORS) {
 
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
@@ -177,7 +177,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			num_errors = num_mistakes + num_failures;
 			num_trials += 1;
 
-			if (num_trials % LOGGING_ITERS == 0 || num_mistakes == MAX_ERRORS) {
+			if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS) {
 				 std::cout << "numTrials = " << num_trials << ", number of UDE = " << num_mistakes << std::endl; 
 
 				// RRV Write to file
