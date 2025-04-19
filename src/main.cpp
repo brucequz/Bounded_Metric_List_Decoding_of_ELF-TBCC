@@ -80,7 +80,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		
 		std::string folder_name;
 		if (STOPPING_RULE == 'A') {
-			folder_name = "output/BALD/Curve_Sim/EbN0_" + ebn0_str.str() + "_thetad_" + thetad_str.str() + "/Proc" + std::to_string(rank);
+			folder_name = "output/BALD/Curve_Sim_thetad_" + thetad_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		}
