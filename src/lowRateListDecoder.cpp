@@ -225,7 +225,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<dou
 		currentMetricExplored = forwardPartialPathMetric;
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc)){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentMetricExplored <= MAX_METRIC){
 			output.message = message;
 			output.path = path;
 		 	output.listSize = numPathsSearched + 1;
