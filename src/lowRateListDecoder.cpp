@@ -121,7 +121,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<d
 		std::vector<int> codeword = pathToCodeword(path);
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc)){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && numPathsSearched <= this->listSize){
 			output.message = message;
 			output.path = path;
 		 	output.listSize = numPathsSearched + 1;
@@ -328,7 +328,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<doub
 		currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword);
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc)){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored <= MAX_ANGLE){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
