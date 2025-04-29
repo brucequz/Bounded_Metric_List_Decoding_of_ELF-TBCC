@@ -27,11 +27,12 @@ constexpr double MAX_METRIC = 87.6;     /* Maximum decoding metric */
 constexpr double MAX_ANGLE = 0.6286;    /* Maximum angle for the list decoder */
 constexpr char STOPPING_RULE = 'M';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
 constexpr char DECODING_RULE = 'N';     /* Decoding rule: {P: projected, N: non-projected}*/
+constexpr char ERROR_RUN_TYPE = 'U';    /* Accumulate to which type of error: {U: undetected, T: total}*/
 
 /* --- Simulation Parameters --- */
 constexpr int MAX_ERRORS = 20;           /* Maximum number of errors */
 constexpr bool NOISELESS = false;        /* Noiseless simulation */
-const std::vector<double> EBN0 = {3.2}; /* Eb/N0 values */
+const std::vector<double> EBN0 = {3.2};  /* Eb/N0 values */
 constexpr int LOGGING_ITERS = 2000;      /* Logging Interval*/
 constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
 

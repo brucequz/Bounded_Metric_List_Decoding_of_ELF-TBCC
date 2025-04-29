@@ -135,7 +135,28 @@ void ISTC_sim(CodeInformation code, int rank){
 		int num_errors 	 	= 0; // num_mistakes + num_failures
 		int num_trials	 	= 0;
 
-		while (num_mistakes < MAX_ERRORS) {
+		// lambda to decide if we continue the loop or not
+		auto should_continue = [&]() -> bool {
+			if (ERROR_RUN_TYPE == 'U') {
+					return num_mistakes < MAX_ERRORS;
+			} else if (ERROR_RUN_TYPE == 'T') {
+					return num_errors < MAX_ERRORS;
+			} else {
+					throw std::runtime_error("Unknown TER_TYPE");
+			}
+		};
+
+		auto should_end_of_file_log = [&]() -> bool {
+			if (ERROR_RUN_TYPE == 'U') {
+					return num_mistakes == MAX_ERRORS;
+			} else if (ERROR_RUN_TYPE == 'T') {
+					return num_errors == MAX_ERRORS;
+			} else {
+					throw std::runtime_error("Unknown TER_TYPE");
+			}
+		};
+
+		while (should_continue()) {
 
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
@@ -185,9 +206,10 @@ void ISTC_sim(CodeInformation code, int rank){
 			num_errors = num_mistakes + num_failures;
 			num_trials += 1;
 
-			if (num_trials % LOGGING_ITERS == 0 || num_mistakes == MAX_ERRORS) {
-				 std::cout << "numTrials = " << num_trials << ", number of detected errors = " << num_mistakes << std::endl; 
-
+			if (num_trials % LOGGING_ITERS == 0 || should_end_of_file_log()) {
+				if (ERROR_RUN_TYPE == 'U') {std::cout << "numTrials = " << num_trials << ", number of undetected errors = " << num_mistakes << std::endl;}
+				if (ERROR_RUN_TYPE == 'T') {std::cout << "numTrials = " << num_trials << ", number of total errors = " << num_errors << std::endl;}
+				 
 				// RRV Write to file
 				if (RRVtoTransmitted_MetricFile.is_open()) {
 					for (int i = 0; i < RRVtoTransmitted_Metric.size(); i++) {
@@ -304,6 +326,13 @@ void logSimulationParams() {
 						<< "| " << "0x" << std::setw(10) << std::hex << CRC << std::dec << "|\n";
 	std::cout << "| " << std::left << std::setw(20) << "STOPPING RULE"
 						<< "| " << std::setw(10) << STOPPING_RULE << "|\n";
+	/// ---------------- ERROR TYPE ----------------
+	if (ERROR_RUN_TYPE == 'T' || ERROR_RUN_TYPE == 'U') {
+		std::cout << "| " << std::left << std::setw(20) << "ERROR TYPE"
+						<< "| " << std::setw(10) << ERROR_RUN_TYPE << "|\n";
+		std::cout << "| " << std::left << std::setw(20) << "ACCUMULATE"
+						<< "| " << std::setw(10) << MAX_ERRORS << "|\n";
+	} else {std::cerr << "INCORRECT ERROR TYPE! ABORT!"; exit(1);}
 	/// ---------------- STOPPING RULE ----------------
 	if (STOPPING_RULE == 'M') {
 		std::cout << "| " << std::left << std::setw(20) << "MAX METRIC"
