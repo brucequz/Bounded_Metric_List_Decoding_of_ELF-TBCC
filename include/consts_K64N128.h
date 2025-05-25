@@ -5,15 +5,17 @@
 #include <vector>
 
 /* --- Convolutional Code Parameters --- */
-constexpr int K = 1;                    /* Number of input bits */
-constexpr int N = 2;                    /* Number of output bits */
+constexpr int k = 1;                    /* Number of input bits */
+constexpr int n = 2;                    /* Number of output bits */
+constexpr int K = 64;                    /* Number of input bits */
+constexpr int N = 128;                    /* Number of output bits */
 constexpr int V = 8;                    /* Number of memory elements */
 constexpr int M = 12;                   /* Degree of CRC - 1 */
 constexpr unsigned int CRC = 0x1565;    /* CRC polynomial */
-constexpr int POLY1 = 561;              /* Polynomial 1, in decimal*/
-constexpr int POLY2 = 753;              /* Polynomial 2, in decimal*/
-constexpr int NUM_INFO_BITS = 64;       /* Number of information bits */
-constexpr int NUM_CODED_SYMBOLS = 128;  /* Number of coded symbols */
+constexpr int POLY1 = 561;              /* Polynomial 1, in octal*/
+constexpr int POLY2 = 753;              /* Polynomial 2, in octal*/
+// constexpr int NUM_INFO_BITS = 64;       /* Number of information bits */
+// constexpr int NUM_CODED_SYMBOLS = 128;  /* Number of coded symbols */
 
 const std::vector<int> PUNCTURING_INDICES 
     = {4, 10, 21, 24, 31, 37, 
@@ -25,9 +27,10 @@ const std::vector<int> PUNCTURING_INDICES
 constexpr int MAX_LISTSIZE = 1e7;       /* Maximum list size */
 constexpr double MAX_METRIC = 87.6;     /* Maximum decoding metric */
 constexpr double MAX_ANGLE = 0.8075;    /* Maximum angle for the list decoder */
-constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
-constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
-constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
+inline constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
+inline constexpr char ENCODING_RULE = 'T';     /* Encoding rule: {Z: zero-terminated, T: tail-biting} */
+inline constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
+inline constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
 
 /* --- Simulation Parameters --- */
 constexpr int MAX_ERRORS = 20;           /* Maximum number of errors */

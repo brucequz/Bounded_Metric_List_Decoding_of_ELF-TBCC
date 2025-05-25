@@ -201,8 +201,6 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT
 			output.metric = forwardPartialPathMetric;
 			output.TBListSize = TBPathsSearched + 1;
 			output.angle_received_decoded_rad = currentAngleExplored;
-			// std::cout << "returning message length = " << message.size() << std::endl;
-			
 			return output;
 		}
 

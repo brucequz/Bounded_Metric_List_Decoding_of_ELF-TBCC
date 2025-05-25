@@ -7,6 +7,7 @@ class FeedForwardTrellis {
 public:
 	FeedForwardTrellis(int k, int n, int v, std::vector<int> numerators);
 	std::vector<int> encode(std::vector<int> originalMessage);
+	std::vector<int> encode_zt(std::vector<int> originalMessage);
 	std::vector<std::vector<int>> getNextStates();
 	std::vector<std::vector<int>> getOutputs();
 	int getNumInputSymbols();

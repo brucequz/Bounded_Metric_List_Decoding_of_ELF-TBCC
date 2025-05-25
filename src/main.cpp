@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <cstdlib>
+#include <cassert>
 #include <numeric>
 #include <string>
 #include <sstream>
@@ -17,19 +18,19 @@
 
 void ISTC_sim(CodeInformation code, int rank);
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
-std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless);
+std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless);
 std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float snr, bool noiseless);
 void logSimulationParams();
 
 int main(int argc, char *argv[]) {
     
   CodeInformation code;
-  code.k = K;         // numerator of the rate
-  code.n = N;         // denominator of the rate
+  code.k = k;         // numerator of the rate
+  code.n = n;         // denominator of the rate
   code.v = V;         // number of memory elements
   code.crcDeg = M+1;  // m+1, degree of CRC, # bits of CRC polynomial
   code.crc = CRC;     // CRC polynomial
-  code.numInfoBits = NUM_INFO_BITS; // number of information bits
+  code.numInfoBits = K; // number of information bits
   code.numerators = {POLY1, POLY2};
 
 	
@@ -112,7 +113,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		/* - Simulation SNR setup - */
 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
 		float snr = 0.0;
-		float offset = 10 * log10((float)N/K *NUM_INFO_BITS / (NUM_CODED_SYMBOLS));
+		float offset = 10 * log10((float)n/k * K / N);
 		snr = EbN0 + offset;
 		
 		/* - Trellis setup - */
@@ -162,7 +163,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
 			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
-			std::cout << "received message length = " << receivedMessage.size() << std::endl;
+
 			// Transmitted statistics
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
@@ -170,7 +171,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			MessageInformation decodingResult;
 			if (DECODING_RULE == 'P') {
 				float received_word_energy = utils::compute_vector_energy(receivedMessage);
-				float energy_normalize_factor = std::sqrt(NUM_CODED_SYMBOLS / received_word_energy);  // normalizing received message
+				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
 				std::vector<float> projected_received_word(receivedMessage.size(), 0.0);
 				for (size_t i = 0; i < receivedMessage.size(); i++) {
 					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
@@ -243,7 +244,6 @@ void ISTC_sim(CodeInformation code, int rank){
 					RRV_DecodedType.clear();
 				}
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-			num_errors = MAX_ERRORS;
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
@@ -271,25 +271,34 @@ void ISTC_sim(CodeInformation code, int rank){
 
 // this generates a random binary string of length code.numInfoBits, and appends the appropriate CRC bits
 std::vector<int> generateRandomCRCMessage(CodeInformation code){
-	std::vector<int> message;
+	std::vector<int> info_crc;
 	for(int i = 0; i < code.numInfoBits; i++)
-		message.push_back(rand()%2);
-	std::cout << "printing original message word: ";
-	utils::print_int_vector(message);
-	std::cout << std::endl;
-	std::cout << "message length = " << message.size() << std::endl;
+		info_crc.push_back(rand()%2);
+
 	// compute the CRC
-	crc::crc_calculation(message, code.crcDeg, code.crc);
-	return message;
+	crc::crc_calculation(info_crc, code.crcDeg, code.crc);
+	return info_crc;
 }
 
 // this takes the message bits, including the CRC, and encodes them using the trellis
-std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless){
+std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless){
+	/*
+	encodes to get the transmitted message bits (info + zero termination + crc) before modulation.
+	*/ 
+	if (ENCODING_RULE != 'T' && ENCODING_RULE != 'Z') {std::cerr << "ISSUE: INCORRECT ENCODING_RULE" << std::endl;}
 	// encode the message
-	std::vector<int> encodedMessage = encodingTrellis.encode(originalMessage);
-	std::cout << "Projected unpunctured encoded word: ";
-	utils::print_int_vector(encodedMessage);
-	std::cout << std::endl;
+	std::vector<int> encodedMessage;
+	if (ENCODING_RULE == 'T') {
+		encodedMessage = encodingTrellis.encode(info_crc);
+		assert(encodedMessage.size() == (K+M) / k * n);
+	} else if (ENCODING_RULE == 'Z') {
+		for (int i=0; i<V; i++){
+			encodedMessage.push_back(0);
+		}
+		encodedMessage = encodingTrellis.encode_zt(info_crc);
+		assert(encodedMessage.size() == (K+M+V) / k * n);
+	}
+	
 	return encodedMessage;
 }
 
@@ -325,9 +334,9 @@ void logSimulationParams() {
 
 	/// ---------------- CODE INFO ----------------
 	std::cout << "| " << std::left << std::setw(20) << "K"
-						<< "| " << std::setw(10) << NUM_INFO_BITS << "|\n";
+						<< "| " << std::setw(10) << K << "|\n";
 	std::cout << "| " << std::left << std::setw(20) << "N"
-						<< "| " << std::setw(10) << NUM_CODED_SYMBOLS << "|\n";
+						<< "| " << std::setw(10) << N << "|\n";
 	std::cout << "| " << std::left << std::setw(20) << "GEN POLY"
 						<< "| " << "{" << POLY1 << ", " << POLY2 << "}" << "|\n";
 	std::cout << "| " << std::left << std::setw(20) << "ELF"

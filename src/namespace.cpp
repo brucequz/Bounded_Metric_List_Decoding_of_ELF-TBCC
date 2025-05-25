@@ -12,7 +12,6 @@ std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR) {
 	// std::cout << "variance" << std::fixed << std::setprecision(4) << variance << std::endl;
 
   float sigma = sqrt(variance);
-	std::cout << "sigma" << std::fixed << std::setprecision(4) << sigma << std::endl;
   std::normal_distribution<float> distribution(0.0, sigma);
 
   for (int i = 0; i < encodedMsg.size(); i++) {
