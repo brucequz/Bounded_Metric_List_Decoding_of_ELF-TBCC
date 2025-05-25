@@ -1,6 +1,6 @@
 #include "../include/feedForwardTrellis.h"
-#include "../include/mla_consts.h"
-#include "../include/mla_namespace.h"
+#include "../include/consts.h"
+#include "../include/namespace.h"
 
 #include <iostream>
 #include <string>

@@ -3,22 +3,28 @@
 #define LOWRATELISTDECODER_H
 
 #include <climits>
+#include <iostream>
+#include <algorithm>
 
 #include "feedForwardTrellis.h"
 #include "minHeap.h"
-#include "mla_types.h"
+#include "types.h"
+#include "namespace.h"
+#include "consts.h"
 
 class LowRateListDecoder{
 public:
 	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc, char stopping_rule);
-	MessageInformation lowRateDecoding_MaxListsize(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
-	MessageInformation lowRateDecoding_MaxMetric(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
-	MessageInformation lowRateDecoding_MaxAngle(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
 
-	MessageInformation decode(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
+	/* - Floating Point - */
+	MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation lowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation lowRateDecoding_MaxMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation lowRateDecoding_MaxAngle(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation lowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 
-	/* - MLA - */
-	MessageInformation lowRateDecoding_mla(std::vector<double> receivedMessage, std::vector<int> punctured_indices, std::vector<int> transmittedMessage);
+	// ZT
+	MessageInformation lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage);
 
 private:
 	int numForwardPaths;
@@ -40,17 +46,24 @@ private:
 	struct cell {
 		int optimalFatherState = -1;
 		int suboptimalFatherState = -1;
-		double pathMetric = INT_MAX;
-		double suboptimalPathMetric = INT_MAX;
+		float pathMetric = INT_MAX;
+		float suboptimalPathMetric = INT_MAX;
 		bool init = false;
 	};
 
-  std::vector<int> pathToMessage(std::vector<int>); 
+	std::vector<int> pathToMessage(std::vector<int>); 
   std::vector<int> pathToCodeword(std::vector<int>); 
-	std::vector<std::vector<cell>> constructLowRateTrellis(std::vector<double> receivedMessage);
-  std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(std::vector<double> receivedMessage, std::vector<int> punctured_indices);
-	std::vector<std::vector<std::vector<cell>>> constructLowRateMultiTrellis(std::vector<double> receivedMessage);
-	std::vector<std::vector<cell>> constructMinimumLikelihoodLowRateTrellis(std::vector<double> receivedMessage);
+	std::vector<int> pathToMessage_ZT(std::vector<int> path);
+
+	/* - Floating Point - */
+	std::vector<std::vector<cell>> constructLowRateTrellis(std::vector<float> receivedMessage);
+
+	// ZT
+	std::vector<std::vector<cell>> constructLowRateTrellis_ZT(std::vector<float> receivedMessage);
+
+	// TB Punctured
+  std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+	std::vector<std::vector<cell>> constructLowRateTrellis_Punctured_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 };
 
 

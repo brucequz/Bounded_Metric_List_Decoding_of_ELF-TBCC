@@ -1,12 +1,13 @@
 OBJS = src/main.o src/feedForwardTrellis.o src/lowRateListDecoder.o
 CXX = mpicxx
-CXXFLAGS = -std=c++14 -I include -O2
+CXXFLAGS = -std=c++17 -Wall -I include -O2
 
 
 # Directories
 SRC_DIR = src
 INCLUDE_DIR = include
 BUILD_DIR = build
+CONFIG ?= K64N128
 
 # Create a list of all source and object files
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
@@ -16,7 +17,11 @@ OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRC_FILES))
 TARGET = main
 
 # Default rule
-all: clean $(TARGET)
+all: clean consts.h $(TARGET)
+
+
+consts.h:
+	cp $(INCLUDE_DIR)/consts_$(CONFIG).h consts.h
 
 # Rule to link object files and create the final
 $(TARGET): $(OBJ_FILES)

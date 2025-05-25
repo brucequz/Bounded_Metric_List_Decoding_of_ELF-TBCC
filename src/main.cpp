@@ -9,16 +9,16 @@
 // #include "/opt/homebrew/Cellar/open-mpi/5.0.7/include/mpi.h"
 #include "mpi.h"
 
-#include "../include/mla_consts.h"
-#include "../include/mla_types.h"
-#include "../include/mla_namespace.h"
+#include "../include/consts.h"
+#include "../include/types.h"
+#include "../include/namespace.h"
 #include "../include/feedForwardTrellis.h"
 #include "../include/lowRateListDecoder.h"
 
 void ISTC_sim(CodeInformation code, int rank);
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
-std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, double snr, std::vector<int> puncturedIndices, bool noiseless);
-std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless);
+std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless);
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float snr, bool noiseless);
 void logSimulationParams();
 
 int main(int argc, char *argv[]) {
@@ -65,7 +65,7 @@ void ISTC_sim(CodeInformation code, int rank){
 	for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) {
 
 		/* - Output files setup - */
-		double EbN0 = EBN0[ebn0_id];
+		float EbN0 = EBN0[ebn0_id];
 		std::ostringstream ebn0_str;
 		ebn0_str.precision(2);
 		ebn0_str << std::fixed << EbN0;
@@ -111,8 +111,8 @@ void ISTC_sim(CodeInformation code, int rank){
 		
 		/* - Simulation SNR setup - */
 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
-		double snr = 0.0;
-		double offset = 10 * log10((double)N/K *NUM_INFO_BITS / (NUM_CODED_SYMBOLS));
+		float snr = 0.0;
+		float offset = 10 * log10((float)N/K *NUM_INFO_BITS / (NUM_CODED_SYMBOLS));
 		snr = EbN0 + offset;
 		
 		/* - Trellis setup - */
@@ -122,10 +122,10 @@ void ISTC_sim(CodeInformation code, int rank){
 		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
 
 		/* - Output Temporary Holder setup - */
-		std::vector<double> RRVtoTransmitted_Metric;
-		std::vector<double> RRVtoDecoded_Metric;
+		std::vector<float> RRVtoTransmitted_Metric;
+		std::vector<float> RRVtoDecoded_Metric;
 		std::vector<int> 		RRVtoDecoded_ListSize;
-		std::vector<double> RRVtoDecoded_Angle;
+		std::vector<float> RRVtoDecoded_Angle;
 		std::vector<int>		RRV_DecodedType;
 
 		/* ==== SIMULATION begins ==== */
@@ -148,11 +148,12 @@ void ISTC_sim(CodeInformation code, int rank){
 
 		auto should_end_of_file_log = [&]() -> bool {
 			if (ERROR_RUN_TYPE == 'U') {
-					return num_mistakes == MAX_ERRORS;
+				return num_mistakes == MAX_ERRORS;
 			} else if (ERROR_RUN_TYPE == 'T') {
-					return num_errors == MAX_ERRORS;
+				// std::cout << "num_errors = " << num_errors << std::endl;
+				return num_errors == MAX_ERRORS;
 			} else {
-					throw std::runtime_error("Unknown TER_TYPE");
+				throw std::runtime_error("Unknown TER_TYPE");
 			}
 		};
 
@@ -160,17 +161,17 @@ void ISTC_sim(CodeInformation code, int rank){
 
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
-			std::vector<double> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
-		
+			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
+			std::cout << "received message length = " << receivedMessage.size() << std::endl;
 			// Transmitted statistics
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// Project Received Message onto the codeword sphere
 			MessageInformation decodingResult;
 			if (DECODING_RULE == 'P') {
-				double received_word_energy = utils::compute_vector_energy(receivedMessage);
-				double energy_normalize_factor = std::sqrt(128.0 / received_word_energy);  // normalizing received message
-				std::vector<double> projected_received_word(receivedMessage.size(), 0.0);
+				float received_word_energy = utils::compute_vector_energy(receivedMessage);
+				float energy_normalize_factor = std::sqrt(NUM_CODED_SYMBOLS / received_word_energy);  // normalizing received message
+				std::vector<float> projected_received_word(receivedMessage.size(), 0.0);
 				for (size_t i = 0; i < receivedMessage.size(); i++) {
 					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
 				}
@@ -242,15 +243,16 @@ void ISTC_sim(CodeInformation code, int rank){
 					RRV_DecodedType.clear();
 				}
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
+			num_errors = MAX_ERRORS;
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
 		std::cout << "number of total errors: " << num_errors << std::endl;
 		std::cout << "number of undetected errors: " << num_mistakes << std::endl;
 		std::cout << "number of detected errors: " << num_failures << std::endl;
-		std::cout << "Undetected Error Rate: " << std::scientific << (double)num_mistakes/num_trials << std::endl;
-		std::cout << "Detected Error Rate: " << std::scientific << (double)num_failures/num_trials << std::endl;
-		std::cout << "TFR: " << (double)num_errors/num_trials << std::endl;
+		std::cout << "Undetected Error Rate: " << std::scientific << (float)num_mistakes/num_trials << std::endl;
+		std::cout << "Detected Error Rate: " << std::scientific << (float)num_failures/num_trials << std::endl;
+		std::cout << "TFR: " << (float)num_errors/num_trials << std::endl;
 		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -*" << std::endl;
 
 		
@@ -272,26 +274,32 @@ std::vector<int> generateRandomCRCMessage(CodeInformation code){
 	std::vector<int> message;
 	for(int i = 0; i < code.numInfoBits; i++)
 		message.push_back(rand()%2);
+	std::cout << "printing original message word: ";
+	utils::print_int_vector(message);
+	std::cout << std::endl;
+	std::cout << "message length = " << message.size() << std::endl;
 	// compute the CRC
 	crc::crc_calculation(message, code.crcDeg, code.crc);
 	return message;
 }
 
 // this takes the message bits, including the CRC, and encodes them using the trellis
-std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, double snr, std::vector<int> puncturedIndices, bool noiseless){
+std::vector<int> generateTransmittedMessage(std::vector<int> originalMessage, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless){
 	// encode the message
 	std::vector<int> encodedMessage = encodingTrellis.encode(originalMessage);
-
+	std::cout << "Projected unpunctured encoded word: ";
+	utils::print_int_vector(encodedMessage);
+	std::cout << std::endl;
 	return encodedMessage;
 }
 
 // this takes the transmitted message and adds AWGN noise to it
 // it also punctures the bits that are not used in the trellis
-std::vector<double> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, double snr, bool noiseless){
-	std::vector<double> receivedMessage;
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float snr, bool noiseless){
+	std::vector<float> receivedMessage;
 	if(noiseless){
 		for(int i = 0; i < transmittedMessage.size(); i++)
-			receivedMessage.push_back((double)transmittedMessage[i]);
+			receivedMessage.push_back((float)transmittedMessage[i]);
 	} else {
 		receivedMessage = awgn::addNoise(transmittedMessage, snr);
 	}

@@ -1,7 +1,7 @@
 #include "../include/lowRateListDecoder.h"
-#include "../include/mla_types.h"
-#include "../include/mla_namespace.h"
-#include "../include/mla_consts.h"
+#include "../include/types.h"
+#include "../include/namespace.h"
+#include "../include/consts.h"
 
 LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, int listSize, int crcDegree, int crc, char stopping_rule) {
   this->lowrate_nextStates    = feedforwardTrellis.getNextStates();
@@ -17,11 +17,9 @@ LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, in
 	if (this->stopping_rule != 'M' && this->stopping_rule != 'L' && this->stopping_rule != 'A') {
 		std::cerr << "[ERROR] INVALID STOPPING RULE" << std::endl;
 	}
-	
-	int v = feedforwardTrellis.getV();
 }
 
-MessageInformation LowRateListDecoder::decode(std::vector<double> receivedMessage, std::vector<int> punctured_indices) {
+MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices) {
 	/** Decode according to a policy passed into the constructor
 	 * 
 	 */
@@ -39,7 +37,7 @@ MessageInformation LowRateListDecoder::decode(std::vector<double> receivedMessag
 	throw std::invalid_argument("INVALID DECODING CHOICE!");
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<double> receivedMessage, std::vector<int> punctured_indices){
+MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices){
 	// trellisInfo is indexed [state][stage]
 	std::vector<std::vector<cell>> trellisInfo;
 	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
@@ -68,7 +66,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<d
 		std::vector<int> path(lowrate_pathLength);
 
 		int newTracebackStage = lowrate_pathLength - 1;
-		double forwardPartialPathMetric = 0;
+		float forwardPartialPathMetric = 0;
 		int currentState = detour.startingState;
 
 		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
@@ -82,12 +80,12 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<d
 			path = previousPaths[detour.originalPathIndex];
 			currentState = path[newTracebackStage];
 
-			double suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
+			float suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
 
 			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
 			newTracebackStage--;
 			
-			double prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
+			float prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
 
 			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
 			
@@ -96,8 +94,8 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<d
 
 		// actually tracing back
 		for(int stage = newTracebackStage; stage > 0; stage--){
-			double suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
-			double currPathMetric = trellisInfo[currentState][stage].pathMetric;
+			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
+			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
 
 			// if there is a detour we add to the detourTree
 			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
@@ -110,7 +108,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<d
 				detourTree.insert(localDetour);
 			}
 			currentState = trellisInfo[currentState][stage].optimalFatherState;
-			double prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
+			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
 			forwardPartialPathMetric += currPathMetric - prevPathMetric;
 			path[stage - 1] = currentState;
 		}
@@ -141,7 +139,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<d
 
 
 
-MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<double> receivedMessage, std::vector<int> punctured_indices){
+MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices){
 	// trellisInfo is indexed [state][stage]
 	std::vector<std::vector<cell>> trellisInfo;
 	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
@@ -164,14 +162,14 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<dou
 
 	int numPathsSearched = 0;
 	int TBPathsSearched = 0;
-	double currentMetricExplored = 0.0;
+	float currentMetricExplored = 0.0;
   
 	while(currentMetricExplored < MAX_METRIC){
 		DetourObject detour = detourTree.pop();
 		std::vector<int> path(lowrate_pathLength);
 
 		int newTracebackStage = lowrate_pathLength - 1;
-		double forwardPartialPathMetric = 0;
+		float forwardPartialPathMetric = 0;
 		int currentState = detour.startingState;
 
 		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
@@ -185,12 +183,12 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<dou
 			path = previousPaths[detour.originalPathIndex];
 			currentState = path[newTracebackStage];
 
-			double suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
+			float suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
 
 			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
 			newTracebackStage--;
 			
-			double prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
+			float prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
 
 			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
 			
@@ -199,8 +197,8 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<dou
 
 		// actually tracing back
 		for(int stage = newTracebackStage; stage > 0; stage--){
-			double suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
-			double currPathMetric = trellisInfo[currentState][stage].pathMetric;
+			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
+			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
 
 			// if there is a detour we add to the detourTree
 			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
@@ -213,7 +211,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<dou
 				detourTree.insert(localDetour);
 			}
 			currentState = trellisInfo[currentState][stage].optimalFatherState;
-			double prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
+			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
 			forwardPartialPathMetric += currPathMetric - prevPathMetric;
 			path[stage - 1] = currentState;
 		} // for(int stage = newTracebackStage; stage > 0; stage--)
@@ -244,7 +242,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<dou
 	return output;
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<double> receivedMessage, std::vector<int> punctured_indices) {
+MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<float> receivedMessage, std::vector<int> punctured_indices) {
 	// trellisInfo is indexed [state][stage]
 	std::vector<std::vector<cell>> trellisInfo;
 	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
@@ -267,14 +265,14 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<doub
 
 	int numPathsSearched = 0;
 	int TBPathsSearched = 0;
-	double currentAngleExplored = 0.0;
+	float currentAngleExplored = 0.0;
 	
 	while(currentAngleExplored < MAX_ANGLE){
 		DetourObject detour = detourTree.pop();
 		std::vector<int> path(lowrate_pathLength);
 
 		int newTracebackStage = lowrate_pathLength - 1;
-		double forwardPartialPathMetric = 0;
+		float forwardPartialPathMetric = 0;
 		int currentState = detour.startingState;
 
 		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
@@ -288,12 +286,12 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<doub
 			path = previousPaths[detour.originalPathIndex];
 			currentState = path[newTracebackStage];
 
-			double suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
+			float suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
 
 			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
 			newTracebackStage--;
 			
-			double prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
+			float prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
 
 			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
 			
@@ -302,8 +300,8 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<doub
 
 		// actually tracing back
 		for(int stage = newTracebackStage; stage > 0; stage--){
-			double suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
-			double currPathMetric = trellisInfo[currentState][stage].pathMetric;
+			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
+			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
 
 			// if there is a detour we add to the detourTree
 			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
@@ -316,7 +314,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<doub
 				detourTree.insert(localDetour);
 			}
 			currentState = trellisInfo[currentState][stage].optimalFatherState;
-			double prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
+			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
 			forwardPartialPathMetric += currPathMetric - prevPathMetric;
 			path[stage - 1] = currentState;
 		} // for(int stage = newTracebackStage; stage > 0; stage--)
@@ -349,7 +347,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<doub
 	return output;
 }
 
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis(std::vector<double> receivedMessage){
+std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis(std::vector<float> receivedMessage){
 	std::vector<std::vector<cell>> trellisInfo;
 	lowrate_pathLength = (receivedMessage.size() / lowrate_symbolLength) + 1;
 
@@ -379,14 +377,14 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 				if(nextState < 0)
 					continue;
 				
-				double branchMetric = 0;
+				float branchMetric = 0;
 				std::vector<int> output_point = crc::get_point(lowrate_outputs[currentState][forwardPathIndex], lowrate_symbolLength);
 				
 				for(int i = 0; i < lowrate_symbolLength; i++){
-					branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (double)output_point[i], 2);
-					// branchMetric += std::abs(receivedMessage[lowrate_symbolLength * stage + i] - (double)output_point[i]);
+					branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i], 2);
+					// branchMetric += std::abs(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i]);
 				}
-				double totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
+				float totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
 				
 				// dealing with cases of uninitialized states, when the transition becomes the optimal father state, and suboptimal father state, in order
 				if(!trellisInfo[nextState][stage + 1].init){
@@ -411,10 +409,10 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 	return trellisInfo;
 }
 
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured(std::vector<double> receivedMessage, std::vector<int> punctured_indices){
+std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured(std::vector<float> receivedMessage, std::vector<int> punctured_indices){
 	/* Constructs a trellis for a low rate code, with puncturing
 		Args:
-			receivedMessage (std::vector<double>): the received message
+			receivedMessage (std::vector<float>): the received message
 			punctured_indices (std::vector<int>): the indices of the punctured bits
 
 		Returns:
@@ -451,18 +449,18 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 				if(nextState < 0)
 					continue;
 				
-				double branchMetric = 0;
+				float branchMetric = 0;
 				std::vector<int> output_point = crc::get_point(lowrate_outputs[currentState][forwardPathIndex], lowrate_symbolLength);
 				
 				for(int i = 0; i < lowrate_symbolLength; i++){
 					if (std::find(punctured_indices.begin(), punctured_indices.end(), lowrate_symbolLength * stage + i) != punctured_indices.end()){
 						branchMetric += 0;
 					} else {
-						branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (double)output_point[i], 2);
+						branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i], 2);
 					}
 				}
 				
-				double totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
+				float totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
 				
 				// dealing with cases of uninitialized states, when the transition becomes the optimal father state, and suboptimal father state, in order
 				if(!trellisInfo[nextState][stage + 1].init){
