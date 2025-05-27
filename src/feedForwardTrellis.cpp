@@ -1,5 +1,5 @@
 #include "../include/feedForwardTrellis.h"
-#include "../include/consts.h"
+#include "../consts.h"
 #include "../include/namespace.h"
 
 #include <iostream>

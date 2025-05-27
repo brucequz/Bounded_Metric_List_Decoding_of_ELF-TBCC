@@ -2,6 +2,7 @@
 #define MLA_NAMESPACE_H
 
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -14,6 +15,8 @@
 namespace awgn {
 
 std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR);
+
+float normpdf(float x, float mu = 0.0, float sigma = 1.0);
 
 } // namespace awgn
 

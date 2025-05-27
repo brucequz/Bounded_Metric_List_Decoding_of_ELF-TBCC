@@ -10,7 +10,7 @@
 // #include "/opt/homebrew/Cellar/open-mpi/5.0.7/include/mpi.h"
 #include "mpi.h"
 
-#include "../include/consts.h"
+#include "../consts.h"
 #include "../include/types.h"
 #include "../include/namespace.h"
 #include "../include/feedForwardTrellis.h"
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   code.crcDeg = M+1;  // m+1, degree of CRC, # bits of CRC polynomial
   code.crc = CRC;     // CRC polynomial
   code.numInfoBits = K; // number of information bits
-  code.numerators = {POLY1, POLY2};
+  code.numerators = NUMERATORS;
 
 	
 	/* MPI Init */
@@ -161,8 +161,17 @@ void ISTC_sim(CodeInformation code, int rank){
 		while (should_continue()) {
 
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
+			std::cout << "original message: ";
+			utils::print_int_vector(originalMessage);
+			std::cout << std::endl;
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
+			std::cout << "transmitted message: ";
+			utils::print_int_vector(transmittedMessage);
+			std::cout << std::endl;
 			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
+			std::cout << "received message: ";
+			utils::print_float_vector(receivedMessage);
+			std::cout << std::endl;
 
 			// Transmitted statistics
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
@@ -244,6 +253,7 @@ void ISTC_sim(CodeInformation code, int rank){
 					RRV_DecodedType.clear();
 				}
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
+			num_mistakes = MAX_ERRORS;
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
@@ -293,10 +303,14 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwa
 		assert(encodedMessage.size() == (K+M) / k * n);
 	} else if (ENCODING_RULE == 'Z') {
 		for (int i=0; i<V; i++){
-			encodedMessage.push_back(0);
+			info_crc.push_back(0);
 		}
+		std::cout << "info crc with termination: ";
+		utils::print_int_vector(info_crc);
+		std::cout << std::endl;
 		encodedMessage = encodingTrellis.encode_zt(info_crc);
 		assert(encodedMessage.size() == (K+M+V) / k * n);
+		
 	}
 	
 	return encodedMessage;
@@ -337,8 +351,8 @@ void logSimulationParams() {
 						<< "| " << std::setw(10) << K << "|\n";
 	std::cout << "| " << std::left << std::setw(20) << "N"
 						<< "| " << std::setw(10) << N << "|\n";
-	std::cout << "| " << std::left << std::setw(20) << "GEN POLY"
-						<< "| " << "{" << POLY1 << ", " << POLY2 << "}" << "|\n";
+	// std::cout << "| " << std::left << std::setw(20) << "GEN POLY"
+	// 					<< "| " << "{" << POLY1 << ", " << POLY2 << "}" << "|\n";
 	std::cout << "| " << std::left << std::setw(20) << "ELF"
 						<< "| " << "0x" << std::setw(10) << std::hex << CRC << std::dec << "|\n";
 	std::cout << "| " << std::left << std::setw(20) << "STOPPING RULE"

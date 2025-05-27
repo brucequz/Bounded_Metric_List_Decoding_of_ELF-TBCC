@@ -1,21 +1,18 @@
-/* Metric - Listsize Analysis (MLA) Constants */
-#ifndef MLACONST_H
-#define MLACONST_H
+/* K64N128 PARAMETERS */
+#ifndef K64N128_PARAM
+#define K64N128_PARAM
 
 #include <vector>
 
 /* --- Convolutional Code Parameters --- */
 constexpr int k = 1;                    /* Number of input bits */
 constexpr int n = 2;                    /* Number of output bits */
-constexpr int K = 64;                    /* Number of input bits */
-constexpr int N = 128;                    /* Number of output bits */
+constexpr int K = 64;                   /* Number of input bits */
+constexpr int N = 128;                  /* Number of output bits */
 constexpr int V = 8;                    /* Number of memory elements */
 constexpr int M = 12;                   /* Degree of CRC - 1 */
 constexpr unsigned int CRC = 0x1565;    /* CRC polynomial */
-constexpr int POLY1 = 561;              /* Polynomial 1, in octal*/
-constexpr int POLY2 = 753;              /* Polynomial 2, in octal*/
-// constexpr int NUM_INFO_BITS = 64;       /* Number of information bits */
-// constexpr int NUM_CODED_SYMBOLS = 128;  /* Number of coded symbols */
+inline const std::vector<int> NUMERATORS = {561, 753};  /* in octal */
 
 const std::vector<int> PUNCTURING_INDICES 
     = {4, 10, 21, 24, 31, 37, 
@@ -26,17 +23,17 @@ const std::vector<int> PUNCTURING_INDICES
 /* --- List Decoder Parameters --- */
 constexpr int MAX_LISTSIZE = 1e7;       /* Maximum list size */
 constexpr double MAX_METRIC = 87.6;     /* Maximum decoding metric */
-constexpr double MAX_ANGLE = 0.8075;    /* Maximum angle for the list decoder */
+constexpr double MAX_ANGLE = 0.7498;    /* Maximum angle for the list decoder */
 inline constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
 inline constexpr char ENCODING_RULE = 'T';     /* Encoding rule: {Z: zero-terminated, T: tail-biting} */
-inline constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
-inline constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
+constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
+constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
 
 /* --- Simulation Parameters --- */
 constexpr int MAX_ERRORS = 20;           /* Maximum number of errors */
 constexpr bool NOISELESS = false;        /* Noiseless simulation */
-const std::vector<double> EBN0 = {2.5};  /* Eb/N0 values */
 constexpr int LOGGING_ITERS = 1000;      /* Logging Interval*/
 constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
+inline const std::vector<float> EBN0 = {2.5};
 
 #endif

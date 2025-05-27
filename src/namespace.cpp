@@ -1,6 +1,7 @@
 #include "../include/namespace.h"
 
 
+
 namespace awgn {
 
 std::default_random_engine generator;
@@ -18,6 +19,13 @@ std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR) {
     noisyMsg.push_back(encodedMsg[i] + distribution(generator));
   }
   return noisyMsg;
+}
+
+float normpdf(float x, float mu, float sigma) {
+	/* returns the probability density function of the standard normal distribution, evaluated at the values in x 
+	*/
+	float pdf = (float)1.0/(sqrt(2*M_PI)*sigma) * std::exp(pow(((x - mu) / sigma),2) * -0.5);
+	return pdf;
 }
 
 } // namespace awgn

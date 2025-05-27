@@ -29,7 +29,7 @@ $(TARGET): $(OBJ_FILES)
 
 # Rule to compile source files into object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -DCONFIG_$(CONFIG) -c $< -o $@
 
 # Rule to create the build directory if it doesn't exist
 $(BUILD_DIR):
@@ -37,7 +37,7 @@ $(BUILD_DIR):
 
 # Clean up build files
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(TARGET) consts.h
 
 # Rule to clean up object files
 clean_obj:

@@ -1,15 +1,26 @@
 #include "lowRateListDecoder.h"
 
-// construct ZT trellis
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_ZT(std::vector<float> receivedMessage){
-	std::vector<std::vector<cell>> trellisInfo;
+
+
+std::vector<std::vector<LowRateListDecoder::rova_cell>> LowRateListDecoder::constructLowRateTrellis_ROVA_ZT(std::vector<float> receivedMessage){
+	std::vector<std::vector<rova_cell>> trellisInfo;
 	lowrate_pathLength = (receivedMessage.size() / lowrate_symbolLength) + 1;
 
-	trellisInfo = std::vector<std::vector<cell>>(lowrate_numStates, std::vector<cell>(lowrate_pathLength));
+	trellisInfo = std::vector<std::vector<rova_cell>>(lowrate_numStates, std::vector<rova_cell>(lowrate_pathLength));
+  int trellis_width = trellisInfo[0].size();
+  int trellis_height = trellisInfo.size();
+  std::vector<std::vector<std::vector<float>>> gammas(
+    trellis_width-1, std::vector<std::vector<float>>(
+      trellis_height, std::vector<float>(
+        numForwardPaths, 1.0
+      )
+    )
+  );
 
 	// initialize only 0 as the starting states
 	trellisInfo[0][0].pathMetric = 0;
 	trellisInfo[0][0].init = true;
+  trellisInfo[0][0].Gamma = 1.0;
 	
 	// building the trellis
 	for(int stage = 0; stage < lowrate_pathLength - V - 1; stage++){
@@ -33,9 +44,12 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 				std::vector<int> output_point = crc::get_point(lowrate_outputs[currentState][forwardPathIndex], lowrate_symbolLength);
 				
 				for(int i = 0; i < lowrate_symbolLength; i++){
-					branchMetric += -1 * (receivedMessage[lowrate_symbolLength * stage + i] * (float)output_point[i]);
+					branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i], 2);
+          gammas[stage][currentState][forwardPathIndex] *= awgn::normpdf(receivedMessage[lowrate_symbolLength * stage + i], (float)output_point[i], 0.3749);
 				}
+        
 				float totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
+        float input_Gamma = trellisInfo[currentState][stage].Gamma * gammas[stage][currentState][forwardPathIndex];
 				
 				// dealing with cases of uninitialized states, when the transition becomes the optimal father state, and suboptimal father state, in order
 				if(!trellisInfo[nextState][stage + 1].init){
@@ -53,10 +67,17 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 					trellisInfo[nextState][stage + 1].suboptimalPathMetric = totalPathMetric;
 					trellisInfo[nextState][stage + 1].suboptimalFatherState = currentState;
 				}
-			}
 
-		}
-	}
+        if (trellisInfo[nextState][stage + 1].Gamma != 0) {
+          trellisInfo[nextState][stage + 1].P = std::max(trellisInfo[nextState][stage + 1].Gamma, input_Gamma) / (trellisInfo[nextState][stage + 1].Gamma + input_Gamma);
+        }
+        trellisInfo[nextState][stage + 1].Gamma = std::max(trellisInfo[nextState][stage + 1].Gamma, input_Gamma); // update Gamma
+
+			} // for(int forwardPathIndex = 0; forwardPathIndex < numForwardPaths; forwardPathIndex++)
+
+		} // for(int currentState = 0; currentState < lowrate_numStates; currentState++)
+	} // for(int stage = 0; stage < lowrate_pathLength - V - 1; stage++)
+
 	// ZT stage
 	for(int stage = lowrate_pathLength - V - 1; stage < lowrate_pathLength - 1; stage++){
 		for(int currentState = 0; currentState < lowrate_numStates; currentState++){
@@ -79,9 +100,11 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 			std::vector<int> output_point = crc::get_point(lowrate_outputs[currentState][forwardPathIndex], lowrate_symbolLength);
 			
 			for(int i = 0; i < lowrate_symbolLength; i++){
-				branchMetric += -1 * (receivedMessage[lowrate_symbolLength * stage + i] * (float)output_point[i]);
+				branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i], 2);
+        gammas[stage][currentState][forwardPathIndex] *= awgn::normpdf(receivedMessage[lowrate_symbolLength * stage + i], (float)output_point[i], 0.3749);
 			}
 			float totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
+      float input_Gamma = trellisInfo[currentState][stage].Gamma * gammas[stage][currentState][forwardPathIndex];
 			
 			// dealing with cases of uninitialized states, when the transition becomes the optimal father state, and suboptimal father state, in order
 			if(!trellisInfo[nextState][stage + 1].init){
@@ -100,15 +123,30 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 				trellisInfo[nextState][stage + 1].suboptimalFatherState = currentState;
 			}
 
-		}
-	}
+
+      trellisInfo[nextState][stage + 1].P = std::max(trellisInfo[nextState][stage + 1].Gamma, input_Gamma) / (trellisInfo[nextState][stage + 1].Gamma + input_Gamma);
+      
+      trellisInfo[nextState][stage + 1].Gamma = std::max(trellisInfo[nextState][stage + 1].Gamma, input_Gamma); // update Gamma
+      // std::cout << "Zero terminating Gamma: nextState: " << nextState << ", stage+1: " << stage+1 << ", P: "
+      // << std::fixed << std::setprecision(50) << trellisInfo[nextState][stage + 1].P << std::endl;
+
+		} // for(int currentState = 0; currentState < lowrate_numStates; currentState++
+	} // for(int stage = lowrate_pathLength - V - 1; stage < lowrate_pathLength - 1; stage++)
+
+
+  // std::cout << "before returning trellis: " << std::endl;
+  // std::cout << trellisInfo[0][lowrate_pathLength - 1].P;
+
+
 	return trellisInfo;
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage) {
-	std::vector<std::vector<cell>> trellisInfo;
 
-	trellisInfo = constructLowRateTrellis_ZT(receivedMessage);
+
+MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage) {
+	std::vector<std::vector<rova_cell>> trellisInfo;
+
+	trellisInfo = constructLowRateTrellis_ROVA_ZT(receivedMessage);
 
 	// start search
 	MessageInformation output;
@@ -188,11 +226,11 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT
 
 		// another way to compute the angle
 		// currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword);
-		currentAngleExplored = std::acos( std::max(-1.0f, std::min(1.0f, -forwardPartialPathMetric/N)) );
+		
 		
 		// one trellis decoding requires both a tb and crc check
 		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcDegree, crc) && currentAngleExplored <= MAX_ANGLE){
-			output.message = message;
+ 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
 			output.metric = forwardPartialPathMetric;
@@ -210,17 +248,4 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT
 	output.listSize = numPathsSearched;
 	std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
 	return output;
-}
-
-
-// converts a path through the ztcc trellis to the binary message it corresponds with
-std::vector<int> LowRateListDecoder::pathToMessage_ZT(std::vector<int> path){
-	std::vector<int> message;
-	for(int pathIndex = 0; pathIndex < path.size() - 1 - V; pathIndex++){
-		for(int forwardPath = 0; forwardPath < numForwardPaths; forwardPath++){
-			if(lowrate_nextStates[path[pathIndex]][forwardPath] == path[pathIndex + 1])
-				message.push_back(forwardPath);
-		}
-	}
-	return message;
 }

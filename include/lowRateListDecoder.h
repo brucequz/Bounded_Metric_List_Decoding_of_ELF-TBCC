@@ -10,7 +10,7 @@
 #include "minHeap.h"
 #include "types.h"
 #include "namespace.h"
-#include "consts.h"
+#include "../consts.h"
 
 class LowRateListDecoder{
 public:
@@ -25,6 +25,7 @@ public:
 
 	// ZT
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage);
+	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage);
 
 private:
 	int numForwardPaths;
@@ -51,6 +52,18 @@ private:
 		bool init = false;
 	};
 
+	struct rova_cell {
+		// ROVA
+		float Gamma = 0.0;
+		float P = 0.0;
+		// regular cell
+		int optimalFatherState = -1;
+		int suboptimalFatherState = -1;
+		float pathMetric = INT_MAX;
+		float suboptimalPathMetric = INT_MAX;
+		bool init = false;
+	};
+
 	std::vector<int> pathToMessage(std::vector<int>); 
   std::vector<int> pathToCodeword(std::vector<int>); 
 	std::vector<int> pathToMessage_ZT(std::vector<int> path);
@@ -60,6 +73,8 @@ private:
 
 	// ZT
 	std::vector<std::vector<cell>> constructLowRateTrellis_ZT(std::vector<float> receivedMessage);
+	// ZT ROVA
+	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_ZT(std::vector<float> receivedMessage);
 
 	// TB Punctured
   std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(std::vector<float> receivedMessage, std::vector<int> punctured_indices);

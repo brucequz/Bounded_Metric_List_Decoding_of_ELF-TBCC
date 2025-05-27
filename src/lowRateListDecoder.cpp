@@ -1,7 +1,7 @@
 #include "../include/lowRateListDecoder.h"
 #include "../include/types.h"
 #include "../include/namespace.h"
-#include "../include/consts.h"
+#include "../consts.h"
 
 LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, int listSize, int crcDegree, int crc, char stopping_rule) {
   this->lowrate_nextStates    = feedforwardTrellis.getNextStates();
@@ -23,6 +23,12 @@ MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage
 	/** Decode according to a policy passed into the constructor
 	 * 
 	 */
+
+	// ZT
+	if (ENCODING_RULE == 'Z') {
+		return lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(receivedMessage);
+	}
+	
 	if (this->stopping_rule == 'L') {
 		// max listsize restriction
 		return lowRateDecoding_MaxListsize(receivedMessage, punctured_indices);
