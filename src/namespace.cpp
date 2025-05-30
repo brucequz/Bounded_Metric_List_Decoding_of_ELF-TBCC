@@ -28,6 +28,13 @@ float normpdf(float x, float mu, float sigma) {
 	return pdf;
 }
 
+float log_normpdf(float x, float mu, float sigma) {
+	/* returns the log of the probability density function of the standard normal distribution, evaluated at the values in x 
+	*/
+	return std::log(1.0/(sqrt(2*M_PI)*sigma)) - 0.5 * pow(((x - mu) / sigma), 2);
+}
+
+
 } // namespace awgn
 
 namespace crc {

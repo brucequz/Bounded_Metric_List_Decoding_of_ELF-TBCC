@@ -19,14 +19,14 @@ LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, in
 	}
 }
 
-MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices) {
+MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd) {
 	/** Decode according to a policy passed into the constructor
 	 * 
 	 */
 
 	// ZT
 	if (ENCODING_RULE == 'Z') {
-		return lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(receivedMessage);
+		return lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(receivedMessage, sigma_sqrd);
 	}
 	
 	if (this->stopping_rule == 'L') {

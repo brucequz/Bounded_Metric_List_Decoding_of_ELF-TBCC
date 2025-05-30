@@ -17,7 +17,7 @@ public:
 	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc, char stopping_rule);
 
 	/* - Floating Point - */
-	MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd);
 	MessageInformation lowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxAngle(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
@@ -25,7 +25,7 @@ public:
 
 	// ZT
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage);
-	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage);
+	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd);
 
 private:
 	int numForwardPaths;
@@ -54,8 +54,8 @@ private:
 
 	struct rova_cell {
 		// ROVA
-		float Gamma = 0.0;
-		float P = 0.0;
+		float log_Gamma = -INFINITY;
+		float log_Z = -INFINITY;
 		// regular cell
 		int optimalFatherState = -1;
 		int suboptimalFatherState = -1;
@@ -74,7 +74,10 @@ private:
 	// ZT
 	std::vector<std::vector<cell>> constructLowRateTrellis_ZT(std::vector<float> receivedMessage);
 	// ZT ROVA
-	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_ZT(std::vector<float> receivedMessage);
+	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_Alg2_ZT(std::vector<float> receivedMessage);
+	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_Alg4_ZT(std::vector<float> receivedMessage, float sigma_sqrd);
+	// computes max star approximation in BCJR decoding
+	float max_star(float lnx, float lny);
 
 	// TB Punctured
   std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(std::vector<float> receivedMessage, std::vector<int> punctured_indices);

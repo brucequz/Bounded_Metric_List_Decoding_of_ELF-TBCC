@@ -113,7 +113,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		/* - Simulation SNR setup - */
 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
 		float snr = 0.0;
-		float offset = 10 * log10((float)n/k * K / N);
+		float offset = 10 * log10((float)n/k);
 		snr = EbN0 + offset;
 		
 		/* - Trellis setup - */
@@ -159,25 +159,27 @@ void ISTC_sim(CodeInformation code, int rank){
 		};
 
 		while (should_continue()) {
-
+			
+			// std::cout << "Checkpoint 0" << std::endl; 
 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
-			std::cout << "original message: ";
-			utils::print_int_vector(originalMessage);
-			std::cout << std::endl;
+			// std::cout << "original message: ";
+			// utils::print_int_vector(originalMessage);
+			// std::cout << std::endl;
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
-			std::cout << "transmitted message: ";
-			utils::print_int_vector(transmittedMessage);
-			std::cout << std::endl;
+			// std::cout << "transmitted message: ";
+			// utils::print_int_vector(transmittedMessage);
+			// std::cout << std::endl;
 			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
-			std::cout << "received message: ";
-			utils::print_float_vector(receivedMessage);
-			std::cout << std::endl;
+			// std::cout << "received message: ";
+			// utils::print_float_vector(receivedMessage);
+			// std::cout << std::endl;
 
 			// Transmitted statistics
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// Project Received Message onto the codeword sphere
 			MessageInformation decodingResult;
+			float sigma_sqrd = pow(10.0, -snr / 10.0) / 2.0;
 			if (DECODING_RULE == 'P') {
 				float received_word_energy = utils::compute_vector_energy(receivedMessage);
 				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
@@ -186,9 +188,9 @@ void ISTC_sim(CodeInformation code, int rank){
 					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
 				}
 				// Decoding
-				decodingResult = listDecoder.decode(projected_received_word, puncturedIndices);
+				decodingResult = listDecoder.decode(projected_received_word, puncturedIndices, sigma_sqrd);
 			} else if (DECODING_RULE == 'N') {
-				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices);
+				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices, sigma_sqrd);
 			}
 			
 

@@ -7,11 +7,11 @@
 /* --- Convolutional Code Parameters --- */
 inline constexpr int k = 1;                    /* Number of input bits */
 inline constexpr int n = 2;                    /* Number of output bits */
-inline constexpr int K = 2;                   /* Number of input bits */
-inline constexpr int N = 8;                   /* Number of output bits */
+inline constexpr int K = 128;                   /* Number of input bits */
+inline constexpr int N = 260;                   /* Number of output bits */
 inline constexpr int V = 2;                    /* Number of memory elements */
 inline constexpr int M = 0;                    /* Degree of CRC - 1 */
-inline constexpr unsigned int CRC = 0x0;     /* CRC polynomial */
+inline constexpr unsigned int CRC = 0;     /* CRC polynomial */
 inline const std::vector<int> NUMERATORS = {5, 7};  /* in octal */
 inline const std::vector<int> PUNCTURING_INDICES = {};
 
@@ -29,6 +29,6 @@ inline constexpr int MAX_ERRORS = 20;           /* Maximum number of errors */
 inline constexpr bool NOISELESS = false;        /* Noiseless simulation */
 inline constexpr int LOGGING_ITERS = 1000;      /* Logging Interval*/
 inline constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
-inline const std::vector<float> EBN0 = {2.5};
+inline const std::vector<float> EBN0 = {-2.5};
 
 #endif

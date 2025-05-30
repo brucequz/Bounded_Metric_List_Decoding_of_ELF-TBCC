@@ -18,6 +18,8 @@ std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR);
 
 float normpdf(float x, float mu = 0.0, float sigma = 1.0);
 
+float log_normpdf(float x, float mu, float sigma);
+
 } // namespace awgn
 
 namespace crc {
@@ -54,6 +56,7 @@ float compute_vector_energy(std::vector<float> vector);
 
 // computes angle (radians) between two vectors
 float compute_angle_between_vectors_rad(std::vector<float> vec1, std::vector<int> vec2);
+
 
 // Euclidean distance metric
 template <typename T1, typename T2>
