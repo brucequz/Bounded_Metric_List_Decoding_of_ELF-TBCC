@@ -37,12 +37,12 @@ private:
 
 	std::vector<std::vector<int>> lowrate_nextStates;
 	std::vector<std::vector<int>> lowrate_outputs;
-	std::vector<std::vector<int>> neighboring_cwds; // ${listSize} x 516 matrix
-	std::vector<std::vector<int>> neighboring_msgs;  // ${listSize} x 43 matrix
-	std::vector<std::vector<int>> path_ie_state;
 	int lowrate_numStates;
 	int lowrate_symbolLength;
 	int lowrate_pathLength;
+
+	// ROVA
+	std::vector<std::vector<std::vector<float>>> log_gammas_;
 
 	struct cell {
 		int optimalFatherState = -1;
@@ -76,6 +76,7 @@ private:
 	// ZT ROVA
 	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_Alg2_ZT(std::vector<float> receivedMessage);
 	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_Alg4_ZT(std::vector<float> receivedMessage, float sigma_sqrd);
+	float compute_logGamma(std::vector<float> receivedMessage, std::vector<int> codeword, float sigma_sqrd);
 	// computes max star approximation in BCJR decoding
 	float max_star(float lnx, float lny);
 

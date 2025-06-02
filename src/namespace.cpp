@@ -9,7 +9,7 @@ std::default_random_engine generator;
 std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR) {
   std::vector<float> noisyMsg;
 
-  float variance = pow(10.0, -SNR / 10.0);
+  float variance = pow(10.0, -SNR / 10.0) / 2.0;
 	// std::cout << "variance" << std::fixed << std::setprecision(4) << variance << std::endl;
 
   float sigma = sqrt(variance);
@@ -111,7 +111,7 @@ void print_float_vector(std::vector<float> vector){
 	if(vector.size() == 0)
 		return;
 	for(int i = 0; i < vector.size() - 1; i++){
-		std::cout << vector[i] << ", ";
+		std::cout << std::setprecision(5) << vector[i] << ", ";
 	}
 	std::cout << vector[vector.size() - 1] << std::endl;
 }

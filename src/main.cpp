@@ -18,8 +18,8 @@
 
 void ISTC_sim(CodeInformation code, int rank);
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
-std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless);
-std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float snr, bool noiseless);
+std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwardTrellis encodingTrellis, float esn0, std::vector<int> puncturedIndices, bool noiseless);
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esn0, bool noiseless);
 void logSimulationParams();
 
 int main(int argc, char *argv[]) {
@@ -110,11 +110,11 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::string RtoD_Type_filename = folder_name + "/decoded_type.txt";
 		std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
 		
-		/* - Simulation SNR setup - */
+		/* - Simulation esn0 setup - */
 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
-		float snr = 0.0;
-		float offset = 10 * log10((float)n/k);
-		snr = EbN0 + offset;
+		float esn0 = 0.0; // defined as Es / N0
+		float offset = 10 * log10((float)K/N);
+		esn0 = EbN0 + offset;
 		
 		/* - Trellis setup - */
 		FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
@@ -165,11 +165,12 @@ void ISTC_sim(CodeInformation code, int rank){
 			// std::cout << "original message: ";
 			// utils::print_int_vector(originalMessage);
 			// std::cout << std::endl;
-			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, snr, puncturedIndices, NOISELESS);
+			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, esn0, puncturedIndices, NOISELESS);
+			// transmittedMessage = {1, 1, -1, -1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, 1, -1, -1, -1, -1, 1, -1, 1, 1, 1, -1, 1, -1, 1, -1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1};
 			// std::cout << "transmitted message: ";
 			// utils::print_int_vector(transmittedMessage);
-			// std::cout << std::endl;
-			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, snr, NOISELESS);
+			// std::cout << ", length = " << transmittedMessage.size() << std::endl;
+			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, esn0, NOISELESS);
 			// std::cout << "received message: ";
 			// utils::print_float_vector(receivedMessage);
 			// std::cout << std::endl;
@@ -179,7 +180,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			
 			// Project Received Message onto the codeword sphere
 			MessageInformation decodingResult;
-			float sigma_sqrd = pow(10.0, -snr / 10.0) / 2.0;
+			float sigma_sqrd = pow(10.0, -esn0 / 10.0) / 2.0;
 			if (DECODING_RULE == 'P') {
 				float received_word_energy = utils::compute_vector_energy(receivedMessage);
 				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
@@ -206,6 +207,7 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRV_DecodedType.push_back(1);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				num_failures++;
+				std::cout << "List size exceeded! num_failures = " << num_failures << std::endl;
 			} else { 
 				// incorrect decoding
 				RRV_DecodedType.push_back(2);
@@ -213,6 +215,7 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
 				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
 				num_mistakes++;
+				std::cout << "Undetected error! num_mistakes = " << num_mistakes << std::endl;
 			}
 
 			// Increment errors and trials
@@ -255,7 +258,7 @@ void ISTC_sim(CodeInformation code, int rank){
 					RRV_DecodedType.clear();
 				}
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-			num_mistakes = MAX_ERRORS;
+			// num_errors = MAX_ERRORS;
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
@@ -293,7 +296,7 @@ std::vector<int> generateRandomCRCMessage(CodeInformation code){
 }
 
 // this takes the message bits, including the CRC, and encodes them using the trellis
-std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwardTrellis encodingTrellis, float snr, std::vector<int> puncturedIndices, bool noiseless){
+std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwardTrellis encodingTrellis, float esn0, std::vector<int> puncturedIndices, bool noiseless){
 	/*
 	encodes to get the transmitted message bits (info + zero termination + crc) before modulation.
 	*/ 
@@ -307,9 +310,9 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwa
 		for (int i=0; i<V; i++){
 			info_crc.push_back(0);
 		}
-		std::cout << "info crc with termination: ";
-		utils::print_int_vector(info_crc);
-		std::cout << std::endl;
+		// std::cout << "info crc with termination: ";
+		// utils::print_int_vector(info_crc);
+		// std::cout << std::endl;
 		encodedMessage = encodingTrellis.encode_zt(info_crc);
 		assert(encodedMessage.size() == (K+M+V) / k * n);
 		
@@ -320,13 +323,13 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwa
 
 // this takes the transmitted message and adds AWGN noise to it
 // it also punctures the bits that are not used in the trellis
-std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float snr, bool noiseless){
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esn0, bool noiseless){
 	std::vector<float> receivedMessage;
 	if(noiseless){
 		for(int i = 0; i < transmittedMessage.size(); i++)
 			receivedMessage.push_back((float)transmittedMessage[i]);
 	} else {
-		receivedMessage = awgn::addNoise(transmittedMessage, snr);
+		receivedMessage = awgn::addNoise(transmittedMessage, esn0);
 	}
 
 	// puncture the bits. it is more convenient to puncture on this side than on the 
