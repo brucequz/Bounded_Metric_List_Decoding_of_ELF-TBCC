@@ -23,6 +23,7 @@ struct MessageInformation{
 		listSizeExceeded 	= false;
 		metric 						= -1.0;
 		angle_received_decoded_rad = 0.0;
+		rova_probability  = 0.0;
 
 		// History
 		pathToTransmittedCodewordHistory = std::vector<double>();
@@ -35,6 +36,7 @@ struct MessageInformation{
 	bool listSizeExceeded;
 	double metric;
 	double angle_received_decoded_rad;
+	double rova_probability;
 	std::vector<double> pathToTransmittedCodewordHistory;
 	std::vector<double> decodedCodewordSquaredNoiseMag;
 };

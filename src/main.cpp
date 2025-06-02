@@ -89,7 +89,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			folder_name = "output/BALD/Curve_Sim_thetad_" + thetad_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else if (DECODING_RULE == 'N') {
 			// for non-projected decoding
-			folder_name = "output/NonProjected/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
+			folder_name = "output/ROVA/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		}
@@ -201,7 +201,7 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRV_DecodedType.push_back(0);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
-				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
+				RRVtoDecoded_Angle.push_back(decodingResult.rova_probability);
 			} else if(decodingResult.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
@@ -213,7 +213,7 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRV_DecodedType.push_back(2);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
-				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
+				RRVtoDecoded_Angle.push_back(decodingResult.rova_probability);
 				num_mistakes++;
 				std::cout << "Undetected error! num_mistakes = " << num_mistakes << std::endl;
 			}

@@ -427,10 +427,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROV
 			output.metric = forwardPartialPathMetric;
 			output.TBListSize = TBPathsSearched + 1;
 			output.angle_received_decoded_rad = currentAngleExplored;
-			// std::cout << "Returning output path metric: " << output.metric << std::endl;
-			// std::cout << "Returning codeword: ";
-			// utils::print_int_vector(codeword);
-			// std::cout << "codeword size: " << codeword.size() << std::endl;
+			output.rova_probability = (double)p;
 			return output;
 		}
 
