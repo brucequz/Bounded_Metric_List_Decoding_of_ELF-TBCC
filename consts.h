@@ -21,15 +21,18 @@ inline constexpr double MAX_METRIC = 87.6;     /* Maximum decoding metric */
 inline constexpr double MAX_ANGLE = 0.7498;    /* Maximum angle for the list decoder */
 inline constexpr char ENCODING_RULE = 'Z';     /* Select code type: {Z: zero-terminated CC, T: tail-biting CC} */
 inline constexpr char DECODING_RULE = 'N';     /* Decoding rule: {P: projected, N: non-projected}*/
-inline constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
+inline constexpr char STOPPING_RULE = 'R';     /* Stopping rule: {M: metric, L: listsize, A: angle, R: rova} */
 inline constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
 
+/* --- ROVA Parameters --- */
+inline constexpr float ROVA_THRESHOLD = 0.90;
+
 /* --- Simulation Parameters --- */
-inline constexpr int MAX_ERRORS = 50;           /* Maximum number of errors */
+inline constexpr int MAX_ERRORS = 100;           /* Maximum number of errors */
 inline constexpr bool NOISELESS = false;        /* Noiseless simulation */
 inline constexpr int LOGGING_ITERS = 1000;      /* Logging Interval*/
 inline constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
-inline const std::vector<float> EBN0 = {2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6};
+inline const std::vector<float> EBN0 = {5};
 // 4.7691 for 1e-3 UER
 
 #endif

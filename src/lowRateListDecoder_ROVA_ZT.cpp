@@ -328,6 +328,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROV
 
 	// start search
 	MessageInformation output;
+	std::vector<MessageInformation> out_queue;
 	//RBTree detourTree;
 	MinHeap detourTree;
 	std::vector<std::vector<int>> previousPaths;
@@ -405,10 +406,8 @@ MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROV
 		// utils::print_int_vector(codeword);
 		// std::cout << "codeword size: " << codeword.size() << std::endl;
 		float logGamma = compute_logGamma(receivedMessage, codeword, sigma_sqrd);
-		// std::cout << "logGamma: " << std::setprecision(10) << logGamma << std::endl;
-		// std::cout << "path metric: " << std::setprecision(10) << forwardPartialPathMetric << std::endl;
 		std::vector<int> message = pathToMessage_ZT(path);
-		float p = std::exp(logGamma - trellisInfo[0].back().log_Z);
+		// float p = std::exp(logGamma - trellisInfo[0].back().log_Z);
 		// std::cout << "Path Metric: " << std::setprecision(10) << forwardPartialPathMetric << ", P: " << std::fixed << std::setprecision(10) << p << ", logGamma: " << std::setprecision(10) << logGamma << std::endl;
 		// if (p < 5e-5) {
 		// 	std::cout << "P is too small, break!" << std::endl;
@@ -427,8 +426,22 @@ MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROV
 			output.metric = forwardPartialPathMetric;
 			output.TBListSize = TBPathsSearched + 1;
 			output.angle_received_decoded_rad = currentAngleExplored;
-			output.rova_probability = (double)p;
-			return output;
+			output.log_Gamma = logGamma;
+			out_queue.push_back(output);
+			if (out_queue.size() == 2) {
+				float first_logGamma = out_queue[0].log_Gamma;
+				float second_logGamma = out_queue[1].log_Gamma;
+				float rova_prob = std::exp(-std::log(1+std::exp(-first_logGamma + second_logGamma)));
+				out_queue[0].rova_probability = rova_prob;
+				
+
+				if (rova_prob < ROVA_THRESHOLD) {
+					std::cout << "returning number 1 with rova prob = " << std::setprecision(10) << rova_prob 
+					<< " is smaller than ROVA_THRESHOLD = " << std::setprecision(2) << ROVA_THRESHOLD << std::endl;
+					break;
+				}
+				return out_queue[0];
+			}
 		}
 
 		numPathsSearched++;
@@ -438,6 +451,6 @@ MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROV
 
 	output.listSizeExceeded = true;
 	output.listSize = numPathsSearched;
-	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
+	std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
 	return output;
 }

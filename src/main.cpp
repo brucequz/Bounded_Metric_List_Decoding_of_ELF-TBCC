@@ -79,6 +79,10 @@ void ISTC_sim(CodeInformation code, int rank){
 		nonProjDist_str.precision(4);
 		nonProjDist_str << std::fixed << MAX_METRIC;
 
+		std::ostringstream rova_prob_str;
+		rova_prob_str.precision(3);
+		rova_prob_str << std::fixed << ROVA_THRESHOLD;
+
 		std::ostringstream ude_error_cnt_str;
 		ude_error_cnt_str.precision(1);
 		ude_error_cnt_str << std::fixed << MAX_ERRORS;
@@ -87,9 +91,12 @@ void ISTC_sim(CodeInformation code, int rank){
 		if (STOPPING_RULE == 'A' && DECODING_RULE == 'P') {
 			// for projected / angle decoding
 			folder_name = "output/BALD/Curve_Sim_thetad_" + thetad_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
-		} else if (DECODING_RULE == 'N') {
+		} else if (DECODING_RULE == 'N' && STOPPING_RULE == 'M') {
 			// for non-projected decoding
 			folder_name = "output/ROVA/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
+		} else if (STOPPING_RULE == 'R') {
+			// ROVA
+			folder_name = "output/ROVA/P_" + rova_prob_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		}
@@ -109,6 +116,10 @@ void ISTC_sim(CodeInformation code, int rank){
 		
 		std::string RtoD_Type_filename = folder_name + "/decoded_type.txt";
 		std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
+
+		std::string ROVA_Approx_filename = folder_name + "/rova_prob.txt";
+		std::ofstream ROVA_Approx_File(ROVA_Approx_filename);
+
 		
 		/* - Simulation esn0 setup - */
 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
@@ -128,6 +139,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::vector<int> 		RRVtoDecoded_ListSize;
 		std::vector<float> RRVtoDecoded_Angle;
 		std::vector<int>		RRV_DecodedType;
+		std::vector<float>  ROVA_Probability;
 
 		/* ==== SIMULATION begins ==== */
 		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -**" << std::endl;
@@ -196,12 +208,13 @@ void ISTC_sim(CodeInformation code, int rank){
 			
 
 			// RRV
-			if (decodingResult.message == originalMessage) {
+			if (!decodingResult.listSizeExceeded && decodingResult.message == originalMessage) {
 				// correct decoding
 				RRV_DecodedType.push_back(0);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
-				RRVtoDecoded_Angle.push_back(decodingResult.rova_probability);
+				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
+				ROVA_Probability.push_back(decodingResult.rova_probability);
 			} else if(decodingResult.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
@@ -213,7 +226,8 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRV_DecodedType.push_back(2);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
-				RRVtoDecoded_Angle.push_back(decodingResult.rova_probability);
+				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
+				ROVA_Probability.push_back(decodingResult.rova_probability);
 				num_mistakes++;
 				std::cout << "Undetected error! num_mistakes = " << num_mistakes << std::endl;
 			}
@@ -227,6 +241,18 @@ void ISTC_sim(CodeInformation code, int rank){
 				if (ERROR_RUN_TYPE == 'T') {std::cout << "numTrials = " << num_trials << ", number of total errors = " << num_errors << std::endl;}
 				 
 				// RRV Write to file
+				if (STOPPING_RULE == 'R' && ROVA_Approx_File.is_open()) {
+					for (int i = 0; i < ROVA_Probability.size(); i++) {
+						ROVA_Approx_File << std::setprecision(5) << ROVA_Probability[i] << std::endl;
+					}
+					ROVA_Probability.clear();
+				}
+				if (RRVtoDecoded_AngleFile.is_open()) {
+					for (int i = 0; i < RRVtoDecoded_Angle.size(); i++) {
+						RRVtoDecoded_AngleFile << std::setprecision(5) << RRVtoDecoded_Angle[i] << std::endl;
+					}
+					RRVtoDecoded_Angle.clear();
+				}
 				if (RRVtoTransmitted_MetricFile.is_open()) {
 					for (int i = 0; i < RRVtoTransmitted_Metric.size(); i++) {
 						RRVtoTransmitted_MetricFile << RRVtoTransmitted_Metric[i] << std::endl;
@@ -245,18 +271,14 @@ void ISTC_sim(CodeInformation code, int rank){
 					}
 					RRVtoDecoded_ListSize.clear();
 				}
-				if (RRVtoDecoded_AngleFile.is_open()) {
-					for (int i = 0; i < RRVtoDecoded_Angle.size(); i++) {
-						RRVtoDecoded_AngleFile << RRVtoDecoded_Angle[i] << std::endl;
-					}
-					RRVtoDecoded_Angle.clear();
-				}
 				if (RRVtoDecoded_DecodeTypeFile.is_open()) {
 					for (int i = 0; i < RRV_DecodedType.size(); i++) {
 						RRVtoDecoded_DecodeTypeFile << RRV_DecodedType[i] << std::endl;
 					}
 					RRV_DecodedType.clear();
 				}
+
+				
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
 			// num_errors = MAX_ERRORS;
 		} // while (num_mistakes < MAX_ERRORS)
@@ -272,7 +294,8 @@ void ISTC_sim(CodeInformation code, int rank){
 
 		
 
-		// RRV
+		// Close Files
+		if (STOPPING_RULE == 'R') {ROVA_Approx_File.close();}
 		RRVtoTransmitted_MetricFile.close();
 		RRVtoDecoded_MetricFile.close();
 		RRVtoDecoded_ListSizeFile.close();
@@ -379,6 +402,9 @@ void logSimulationParams() {
 	} else if (STOPPING_RULE == 'A') {
 		std::cout << "| " << std::left << std::setw(20) << "MAX ANGLE"
 						<< "| " << std::setw(10) << MAX_ANGLE << "|\n";
+	} else if (STOPPING_RULE == 'R') {
+		std::cout << "| " << std::left << std::setw(20) << "ROVA THRESHOLD"
+						<< "| " << std::setw(10) << ROVA_THRESHOLD << "|\n";		
 	} else {std::cerr << "INCORRECT STOPPING RULE! ABORT!"; exit(1);}
 	if (DECODING_RULE == 'P' || DECODING_RULE == 'N') {
 		std::cout << "| " << std::left << std::setw(20) << "DECODING RULE"
