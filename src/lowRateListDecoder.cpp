@@ -14,7 +14,7 @@ LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, in
   this->crc                   = crc;
 	this->stopping_rule					= stopping_rule;
 
-	if (this->stopping_rule != 'M' && this->stopping_rule != 'L' && this->stopping_rule != 'A') {
+	if (this->stopping_rule != 'M' && this->stopping_rule != 'L' && this->stopping_rule != 'A' && this->stopping_rule != 'R') {
 		std::cerr << "[ERROR] INVALID STOPPING RULE" << std::endl;
 	}
 }
