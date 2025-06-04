@@ -451,6 +451,6 @@ MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROV
 
 	output.listSizeExceeded = true;
 	output.listSize = numPathsSearched;
-	std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
+	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
 	return output;
 }
