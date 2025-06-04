@@ -78,7 +78,7 @@ void ROVA_sim(CodeInformation code, int rank) {
 
 			float ROVA_T = ROVA_THRESHOLD[i_rova_prob];
 			std::ostringstream rova_prob_str;
-			rova_prob_str.precision(3);
+			rova_prob_str.precision(5);
 			rova_prob_str << std::fixed << ROVA_T;
 
 			std::string folder_name;
@@ -125,7 +125,8 @@ void ROVA_sim(CodeInformation code, int rank) {
 			std::vector<float>  ROVA_Probability;
 
 			/* ==== SIMULATION begins ==== */
-			std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -**" << std::endl;
+			std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 
+			<< " and ROVA THRESHOLD = " << std::fixed << std::setprecision(5) << ROVA_THRESHOLD[i_rova_prob] << " -**" << std::endl;
 			int num_mistakes 	= 0;
 			int num_failures 	= 0;
 			int num_errors 	 	= 0; // num_mistakes + num_failures
