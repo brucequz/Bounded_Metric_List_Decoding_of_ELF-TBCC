@@ -320,7 +320,7 @@ float LowRateListDecoder::max_star(float lnx, float lny) {
 }
 
 
-MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd) {
+MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd, float rova_t) {
 	std::vector<std::vector<rova_cell>> trellisInfo;
 
 	trellisInfo = constructLowRateTrellis_ROVA_Alg4_ZT(receivedMessage, sigma_sqrd);
@@ -435,9 +435,9 @@ MessageInformation LowRateListDecoder::lowRateDecoding_SquaredDistanceMetric_ROV
 				out_queue[0].rova_probability = rova_prob;
 				
 
-				if (rova_prob < ROVA_THRESHOLD) {
-					std::cout << "returning number 1 with rova prob = " << std::setprecision(10) << rova_prob 
-					<< " is smaller than ROVA_THRESHOLD = " << std::setprecision(2) << ROVA_THRESHOLD << std::endl;
+				if (rova_prob < rova_t) {
+					// std::cout << "returning number 1 with rova prob = " << std::setprecision(10) << rova_prob 
+					// << " is smaller than ROVA_THRESHOLD = " << std::setprecision(2) << rova_t << std::endl;
 					break;
 				}
 				return out_queue[0];
