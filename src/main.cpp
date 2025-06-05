@@ -179,7 +179,7 @@ void ROVA_sim(CodeInformation code, int rank) {
 				if (DECODING_RULE == 'P') {
 					exit(5);
 				} else if (DECODING_RULE == 'N') {
-					decodingResult = listDecoder.decode(receivedMessage, puncturedIndices, sigma_sqrd, ROVA_T);
+					decodingResult = listDecoder.lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(receivedMessage, sigma_sqrd, ROVA_T);
 				}
 				
 
@@ -269,250 +269,242 @@ void ROVA_sim(CodeInformation code, int rank) {
 	} // for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++)
 }
 
-// void ISTC_sim(CodeInformation code, int rank){
+void ISTC_sim(CodeInformation code, int rank){
+	for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) {
 
-// 	for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) {
+		/* - Output files setup - */
+		float EbN0 = EBN0[ebn0_id];
+		std::ostringstream ebn0_str;
+		ebn0_str.precision(2);
+		ebn0_str << std::fixed << EbN0;
 
-// 		/* - Output files setup - */
-// 		float EbN0 = EBN0[ebn0_id];
-// 		std::ostringstream ebn0_str;
-// 		ebn0_str.precision(2);
-// 		ebn0_str << std::fixed << EbN0;
+		std::ostringstream thetad_str;
+		thetad_str.precision(4);
+		thetad_str << std::fixed << MAX_ANGLE;
 
-// 		std::ostringstream thetad_str;
-// 		thetad_str.precision(4);
-// 		thetad_str << std::fixed << MAX_ANGLE;
+		std::ostringstream nonProjDist_str;
+		nonProjDist_str.precision(4);
+		nonProjDist_str << std::fixed << MAX_METRIC;
 
-// 		std::ostringstream nonProjDist_str;
-// 		nonProjDist_str.precision(4);
-// 		nonProjDist_str << std::fixed << MAX_METRIC;
-
-// 		std::ostringstream rova_prob_str;
-// 		rova_prob_str.precision(3);
-// 		rova_prob_str << std::fixed << ROVA_THRESHOLD;
-
-// 		std::ostringstream ude_error_cnt_str;
-// 		ude_error_cnt_str.precision(1);
-// 		ude_error_cnt_str << std::fixed << MAX_ERRORS;
+		std::ostringstream ude_error_cnt_str;
+		ude_error_cnt_str.precision(1);
+		ude_error_cnt_str << std::fixed << MAX_ERRORS;
 		
-// 		std::string folder_name;
-// 		if (STOPPING_RULE == 'A' && DECODING_RULE == 'P') {
-// 			// for projected / angle decoding
-// 			folder_name = "output/BALD/Curve_Sim_thetad_" + thetad_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
-// 		} else if (DECODING_RULE == 'N' && STOPPING_RULE == 'M') {
-// 			// for non-projected decoding
-// 			folder_name = "output/ROVA/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
-// 		} else if (STOPPING_RULE == 'R') {
-// 			// ROVA
-// 			folder_name = "output/ROVA/P_" + rova_prob_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
-// 		} else {
-// 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
-// 		}
-// 		system(("mkdir -p " + folder_name).c_str());
+		std::string folder_name;
+		if (STOPPING_RULE == 'A' && DECODING_RULE == 'P') {
+			// for projected / angle decoding
+			folder_name = "output/BALD/Curve_Sim_thetad_" + thetad_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
+		} else if (DECODING_RULE == 'N' && STOPPING_RULE == 'M') {
+			// for non-projected decoding
+			folder_name = "output/ROVA/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
+		} else {
+			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
+		}
+		system(("mkdir -p " + folder_name).c_str());
 		
-// 		std::string RtoT_Metric_filename = folder_name + "/transmitted_metric.txt";
-// 		std::ofstream RRVtoTransmitted_MetricFile(RtoT_Metric_filename.c_str());
+		std::string RtoT_Metric_filename = folder_name + "/transmitted_metric.txt";
+		std::ofstream RRVtoTransmitted_MetricFile(RtoT_Metric_filename.c_str());
 
-// 		std::string RtoD_Metric_filename = folder_name + "/decoded_metric.txt";
-// 		std::ofstream RRVtoDecoded_MetricFile(RtoD_Metric_filename.c_str());
+		std::string RtoD_Metric_filename = folder_name + "/decoded_metric.txt";
+		std::ofstream RRVtoDecoded_MetricFile(RtoD_Metric_filename.c_str());
 
-// 		std::string RtoD_LS_filename = folder_name + "/decoded_listsize.txt";
-// 		std::ofstream RRVtoDecoded_ListSizeFile(RtoD_LS_filename.c_str());
+		std::string RtoD_LS_filename = folder_name + "/decoded_listsize.txt";
+		std::ofstream RRVtoDecoded_ListSizeFile(RtoD_LS_filename.c_str());
 
-// 		std::string RtoD_Angle_filename = folder_name + "/decoded_angle.txt";
-// 		std::ofstream RRVtoDecoded_AngleFile(RtoD_Angle_filename);
+		std::string RtoD_Angle_filename = folder_name + "/decoded_angle.txt";
+		std::ofstream RRVtoDecoded_AngleFile(RtoD_Angle_filename);
 		
-// 		std::string RtoD_Type_filename = folder_name + "/decoded_type.txt";
-// 		std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
+		std::string RtoD_Type_filename = folder_name + "/decoded_type.txt";
+		std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
 
-// 		std::string ROVA_Approx_filename = folder_name + "/rova_prob.txt";
-// 		std::ofstream ROVA_Approx_File(ROVA_Approx_filename);
+		std::string ROVA_Approx_filename = folder_name + "/rova_prob.txt";
+		std::ofstream ROVA_Approx_File(ROVA_Approx_filename);
 
 		
-// 		/* - Simulation esn0 setup - */
-// 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
-// 		float esn0 = 0.0; // defined as Es / N0
-// 		float offset = 10 * log10((float)K/N);
-// 		esn0 = EbN0 + offset;
+		/* - Simulation esn0 setup - */
+		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
+		float esn0 = 0.0;
+		float offset = 10 * log10((float)K/N);
+		esn0 = EbN0 + offset;
 		
-// 		/* - Trellis setup - */
-// 		FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
+		/* - Trellis setup - */
+		FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
 
-// 		/* - Decoder setup - */
-// 		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
+		/* - Decoder setup - */
+		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
 
-// 		/* - Output Temporary Holder setup - */
-// 		std::vector<float> RRVtoTransmitted_Metric;
-// 		std::vector<float> RRVtoDecoded_Metric;
-// 		std::vector<int> 		RRVtoDecoded_ListSize;
-// 		std::vector<float> RRVtoDecoded_Angle;
-// 		std::vector<int>		RRV_DecodedType;
-// 		std::vector<float>  ROVA_Probability;
+		/* - Output Temporary Holder setup - */
+		std::vector<float> RRVtoTransmitted_Metric;
+		std::vector<float> RRVtoDecoded_Metric;
+		std::vector<int> 		RRVtoDecoded_ListSize;
+		std::vector<float> RRVtoDecoded_Angle;
+		std::vector<int>		RRV_DecodedType;
+		std::vector<float>  ROVA_Probability;
 
-// 		/* ==== SIMULATION begins ==== */
-// 		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -**" << std::endl;
-// 		int num_mistakes 	= 0;
-// 		int num_failures 	= 0;
-// 		int num_errors 	 	= 0; // num_mistakes + num_failures
-// 		int num_trials	 	= 0;
+		/* ==== SIMULATION begins ==== */
+		std::cout << std::endl << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -**" << std::endl;
+		int num_mistakes 	= 0;
+		int num_failures 	= 0;
+		int num_errors 	 	= 0; // num_mistakes + num_failures
+		int num_trials	 	= 0;
 
-// 		// lambda to decide if we continue the loop or not
-// 		auto should_continue = [&]() -> bool {
-// 			if (ERROR_RUN_TYPE == 'U') {
-// 					return num_mistakes < MAX_ERRORS;
-// 			} else if (ERROR_RUN_TYPE == 'T') {
-// 					return num_errors < MAX_ERRORS;
-// 			} else {
-// 					throw std::runtime_error("Unknown TER_TYPE");
-// 			}
-// 		};
+		// lambda to decide if we continue the loop or not
+		auto should_continue = [&]() -> bool {
+			if (ERROR_RUN_TYPE == 'U') {
+					return num_mistakes < MAX_ERRORS;
+			} else if (ERROR_RUN_TYPE == 'T') {
+					return num_errors < MAX_ERRORS;
+			} else {
+					throw std::runtime_error("Unknown TER_TYPE");
+			}
+		};
 
-// 		auto should_end_of_file_log = [&]() -> bool {
-// 			if (ERROR_RUN_TYPE == 'U') {
-// 				return num_mistakes == MAX_ERRORS;
-// 			} else if (ERROR_RUN_TYPE == 'T') {
-// 				// std::cout << "num_errors = " << num_errors << std::endl;
-// 				return num_errors == MAX_ERRORS;
-// 			} else {
-// 				throw std::runtime_error("Unknown TER_TYPE");
-// 			}
-// 		};
+		auto should_end_of_file_log = [&]() -> bool {
+			if (ERROR_RUN_TYPE == 'U') {
+				return num_mistakes == MAX_ERRORS;
+			} else if (ERROR_RUN_TYPE == 'T') {
+				// std::cout << "num_errors = " << num_errors << std::endl;
+				return num_errors == MAX_ERRORS;
+			} else {
+				throw std::runtime_error("Unknown TER_TYPE");
+			}
+		};
 
-// 		while (should_continue()) {
+		while (should_continue()) {
 			
-// 			// std::cout << "Checkpoint 0" << std::endl; 
-// 			std::vector<int> originalMessage = generateRandomCRCMessage(code);
-// 			// std::cout << "original message: ";
-// 			// utils::print_int_vector(originalMessage);
-// 			// std::cout << std::endl;
-// 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, esn0, puncturedIndices, NOISELESS);
-// 			// transmittedMessage = {1, 1, -1, -1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, 1, -1, -1, -1, -1, 1, -1, 1, 1, 1, -1, 1, -1, 1, -1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1};
-// 			// std::cout << "transmitted message: ";
-// 			// utils::print_int_vector(transmittedMessage);
-// 			// std::cout << ", length = " << transmittedMessage.size() << std::endl;
-// 			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, esn0, NOISELESS);
-// 			// std::cout << "received message: ";
-// 			// utils::print_float_vector(receivedMessage);
-// 			// std::cout << std::endl;
+			// std::cout << "Checkpoint 0" << std::endl; 
+			std::vector<int> originalMessage = generateRandomCRCMessage(code);
+			// std::cout << "original message: ";
+			// utils::print_int_vector(originalMessage);
+			// std::cout << std::endl;
+			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis, esn0, puncturedIndices, NOISELESS);
+			// transmittedMessage = {1, 1, -1, -1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, 1, -1, -1, -1, -1, 1, -1, 1, 1, 1, -1, 1, -1, 1, -1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1};
+			// std::cout << "transmitted message: ";
+			// utils::print_int_vector(transmittedMessage);
+			// std::cout << ", length = " << transmittedMessage.size() << std::endl;
+			std::vector<float> receivedMessage = addAWNGNoise(transmittedMessage, puncturedIndices, esn0, NOISELESS);
+			// std::cout << "received message: ";
+			// utils::print_float_vector(receivedMessage);
+			// std::cout << std::endl;
 
-// 			// Transmitted statistics
-// 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
+			// Transmitted statistics
+			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
-// 			// Project Received Message onto the codeword sphere
-// 			MessageInformation decodingResult;
-// 			float sigma_sqrd = pow(10.0, -esn0 / 10.0) / 2.0;
-// 			if (DECODING_RULE == 'P') {
-// 				float received_word_energy = utils::compute_vector_energy(receivedMessage);
-// 				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
-// 				std::vector<float> projected_received_word(receivedMessage.size(), 0.0);
-// 				for (size_t i = 0; i < receivedMessage.size(); i++) {
-// 					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
-// 				}
-// 				// Decoding
-// 				decodingResult = listDecoder.decode(projected_received_word, puncturedIndices, sigma_sqrd);
-// 			} else if (DECODING_RULE == 'N') {
-// 				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices, sigma_sqrd);
-// 			}
+			// Project Received Message onto the codeword sphere
+			MessageInformation decodingResult;
+			float sigma_sqrd = pow(10.0, -esn0 / 10.0) / 2.0;
+			if (DECODING_RULE == 'P') {
+				float received_word_energy = utils::compute_vector_energy(receivedMessage);
+				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
+				std::vector<float> projected_received_word(receivedMessage.size(), 0.0);
+				for (size_t i = 0; i < receivedMessage.size(); i++) {
+					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
+				}
+				// Decoding
+				decodingResult = listDecoder.decode(projected_received_word, puncturedIndices, sigma_sqrd);
+			} else if (DECODING_RULE == 'N') {
+				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices, sigma_sqrd);
+			}
 			
 
-// 			// RRV
-// 			if (!decodingResult.listSizeExceeded && decodingResult.message == originalMessage) {
-// 				// correct decoding
-// 				RRV_DecodedType.push_back(0);
-// 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
-// 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
-// 				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
-// 				ROVA_Probability.push_back(decodingResult.rova_probability);
-// 			} else if(decodingResult.listSizeExceeded) {
-// 				// list size exceeded
-// 				RRV_DecodedType.push_back(1);
-// 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
-// 				num_failures++;
-// 				std::cout << "List size exceeded! num_failures = " << num_failures << std::endl;
-// 			} else { 
-// 				// incorrect decoding
-// 				RRV_DecodedType.push_back(2);
-// 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
-// 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
-// 				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
-// 				ROVA_Probability.push_back(decodingResult.rova_probability);
-// 				num_mistakes++;
-// 				std::cout << "Undetected error! num_mistakes = " << num_mistakes << std::endl;
-// 			}
+			// RRV
+			if (!decodingResult.listSizeExceeded && decodingResult.message == originalMessage) {
+				// correct decoding
+				RRV_DecodedType.push_back(0);
+				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
+				RRVtoDecoded_Metric.push_back(decodingResult.metric);
+				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
+				ROVA_Probability.push_back(decodingResult.rova_probability);
+			} else if(decodingResult.listSizeExceeded) {
+				// list size exceeded
+				RRV_DecodedType.push_back(1);
+				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
+				num_failures++;
+				std::cout << "List size exceeded! num_failures = " << num_failures << std::endl;
+			} else { 
+				// incorrect decoding
+				RRV_DecodedType.push_back(2);
+				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
+				RRVtoDecoded_Metric.push_back(decodingResult.metric);
+				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
+				ROVA_Probability.push_back(decodingResult.rova_probability);
+				num_mistakes++;
+				std::cout << "Undetected error! num_mistakes = " << num_mistakes << std::endl;
+			}
 
-// 			// Increment errors and trials
-// 			num_errors = num_mistakes + num_failures;
-// 			num_trials += 1;
+			// Increment errors and trials
+			num_errors = num_mistakes + num_failures;
+			num_trials += 1;
 
-// 			if (num_trials % LOGGING_ITERS == 0 || should_end_of_file_log()) {
-// 				if (ERROR_RUN_TYPE == 'U') {std::cout << "numTrials = " << num_trials << ", number of undetected errors = " << num_mistakes << std::endl;}
-// 				if (ERROR_RUN_TYPE == 'T') {std::cout << "numTrials = " << num_trials << ", number of total errors = " << num_errors << std::endl;}
+			if (num_trials % LOGGING_ITERS == 0 || should_end_of_file_log()) {
+				if (ERROR_RUN_TYPE == 'U') {std::cout << "numTrials = " << num_trials << ", number of undetected errors = " << num_mistakes << std::endl;}
+				if (ERROR_RUN_TYPE == 'T') {std::cout << "numTrials = " << num_trials << ", number of total errors = " << num_errors << std::endl;}
 				 
-// 				// RRV Write to file
-// 				if (STOPPING_RULE == 'R' && ROVA_Approx_File.is_open()) {
-// 					for (int i = 0; i < ROVA_Probability.size(); i++) {
-// 						ROVA_Approx_File << std::setprecision(5) << ROVA_Probability[i] << std::endl;
-// 					}
-// 					ROVA_Probability.clear();
-// 				}
-// 				if (RRVtoDecoded_AngleFile.is_open()) {
-// 					for (int i = 0; i < RRVtoDecoded_Angle.size(); i++) {
-// 						RRVtoDecoded_AngleFile << std::setprecision(5) << RRVtoDecoded_Angle[i] << std::endl;
-// 					}
-// 					RRVtoDecoded_Angle.clear();
-// 				}
-// 				if (RRVtoTransmitted_MetricFile.is_open()) {
-// 					for (int i = 0; i < RRVtoTransmitted_Metric.size(); i++) {
-// 						RRVtoTransmitted_MetricFile << RRVtoTransmitted_Metric[i] << std::endl;
-// 					}
-// 					RRVtoTransmitted_Metric.clear();
-// 				}
-// 				if (RRVtoDecoded_MetricFile.is_open()) {
-// 					for (int i = 0; i < RRVtoDecoded_Metric.size(); i++) {
-// 						RRVtoDecoded_MetricFile << RRVtoDecoded_Metric[i] << std::endl;
-// 					}
-// 					RRVtoDecoded_Metric.clear();
-// 				}
-// 				if (RRVtoDecoded_ListSizeFile.is_open()) {
-// 					for (int i = 0; i < RRVtoDecoded_ListSize.size(); i++) {
-// 						RRVtoDecoded_ListSizeFile << RRVtoDecoded_ListSize[i] << std::endl;
-// 					}
-// 					RRVtoDecoded_ListSize.clear();
-// 				}
-// 				if (RRVtoDecoded_DecodeTypeFile.is_open()) {
-// 					for (int i = 0; i < RRV_DecodedType.size(); i++) {
-// 						RRVtoDecoded_DecodeTypeFile << RRV_DecodedType[i] << std::endl;
-// 					}
-// 					RRV_DecodedType.clear();
-// 				}
+				// RRV Write to file
+				if (STOPPING_RULE == 'R' && ROVA_Approx_File.is_open()) {
+					for (int i = 0; i < ROVA_Probability.size(); i++) {
+						ROVA_Approx_File << std::setprecision(5) << ROVA_Probability[i] << std::endl;
+					}
+					ROVA_Probability.clear();
+				}
+				if (RRVtoDecoded_AngleFile.is_open()) {
+					for (int i = 0; i < RRVtoDecoded_Angle.size(); i++) {
+						RRVtoDecoded_AngleFile << std::setprecision(5) << RRVtoDecoded_Angle[i] << std::endl;
+					}
+					RRVtoDecoded_Angle.clear();
+				}
+				if (RRVtoTransmitted_MetricFile.is_open()) {
+					for (int i = 0; i < RRVtoTransmitted_Metric.size(); i++) {
+						RRVtoTransmitted_MetricFile << RRVtoTransmitted_Metric[i] << std::endl;
+					}
+					RRVtoTransmitted_Metric.clear();
+				}
+				if (RRVtoDecoded_MetricFile.is_open()) {
+					for (int i = 0; i < RRVtoDecoded_Metric.size(); i++) {
+						RRVtoDecoded_MetricFile << RRVtoDecoded_Metric[i] << std::endl;
+					}
+					RRVtoDecoded_Metric.clear();
+				}
+				if (RRVtoDecoded_ListSizeFile.is_open()) {
+					for (int i = 0; i < RRVtoDecoded_ListSize.size(); i++) {
+						RRVtoDecoded_ListSizeFile << RRVtoDecoded_ListSize[i] << std::endl;
+					}
+					RRVtoDecoded_ListSize.clear();
+				}
+				if (RRVtoDecoded_DecodeTypeFile.is_open()) {
+					for (int i = 0; i < RRV_DecodedType.size(); i++) {
+						RRVtoDecoded_DecodeTypeFile << RRV_DecodedType[i] << std::endl;
+					}
+					RRV_DecodedType.clear();
+				}
 
 				
-// 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-// 			// num_errors = MAX_ERRORS;
-// 		} // while (num_mistakes < MAX_ERRORS)
+			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
+			// num_errors = MAX_ERRORS;
+		} // while (num_mistakes < MAX_ERRORS)
 
-// 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
-// 		std::cout << "number of total errors: " << num_errors << std::endl;
-// 		std::cout << "number of undetected errors: " << num_mistakes << std::endl;
-// 		std::cout << "number of detected errors: " << num_failures << std::endl;
-// 		std::cout << "Undetected Error Rate: " << std::scientific << (float)num_mistakes/num_trials << std::endl;
-// 		std::cout << "Detected Error Rate: " << std::scientific << (float)num_failures/num_trials << std::endl;
-// 		std::cout << "TFR: " << (float)num_errors/num_trials << std::endl;
-// 		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -*" << std::endl;
+		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
+		std::cout << "number of total errors: " << num_errors << std::endl;
+		std::cout << "number of undetected errors: " << num_mistakes << std::endl;
+		std::cout << "number of detected errors: " << num_failures << std::endl;
+		std::cout << "Undetected Error Rate: " << std::scientific << (float)num_mistakes/num_trials << std::endl;
+		std::cout << "Detected Error Rate: " << std::scientific << (float)num_failures/num_trials << std::endl;
+		std::cout << "TFR: " << (float)num_errors/num_trials << std::endl;
+		std::cout << "*- Simulation Concluded for EbN0 = " << std::fixed << std::setprecision(2) << EbN0 << " -*" << std::endl;
 
 		
 
-// 		// Close Files
-// 		if (STOPPING_RULE == 'R') {ROVA_Approx_File.close();}
-// 		RRVtoTransmitted_MetricFile.close();
-// 		RRVtoDecoded_MetricFile.close();
-// 		RRVtoDecoded_ListSizeFile.close();
-// 		RRVtoDecoded_DecodeTypeFile.close();
-// 		RRVtoDecoded_AngleFile.close();
-// 	} // for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) 
+		// Close Files
+		if (STOPPING_RULE == 'R') {ROVA_Approx_File.close();}
+		RRVtoTransmitted_MetricFile.close();
+		RRVtoDecoded_MetricFile.close();
+		RRVtoDecoded_ListSizeFile.close();
+		RRVtoDecoded_DecodeTypeFile.close();
+		RRVtoDecoded_AngleFile.close();
+	} // for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) 
 
-// 	std::cout << "***--- Simulation Concluded ---***" << std::endl;
-// }
+	std::cout << "***--- Simulation Concluded ---***" << std::endl;
+}
 
 
 // this generates a random binary string of length code.numInfoBits, and appends the appropriate CRC bits

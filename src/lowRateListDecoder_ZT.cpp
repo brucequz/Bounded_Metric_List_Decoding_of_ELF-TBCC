@@ -1,7 +1,7 @@
 #include "lowRateListDecoder.h"
 
 // construct ZT trellis
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_ZT(std::vector<float> receivedMessage){
+std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_ZT(std::vector<float> receivedMessage, METRIC_TYPE metric_type){
 	std::vector<std::vector<cell>> trellisInfo;
 	lowrate_pathLength = (receivedMessage.size() / lowrate_symbolLength) + 1;
 
@@ -33,7 +33,11 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 				std::vector<int> output_point = crc::get_point(lowrate_outputs[currentState][forwardPathIndex], lowrate_symbolLength);
 				
 				for(int i = 0; i < lowrate_symbolLength; i++){
-					branchMetric += -1 * (receivedMessage[lowrate_symbolLength * stage + i] * (float)output_point[i]);
+					if (metric_type == METRIC_TYPE::PRODUCT_METRIC) {
+						branchMetric += -1 * (receivedMessage[lowrate_symbolLength * stage + i] * (float)output_point[i]);
+					} else if (metric_type == METRIC_TYPE::EUCLIDEAN_METRIC) {
+						branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i], 2);
+					}
 				}
 				float totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
 				
@@ -79,7 +83,11 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 			std::vector<int> output_point = crc::get_point(lowrate_outputs[currentState][forwardPathIndex], lowrate_symbolLength);
 			
 			for(int i = 0; i < lowrate_symbolLength; i++){
-				branchMetric += -1 * (receivedMessage[lowrate_symbolLength * stage + i] * (float)output_point[i]);
+				if (metric_type == METRIC_TYPE::PRODUCT_METRIC) {
+					branchMetric += -1 * (receivedMessage[lowrate_symbolLength * stage + i] * (float)output_point[i]);
+				} else if (metric_type == METRIC_TYPE::EUCLIDEAN_METRIC) {
+					branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i], 2);
+				}
 			}
 			float totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
 			
@@ -108,7 +116,7 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage) {
 	std::vector<std::vector<cell>> trellisInfo;
 
-	trellisInfo = constructLowRateTrellis_ZT(receivedMessage);
+	trellisInfo = constructLowRateTrellis_ZT(receivedMessage, METRIC_TYPE::PRODUCT_METRIC);
 
 	// start search
 	MessageInformation output;
@@ -205,6 +213,111 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT
 		if(path[0] == path[lowrate_pathLength - 1])
 			TBPathsSearched++;
 	} // while(currentAngleExplored < MAX_ANGLE)
+
+	output.listSizeExceeded = true;
+	output.listSize = numPathsSearched;
+	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
+	return output;
+}
+
+MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric_EuclideanMetric_ZT(std::vector<float> receivedMessage) {
+	std::vector<std::vector<cell>> trellisInfo;
+
+	trellisInfo = constructLowRateTrellis_ZT(receivedMessage, METRIC_TYPE::EUCLIDEAN_METRIC);
+
+	// start search
+	MessageInformation output;
+	//RBTree detourTree;
+	MinHeap detourTree;
+	std::vector<std::vector<int>> previousPaths;
+	
+
+	// create nodes for each valid ending state with no detours
+	for(int i = 0; i < lowrate_numStates; i++){
+		DetourObject detour;
+		detour.startingState = i;
+		detour.pathMetric = trellisInfo[i][lowrate_pathLength - 1].pathMetric;
+		detourTree.insert(detour);
+	}
+
+	int numPathsSearched = 0;
+	int TBPathsSearched = 0;
+	float currentMetricExplored = 0.0;
+	
+	while(currentMetricExplored < MAX_METRIC){
+		DetourObject detour = detourTree.pop();
+		// std::cout << "floatp detour tree item: " << detour.pathMetric << std::endl;
+		std::vector<int> path(lowrate_pathLength);
+
+		int newTracebackStage = lowrate_pathLength - 1;
+		float forwardPartialPathMetric = 0;
+		int currentState = detour.startingState;
+
+		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
+		// detour from the previous path
+		if(detour.originalPathIndex != -1){
+			forwardPartialPathMetric = detour.forwardPathMetric;
+			newTracebackStage = detour.detourStage;
+
+			// while we only need to copy the path from the detour to the end, this simplifies things,
+			// and we'll write over the earlier data in any case
+			path = previousPaths[detour.originalPathIndex];
+			currentState = path[newTracebackStage];
+
+			float suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
+
+			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
+			newTracebackStage--;
+			
+			float prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
+
+			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
+			
+		}
+		path[newTracebackStage] = currentState;
+
+		// actually tracing back
+		for(int stage = newTracebackStage; stage > 0; stage--){
+			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
+			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
+
+			// if there is a detour we add to the detourTree
+			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
+				DetourObject localDetour;
+				localDetour.detourStage = stage;
+				localDetour.originalPathIndex = numPathsSearched;
+				localDetour.pathMetric = suboptimalPathMetric + forwardPartialPathMetric;
+				localDetour.forwardPathMetric = forwardPartialPathMetric;
+				localDetour.startingState = detour.startingState;
+				detourTree.insert(localDetour);
+			}
+			currentState = trellisInfo[currentState][stage].optimalFatherState;
+			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
+			forwardPartialPathMetric += currPathMetric - prevPathMetric;
+			path[stage - 1] = currentState;
+		} // for(int stage = newTracebackStage; stage > 0; stage--)
+		
+		previousPaths.push_back(path);
+		std::vector<int> message = pathToMessage_ZT(path);
+		currentMetricExplored = forwardPartialPathMetric;
+		// std::cout << "current Metric Explored: " << currentMetricExplored << std::endl;
+		
+		// one trellis decoding requires both a tb and crc check
+		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcDegree, crc) && currentMetricExplored <= MAX_METRIC){
+			output.message = message;
+			output.path = path;
+			output.listSize = numPathsSearched + 1;
+			output.metric = forwardPartialPathMetric;
+			output.TBListSize = TBPathsSearched + 1;
+			// std::cout << "returning metric = " << forwardPartialPathMetric << std::endl;
+			// std::cout << "--" << std::endl;
+			return output;
+		}
+
+		numPathsSearched++;
+		if(path[0] == path[lowrate_pathLength - 1])
+			TBPathsSearched++;
+	} // while(currentMetricExplored < MAX_METRIC)
 
 	output.listSizeExceeded = true;
 	output.listSize = numPathsSearched;

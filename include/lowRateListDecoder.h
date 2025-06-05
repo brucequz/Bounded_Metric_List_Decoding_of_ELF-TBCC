@@ -12,12 +12,16 @@
 #include "namespace.h"
 #include "../consts.h"
 
+enum class METRIC_TYPE {
+	PRODUCT_METRIC = 1,
+	EUCLIDEAN_METRIC = 2
+};
+
 class LowRateListDecoder{
 public:
 	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc, char stopping_rule);
 
-	/* - Floating Point - */
-	MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd, float rova_t);
+	MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd);
 	MessageInformation lowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxAngle(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
@@ -25,6 +29,10 @@ public:
 
 	// ZT
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage);
+	MessageInformation lowRateDecoding_MaxMetric_EuclideanMetric_ZT(std::vector<float> receivedMessage);
+
+	// ROVA
+	MessageInformation decode_ROVA(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd, float rova_t);
 	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd, float rova_t);
 
 private:
@@ -72,10 +80,11 @@ private:
 	std::vector<std::vector<cell>> constructLowRateTrellis(std::vector<float> receivedMessage);
 
 	// ZT
-	std::vector<std::vector<cell>> constructLowRateTrellis_ZT(std::vector<float> receivedMessage);
-	// ZT ROVA
-	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_Alg2_ZT(std::vector<float> receivedMessage);
+	// constructs the trellis with rova information
 	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_Alg4_ZT(std::vector<float> receivedMessage, float sigma_sqrd);
+	// construct the trellis using either product/euclidean distance metric
+	std::vector<std::vector<cell>> constructLowRateTrellis_ZT(std::vector<float> receivedMessage, METRIC_TYPE metric_type);
+	// computes the path likelihood Gamma in logarithm
 	float compute_logGamma(std::vector<float> receivedMessage, std::vector<int> codeword, float sigma_sqrd);
 	// computes max star approximation in BCJR decoding
 	float max_star(float lnx, float lny);
