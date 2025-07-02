@@ -58,8 +58,22 @@ int main(int argc, char *argv[]) {
 	
 	if (STOPPING_RULE == 'R') {
 		ROVA_sim(code, world_rank);
-	} else {
-		ISTC_sim(code, world_rank);  // Run simulation
+	} else if (STOPPING_RULE == 'M' && DECODING_RULE == 'N') {
+		if (MAX_METRIC_VEC.size() >= 2) {
+			for (int i = MAX_METRIC_VEC.size()-1; i >= 0; i--) {
+				MAX_METRIC = MAX_METRIC_VEC[i];
+				std::cout << "MAX_METRIC = " << MAX_METRIC << std::endl;
+				ISTC_sim(code, world_rank);  // Run simulation
+			}
+		}
+	} else if (STOPPING_RULE == 'A' && DECODING_RULE == 'P') {
+		if (MAX_ANGLE_VEC.size() >= 1) {
+			for (int i = MAX_ANGLE_VEC.size()-1; i >= 0; i--) {
+				MAX_ANGLE = MAX_ANGLE_VEC[i];
+				std::cout << "MAX_ANGLE = " << MAX_ANGLE << std::endl;
+				ISTC_sim(code, world_rank);  // Run simulation
+			}
+		}
 	}
 
 	MPI_Finalize();
@@ -292,11 +306,11 @@ void ISTC_sim(CodeInformation code, int rank){
 		
 		std::string folder_name;
 		if (STOPPING_RULE == 'A' && DECODING_RULE == 'P') {
-			// for projected / angle decoding
+			// for projected & angle decoding
 			folder_name = "output/BALD/Curve_Sim_thetad_" + thetad_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else if (DECODING_RULE == 'N' && STOPPING_RULE == 'M') {
 			// for non-projected decoding
-			folder_name = "output/ROVA/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
+			folder_name = "output/BDLD/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
 		}
@@ -420,7 +434,7 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRV_DecodedType.push_back(1);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				num_failures++;
-				std::cout << "List size exceeded! num_failures = " << num_failures << std::endl;
+				// std::cout << "List size exceeded! num_failures = " << num_failures << std::endl;
 			} else { 
 				// incorrect decoding
 				RRV_DecodedType.push_back(2);
@@ -437,7 +451,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			num_trials += 1;
 
 			if (num_trials % LOGGING_ITERS == 0 || should_end_of_file_log()) {
-				if (ERROR_RUN_TYPE == 'U') {std::cout << "numTrials = " << num_trials << ", number of undetected errors = " << num_mistakes << std::endl;}
+				if (ERROR_RUN_TYPE == 'U') {std::cout << "numTrials = " << num_trials << ", number of undetected errors = " << num_mistakes << ", number of total errors = " << num_errors << std::endl;}
 				if (ERROR_RUN_TYPE == 'T') {std::cout << "numTrials = " << num_trials << ", number of total errors = " << num_errors << std::endl;}
 				 
 				// RRV Write to file

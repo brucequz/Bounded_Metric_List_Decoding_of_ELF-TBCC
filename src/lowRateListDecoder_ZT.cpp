@@ -194,8 +194,6 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT
 
 		std::vector<int> message = pathToMessage_ZT(path);
 
-		// another way to compute the angle
-		// currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword);
 		currentAngleExplored = std::acos( std::max(-1.0f, std::min(1.0f, -forwardPartialPathMetric/N)) );
 		
 		// one trellis decoding requires both a tb and crc check
@@ -206,6 +204,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT
 			output.metric = forwardPartialPathMetric;
 			output.TBListSize = TBPathsSearched + 1;
 			output.angle_received_decoded_rad = currentAngleExplored;
+			// std::cout << "returning angle = " << currentAngleExplored << std::endl;
 			return output;
 		}
 
@@ -321,7 +320,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric_EuclideanMetric
 
 	output.listSizeExceeded = true;
 	output.listSize = numPathsSearched;
-	std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
+	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
 	return output;
 }
 
