@@ -1,7 +1,6 @@
-OBJS = src/main.o src/feedForwardTrellis.o src/lowRateListDecoder.o
 CXX = mpicxx
-CXXFLAGS = -std=c++17 -Wall -I include -O2
-
+CXXFLAGS = -std=c++17 -Wall -Wextra -I include -O2
+LDFLAGS = 
 
 # Directories
 SRC_DIR = src
@@ -11,21 +10,24 @@ CONFIG ?= K64N128
 
 # Create a list of all source and object files
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
-OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRC_FILES))
+BALD_SRC_FILES = $(filter-out $(SRC_DIR)/rova_sim.cpp, $(SRC_FILES))
+ROVA_SRC_FILES = $(filter-out $(SRC_DIR)/bald_sim.cpp, $(SRC_FILES))
+BALD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BALD_SRC_FILES))
+ROVA_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(ROVA_SRC_FILES))
 
 # Executable name
-TARGET = main
+BALD_TARGET = bald
+ROVA_TARGET = rova
 
 # Default rule
-all: clean consts.h $(TARGET)
+$(BALD_TARGET): clean consts.h $(BALD_OBJ_FILES) 
+	$(CXX) $(LDFLAGS) $(BALD_OBJ_FILES) -o $@
 
+$(ROVA_TARGET): clean consts.h $(ROVA_OBJ_FILES) 
+	$(CXX) $(LDFLAGS) $(ROVA_OBJ_FILES) -o $@
 
 consts.h:
 	cp $(INCLUDE_DIR)/consts_$(CONFIG).h consts.h
-
-# Rule to link object files and create the final
-$(TARGET): $(OBJ_FILES)
-		$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJ_FILES)
 
 # Rule to compile source files into object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
@@ -37,7 +39,7 @@ $(BUILD_DIR):
 
 # Clean up build files
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET) consts.h
+	rm -rf $(BUILD_DIR) $(BALD_TARGET) $(ROVA_TARGET) consts.h
 
 # Rule to clean up object files
 clean_obj:

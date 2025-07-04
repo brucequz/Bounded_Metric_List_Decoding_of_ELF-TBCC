@@ -1,4 +1,3 @@
-
 #ifndef LOWRATELISTDECODER_H
 #define LOWRATELISTDECODER_H
 
@@ -9,8 +8,6 @@
 #include "feedForwardTrellis.h"
 #include "minHeap.h"
 #include "types.h"
-#include "namespace.h"
-#include "../consts.h"
 
 enum class METRIC_TYPE {
 	PRODUCT_METRIC = 1,

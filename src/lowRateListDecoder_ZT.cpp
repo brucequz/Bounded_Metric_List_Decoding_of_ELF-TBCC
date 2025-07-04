@@ -328,7 +328,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric_EuclideanMetric
 // converts a path through the ztcc trellis to the binary message it corresponds with
 std::vector<int> LowRateListDecoder::pathToMessage_ZT(std::vector<int> path){
 	std::vector<int> message;
-	for(int pathIndex = 0; pathIndex < path.size() - 1 - V; pathIndex++){
+	for(size_t pathIndex = 0; pathIndex < path.size() - 1 - V; pathIndex++){
 		for(int forwardPath = 0; forwardPath < numForwardPaths; forwardPath++){
 			if(lowrate_nextStates[path[pathIndex]][forwardPath] == path[pathIndex + 1])
 				message.push_back(forwardPath);

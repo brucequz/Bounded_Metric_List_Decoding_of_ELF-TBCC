@@ -21,6 +21,8 @@ float normpdf(float x, float mu = 0.0, float sigma = 1.0);
 
 float log_normpdf(float x, float mu, float sigma);
 
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esn0, bool noiseless);
+
 } // namespace awgn
 
 namespace crc {
@@ -38,6 +40,8 @@ std::vector<int> get_point(int output, int n);
 bool crc_check(std::vector<int> input_data, int crc_bits_num, int crc_dec);
 
 void crc_calculation(std::vector<int>& input_data, int crc_bits_num, int crc_dec);
+
+std::vector<int> generateRandomCRCMessage(CodeInformation code);
 
 } // namespace crc
 

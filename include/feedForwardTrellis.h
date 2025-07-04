@@ -2,6 +2,8 @@
 #define FEEDFORWARDTRELLIS_H
 #include <vector>
 #include <string>
+#include "../consts.h"
+#include "namespace.h"
 
 class FeedForwardTrellis {
 public:

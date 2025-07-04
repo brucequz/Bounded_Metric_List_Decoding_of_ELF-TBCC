@@ -29,8 +29,8 @@ DetourObject MinHeap::pop() {
 DetourObject MinHeap::top() { return detourList[0]; }
 
 void MinHeap::reHeap(int index) {
-  int leftIndex = leftChildIndex(index);
-  int rightIndex = rightChildIndex(index);
+  unsigned int leftIndex = leftChildIndex(index);
+  unsigned int rightIndex = rightChildIndex(index);
   int minDetourIndex = index;
   if (leftIndex < detourList.size() &&
       detourList[leftIndex] < detourList[minDetourIndex])

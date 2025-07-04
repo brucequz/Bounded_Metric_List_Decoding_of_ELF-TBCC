@@ -15,7 +15,7 @@ std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR) {
   float sigma = sqrt(variance);
   std::normal_distribution<float> distribution(0.0, sigma);
 
-  for (int i = 0; i < encodedMsg.size(); i++) {
+  for (size_t i = 0; i < encodedMsg.size(); i++) {
     noisyMsg.push_back(encodedMsg[i] + distribution(generator));
   }
   return noisyMsg;
@@ -32,6 +32,31 @@ float log_normpdf(float x, float mu, float sigma) {
 	/* returns the log of the probability density function of the standard normal distribution, evaluated at the values in x 
 	*/
 	return std::log(1.0/(sqrt(2*M_PI)*sigma)) - 0.5 * pow(((x - mu) / sigma), 2);
+}
+
+// this takes the transmitted message and adds AWGN noise to it
+// it also punctures the bits that are not used in the trellis
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esn0, bool noiseless){
+	std::vector<float> receivedMessage;
+	if(noiseless){
+		for(size_t i = 0; i < transmittedMessage.size(); i++)
+			receivedMessage.push_back((float)transmittedMessage[i]);
+	} else {
+		receivedMessage = awgn::addNoise(transmittedMessage, esn0);
+	}
+
+	// puncture the bits. it is more convenient to puncture on this side than on the 
+	// decoder, so we insert zeros which provide no information to the decoder
+	for(size_t index = 0; index < puncturedIndices.size(); index++) {
+		if (puncturedIndices[index] > (int)receivedMessage.size()) {
+			std::cout << "out of bounds index: " << puncturedIndices[index] << std::endl;
+			std::cerr << "Puncturing index out of bounds" << std::endl;
+			exit(1);
+		}
+		receivedMessage[puncturedIndices[index]] = 0;
+	}
+
+	return receivedMessage;
 }
 
 
@@ -102,6 +127,17 @@ void crc_calculation(std::vector<int>& input_data, int crc_bits_num, int crc_dec
 	for (int ii = length; ii < (int)output_data.size(); ii++){ input_data[ii] = output_data[ii];}
 }
 
+// this generates a random binary string of length code.numInfoBits, and appends the appropriate CRC bits
+std::vector<int> generateRandomCRCMessage(CodeInformation code){
+	std::vector<int> info_crc;
+	for(int i = 0; i < code.numInfoBits; i++)
+		info_crc.push_back(rand()%2);
+
+	// compute the CRC
+	crc_calculation(info_crc, code.crcDeg, code.crc);
+	return info_crc;
+}
+
 } // namespace crc
 
 namespace utils {
@@ -110,7 +146,7 @@ namespace utils {
 void print_float_vector(std::vector<float> vector){
 	if(vector.size() == 0)
 		return;
-	for(int i = 0; i < vector.size() - 1; i++){
+	for(size_t i = 0; i < vector.size() - 1; i++){
 		std::cout << std::setprecision(5) << vector[i] << ", ";
 	}
 	std::cout << vector[vector.size() - 1] << std::endl;
@@ -120,7 +156,7 @@ void print_float_vector(std::vector<float> vector){
 void print_int_vector(std::vector<int> vector){
 	if(vector.size() == 0)
 		return;
-	for(int i = 0; i < vector.size() - 1; i++){
+	for(size_t i = 0; i < vector.size() - 1; i++){
 		std::cout << vector[i] << ", ";
 	}
 	std::cout << vector[vector.size() - 1] << std::endl;
@@ -130,7 +166,7 @@ void print_int_vector(std::vector<int> vector){
 void output_int_vector(std::vector<int> vector, std::ofstream& file){
 	if(vector.size() == 0)
 		return;
-	for(int i = 0; i < vector.size() - 1; i++){
+	for(size_t i = 0; i < vector.size() - 1; i++){
 		file << vector[i] << ", ";
 	}
 	file << vector[vector.size() - 1] << std::endl;
@@ -139,7 +175,7 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file){
 float compute_vector_energy(std::vector<float> vector){
 	if (vector.size() == 0) std::cerr << "EMPTY VECTOR!" << std::endl;
 	float sum_of_squares = 0.0;
-	for (int i = 0; i < vector.size(); i++) {
+	for (size_t i = 0; i < vector.size(); i++) {
 		sum_of_squares += vector[i] * vector[i];
 	}
 	return sum_of_squares;
