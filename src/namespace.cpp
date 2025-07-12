@@ -6,17 +6,21 @@ namespace awgn {
 
 std::default_random_engine generator;
 
-std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR) {
+std::vector<float> addNoise(std::vector<int> encodedMsg, float esno_dB) {
   std::vector<float> noisyMsg;
 
-  float variance = pow(10.0, -SNR / 10.0) / 2.0;
+  float variance = pow(10.0, -esno_dB / 10.0) / 2.0;
 	// std::cout << "variance" << std::fixed << std::setprecision(4) << variance << std::endl;
 
   float sigma = sqrt(variance);
   std::normal_distribution<float> distribution(0.0, sigma);
 
+	float esno = pow(10.0, esno_dB / 10.0);
+	std::normal_distribution<float> llr_distribution(4*esno, std::sqrt(8*esno));
+
   for (size_t i = 0; i < encodedMsg.size(); i++) {
-    noisyMsg.push_back(encodedMsg[i] + distribution(generator));
+    // noisyMsg.push_back(encodedMsg[i] + distribution(generator));
+		noisyMsg.push_back(encodedMsg[i] * llr_distribution(generator));
   }
   return noisyMsg;
 }
@@ -36,13 +40,13 @@ float log_normpdf(float x, float mu, float sigma) {
 
 // this takes the transmitted message and adds AWGN noise to it
 // it also punctures the bits that are not used in the trellis
-std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esn0, bool noiseless){
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esno_dB, bool noiseless){
 	std::vector<float> receivedMessage;
 	if(noiseless){
 		for(size_t i = 0; i < transmittedMessage.size(); i++)
 			receivedMessage.push_back((float)transmittedMessage[i]);
 	} else {
-		receivedMessage = awgn::addNoise(transmittedMessage, esn0);
+		receivedMessage = awgn::addNoise(transmittedMessage, esno_dB);
 	}
 
 	// puncture the bits. it is more convenient to puncture on this side than on the 

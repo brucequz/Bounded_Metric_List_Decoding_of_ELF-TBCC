@@ -15,13 +15,13 @@
 
 namespace awgn {
 
-std::vector<float> addNoise(std::vector<int> encodedMsg, float SNR);
+std::vector<float> addNoise(std::vector<int> encodedMsg, float esno_dB);
 
 float normpdf(float x, float mu = 0.0, float sigma = 1.0);
 
 float log_normpdf(float x, float mu, float sigma);
 
-std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esn0, bool noiseless);
+std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esno_dB, bool noiseless);
 
 } // namespace awgn
 

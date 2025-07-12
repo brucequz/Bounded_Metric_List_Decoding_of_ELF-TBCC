@@ -129,11 +129,11 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::ofstream ROVA_Approx_File(ROVA_Approx_filename);
 
 		
-		/* - Simulation esn0 setup - */
+		/* - Simulation esno_dB setup - */
 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
-		float esn0 = 0.0;
+		float esno_dB = 0.0;
 		float offset = 10 * log10((float)K/N);
-		esn0 = EbN0 + offset;
+		esno_dB = EbN0 + offset;
 		
 		/* - Trellis setup - */
 		FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
@@ -190,17 +190,23 @@ void ISTC_sim(CodeInformation code, int rank){
 			// std::cout << "transmitted message: ";
 			// utils::print_int_vector(transmittedMessage);
 			// std::cout << ", length = " << transmittedMessage.size() << std::endl;
-			std::vector<float> receivedMessage = awgn::addAWNGNoise(transmittedMessage, puncturedIndices, esn0, NOISELESS);
+			std::vector<float> receivedMessage = awgn::addAWNGNoise(transmittedMessage, puncturedIndices, esno_dB, NOISELESS);
+			// std::cout << "received message size: " << receivedMessage.size() << std::endl;
 			// std::cout << "received message: ";
 			// utils::print_float_vector(receivedMessage);
-			// std::cout << std::endl;
+			
+			// [DEBUG:]
+			float esno = pow(10.0, esno_dB / 10.0);
+			for (size_t i = 0; i < receivedMessage.size(); i++) {
+				receivedMessage[i] = receivedMessage[i] / (4 * esno);
+			}
 
 			// Transmitted statistics
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// Project Received Message onto the codeword sphere
 			MessageInformation decodingResult;
-			float sigma_sqrd = pow(10.0, -esn0 / 10.0) / 2.0;
+			float sigma_sqrd = pow(10.0, -esno_dB / 10.0) / 2.0;
 			if (DECODING_RULE == 'P') {
 				float received_word_energy = utils::compute_vector_energy(receivedMessage);
 				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message

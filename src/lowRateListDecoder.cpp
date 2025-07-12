@@ -32,7 +32,7 @@ MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage
 	} else if (this->stopping_rule == 'M') {
 		// max metric restriction
 		return lowRateDecoding_MaxMetric(receivedMessage, punctured_indices);
-	} else if (this->stopping_rule == 'A') {
+	} else if (ENCODING_RULE == 'T' && STOPPING_RULE == 'A') {
 		// max angle restriction
 		return lowRateDecoding_MaxAngle_ProductMetric(receivedMessage, punctured_indices);
 	}
@@ -328,7 +328,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<floa
 		currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword);
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored <= MAX_ANGLE){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored < MAX_ANGLE){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
