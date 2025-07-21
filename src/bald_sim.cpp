@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
+	awgn::generator.seed(BASE_SEED + world_rank);  // Seed with rank
+
 	if (world_rank == 0) {
 		logSimulationParams();
 	}
@@ -54,7 +56,7 @@ int main(int argc, char *argv[]) {
 
 	
 	if (STOPPING_RULE == 'M' && DECODING_RULE == 'N') {
-		if (MAX_METRIC_VEC.size() >= 2) {
+		if (MAX_METRIC_VEC.size() >= 1) {
 			for (int i = MAX_METRIC_VEC.size()-1; i >= 0; i--) {
 				MAX_METRIC = MAX_METRIC_VEC[i];
 				std::cout << "MAX_METRIC = " << MAX_METRIC << std::endl;
@@ -66,6 +68,7 @@ int main(int argc, char *argv[]) {
 			for (int i = MAX_ANGLE_VEC.size()-1; i >= 0; i--) {
 				MAX_ANGLE = MAX_ANGLE_VEC[i];
 				std::cout << "MAX_ANGLE = " << MAX_ANGLE << std::endl;
+				std::cout << "world rank: " << world_rank << std::endl;
 				ISTC_sim(code, world_rank);  // Run simulation
 			}
 		}
@@ -103,7 +106,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			// for projected & angle decoding
 			folder_name = "output/BALD/Curve_Sim_thetad_" + thetad_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else if (DECODING_RULE == 'N' && STOPPING_RULE == 'M') {
-			// for non-projected decoding
+			// for non-projected & metric decoding
 			folder_name = "output/BDLD/Curve_Sim_dist_" + nonProjDist_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else {
 			folder_name = "output/Proc" + std::to_string(rank) + "_EbN0_" + ebn0_str.str() + "_ude_" + ude_error_cnt_str.str();
@@ -294,7 +297,7 @@ void ISTC_sim(CodeInformation code, int rank){
 
 				
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-			// num_errors = MAX_ERRORS;
+			// num_mistakes = MAX_ERRORS;
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;

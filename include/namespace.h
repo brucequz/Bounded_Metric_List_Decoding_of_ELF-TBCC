@@ -15,6 +15,8 @@
 
 namespace awgn {
 
+extern std::default_random_engine generator;
+
 std::vector<float> addNoise(std::vector<int> encodedMsg, float esno_dB);
 
 float normpdf(float x, float mu = 0.0, float sigma = 1.0);

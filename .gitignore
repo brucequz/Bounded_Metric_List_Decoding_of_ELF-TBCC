@@ -1,6 +1,8 @@
 .vscode/
 .DS_Store
 main
+bald
+rova
 build/
 manim/
 output/

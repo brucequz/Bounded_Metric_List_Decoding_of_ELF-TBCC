@@ -22,21 +22,21 @@ const std::vector<int> PUNCTURING_INDICES
 
 /* --- List Decoder Parameters --- */
 constexpr int MAX_LISTSIZE = 1e7;       /* Maximum list size */
-inline double MAX_METRIC = 87.6;     /* Maximum decoding metric */
-inline const std::vector<float> MAX_METRIC_VEC = {18.54,	20.05,	21.25,	22.35,	23.35,	24.16,	25.16, 25.96};
-inline std::vector<double> MAX_ANGLE_VEC = {0.808};    /* Maximum angle for the list decoder */
-inline double MAX_ANGLE = 4;
-inline constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
+inline const std::vector<float> MAX_METRIC_VEC = {87.6096};
+inline const std::vector<double> MAX_ANGLE_VEC = {0.808};    /* Maximum angle for the list decoder */
+inline double MAX_ANGLE;
+inline double MAX_METRIC;
+inline constexpr char STOPPING_RULE = 'M';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
 inline constexpr char ENCODING_RULE = 'T';     /* Encoding rule: {Z: zero-terminated, T: tail-biting} */
-constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
-constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
+constexpr char DECODING_RULE = 'N';     /* Decoding rule: {P: projected, N: non-projected}*/
+constexpr char ERROR_RUN_TYPE = 'U';    /* Accumulate to which type of error: {U: undetected, T: total}*/
 
 /* --- Simulation Parameters --- */
 constexpr int MAX_ERRORS = 20;           /* Maximum number of errors */
 constexpr bool NOISELESS = false;        /* Noiseless simulation */
 constexpr int LOGGING_ITERS = 1000;      /* Logging Interval*/
 constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
-inline const std::vector<float> EBN0 = {2.5};
+inline const std::vector<float> EBN0 = {2, 2.5, 3.2, 3.5};
 
 /* --- ROVA Parameters --- */
 inline const std::vector<float> ROVA_THRESHOLD = {0};

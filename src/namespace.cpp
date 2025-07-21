@@ -6,6 +6,7 @@ namespace awgn {
 
 std::default_random_engine generator;
 
+
 std::vector<float> addNoise(std::vector<int> encodedMsg, float esno_dB) {
   std::vector<float> noisyMsg;
 
