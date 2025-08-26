@@ -7,7 +7,6 @@
 #include <numeric>
 #include <string>
 #include <sstream>
-// #include "/opt/homebrew/Cellar/open-mpi/5.0.7/include/mpi.h"
 #include "mpi.h"
 
 #include "../consts.h"
