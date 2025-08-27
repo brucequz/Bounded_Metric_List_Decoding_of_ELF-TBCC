@@ -10,14 +10,20 @@ CONFIG ?= K64N128
 
 # Create a list of all source and object files
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
-BALD_SRC_FILES = $(filter-out $(SRC_DIR)/rova_sim.cpp, $(SRC_FILES))
-ROVA_SRC_FILES = $(filter-out $(SRC_DIR)/bald_sim.cpp, $(SRC_FILES))
+COMMON_SRC_FILES = $(filter-out $(SRC_DIR)/bald_sim.cpp $(SRC_DIR)/rova_sim.cpp $(SRC_DIR)/collect_sim.cpp , $(SRC_FILES))
+
+BALD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bald_sim.cpp
+ROVA_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/rova_sim.cpp
+COLLECT_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/collect_sim.cpp
+
 BALD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BALD_SRC_FILES))
 ROVA_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(ROVA_SRC_FILES))
+COLLECT_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(COLLECT_SRC_FILES))
 
 # Executable name
 BALD_TARGET = bald
 ROVA_TARGET = rova
+COLLECT_TARGET = collect
 
 # Default rule
 $(BALD_TARGET): clean consts.h $(BALD_OBJ_FILES) 
@@ -25,6 +31,9 @@ $(BALD_TARGET): clean consts.h $(BALD_OBJ_FILES)
 
 $(ROVA_TARGET): clean consts.h $(ROVA_OBJ_FILES) 
 	$(CXX) $(LDFLAGS) $(ROVA_OBJ_FILES) -o $@
+
+$(COLLECT_TARGET): clean consts.h $(COLLECT_OBJ_FILES)
+	$(CXX) $(LDFLAGS) $(COLLECT_OBJ_FILES) -o $@
 
 consts.h:
 	cp $(INCLUDE_DIR)/consts_$(CONFIG).h consts.h
@@ -39,7 +48,7 @@ $(BUILD_DIR):
 
 # Clean up build files
 clean:
-	rm -rf $(BUILD_DIR) $(BALD_TARGET) $(ROVA_TARGET) consts.h
+	rm -rf $(BUILD_DIR) $(BALD_TARGET) $(ROVA_TARGET) $(COLLECT_TARGET) consts.h
 
 # Rule to clean up object files
 clean_obj:

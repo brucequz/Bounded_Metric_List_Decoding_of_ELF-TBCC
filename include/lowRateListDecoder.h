@@ -34,6 +34,9 @@ public:
 	MessageInformation decode_ROVA(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd, float rova_t);
 	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd, float rova_t);
 
+	// genie-Aided
+	MessageInformation genieAided_LowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices, std::vector<int> transmittedCodeword, std::vector<float> sampling_points);
+
 private:
 	int numForwardPaths;
 	int listSize;

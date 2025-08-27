@@ -26,9 +26,9 @@ struct MessageInformation{
 		log_Gamma  = 0.0;
 		rova_probability = 0.0;
 
-		// History
-		pathToTransmittedCodewordHistory = std::vector<double>();
-		decodedCodewordSquaredNoiseMag 	= std::vector<double>();
+		vec_highrate_to_tx = std::vector<float>(100, 0);
+		vec_highrate_to_projected_rx = std::vector<float>(100, 0);
+		vec_running_minimum = std::vector<float>(100, 0);
 	};
 	std::vector<int> message;
 	std::vector<int> path;
@@ -39,8 +39,9 @@ struct MessageInformation{
 	double angle_received_decoded_rad;
 	double log_Gamma;
 	double rova_probability;
-	std::vector<double> pathToTransmittedCodewordHistory;
-	std::vector<double> decodedCodewordSquaredNoiseMag;
+	std::vector<float> vec_highrate_to_tx;
+	std::vector<float> vec_highrate_to_projected_rx;
+	std::vector<float> vec_running_minimum;
 };
 
 #endif
