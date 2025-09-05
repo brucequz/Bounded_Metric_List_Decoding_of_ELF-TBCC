@@ -1,0 +1,5 @@
+2025.9.5
+Q1: What is the exact SNR where the (64, 128) code crosses over 1e-3?
+A1: 2.51 dB
+
+Task2: plot out just 1 realization of the figure of x-axis being distance between high-rate codeword and received word (start of exploration).

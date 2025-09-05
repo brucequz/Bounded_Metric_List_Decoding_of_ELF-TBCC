@@ -59,11 +59,36 @@ void print_int_vector(std::vector<int> vector);
 void output_int_vector(std::vector<int> vector, std::ofstream& file);
 
 // computes vector energy, aka sum of squares
-float compute_vector_energy(std::vector<float> vector);
+template <typename T1>
+float compute_vector_energy(
+    std::vector<T1> vector) 
+{
+    if (vector.size() == 0) std::cerr << "EMPTY VECTOR!" << std::endl;
+	float sum_of_squares = 0.0;
+	for (size_t i = 0; i < vector.size(); i++) {
+		sum_of_squares += float(vector[i] * vector[i]);
+	}
+	return sum_of_squares;
+}
 
 // computes angle (radians) between two vectors
-float compute_angle_between_vectors_rad(std::vector<float> vec1, std::vector<int> vec2);
+template <typename T1, typename T2>
+float compute_angle_between_vectors_rad(
+    const std::vector<T1>& vec1,
+    const std::vector<T2>& vec2) 
+{
+    // computes the angle (in radians) between a float vector and an integer vector
+	// assumes the energy of the integer vector is 128.
+	if (vec1.size() != vec2.size()) {std::cerr << "INVALID INNER PRODUCT DUE TO UNCOMPATIBLE SHAPE! ABORT!" << std::endl; exit(1);}
+	float inner_product = std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0);
+	float vec1_energy_sqrt = std::sqrt(compute_vector_energy(vec1));
+	float vec2_energy_sqrt = std::sqrt(compute_vector_energy(vec2));
+	float angle_rad = std::acos( inner_product/(vec1_energy_sqrt * vec2_energy_sqrt) );
+	return angle_rad;
+}
 
+// normalize vector to unit energy
+std::vector<float> normalize_to_unit_energy(std::vector<float> vec);
 
 // Euclidean distance metric
 template <typename T1, typename T2>

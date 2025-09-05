@@ -229,7 +229,8 @@ void ISTC_sim(CodeInformation code, int rank){
 					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
 				}
 				// Decoding
-				decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize(projected_received_word, puncturedIndices, transmittedMessage, sampling_points);
+				// decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize(projected_received_word, puncturedIndices, transmittedMessage, sampling_points);
+        decodingResult = listDecoder.genieAided_LowRateDecoding_MaxAngle_ProductMetric(projected_received_word, transmittedMessage, puncturedIndices, sampling_points);
 			} else if (DECODING_RULE == 'N') {
 				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices, sigma_sqrd);
 			}
@@ -309,7 +310,7 @@ void ISTC_sim(CodeInformation code, int rank){
 
 				
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-			// if (num_trials == 5) {num_errors = MAX_ERRORS;}
+			if (num_trials == 1000) {num_errors = MAX_ERRORS;}
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;

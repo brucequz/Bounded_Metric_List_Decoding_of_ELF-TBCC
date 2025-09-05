@@ -26,17 +26,17 @@ inline const std::vector<float> MAX_METRIC_VEC = {87.6096};
 inline const std::vector<double> MAX_ANGLE_VEC = {0.808};    /* Maximum angle for the list decoder */
 inline double MAX_ANGLE;
 inline double MAX_METRIC;
-inline constexpr char STOPPING_RULE = 'L';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
+inline constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
 inline constexpr char ENCODING_RULE = 'T';     /* Encoding rule: {Z: zero-terminated, T: tail-biting} */
 constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
 constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ERRORS = 20;           /* Maximum number of errors */
+constexpr int MAX_ERRORS = 10;           /* Maximum number of errors */
 constexpr bool NOISELESS = false;        /* Noiseless simulation */
-constexpr int LOGGING_ITERS = 1000;      /* Logging Interval*/
+constexpr int LOGGING_ITERS = 1;      /* Logging Interval*/
 constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
-inline const std::vector<float> EBN0 = {2.5};
+inline const std::vector<float> EBN0 = {2.51};
 
 /* --- ROVA Parameters --- */
 inline const std::vector<float> ROVA_THRESHOLD = {0};

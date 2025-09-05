@@ -36,6 +36,8 @@ public:
 
 	// genie-Aided
 	MessageInformation genieAided_LowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices, std::vector<int> transmittedCodeword, std::vector<float> sampling_points);
+	MessageInformation genieAided_LowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, std::vector<float> sampling_points);
+	static std::vector<float> push_to_angle_boundary(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, float angle);
 
 private:
 	int numForwardPaths;

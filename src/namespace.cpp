@@ -177,24 +177,23 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file){
 	file << vector[vector.size() - 1] << std::endl;
 }
 
-float compute_vector_energy(std::vector<float> vector){
-	if (vector.size() == 0) std::cerr << "EMPTY VECTOR!" << std::endl;
-	float sum_of_squares = 0.0;
-	for (size_t i = 0; i < vector.size(); i++) {
-		sum_of_squares += vector[i] * vector[i];
-	}
-	return sum_of_squares;
-}
 
-float compute_angle_between_vectors_rad(std::vector<float> vec1, std::vector<int> vec2) {
-	// computes the angle (in radians) between a float vector and an integer vector
-	// assumes the energy of the integer vector is 128.
-	if (vec1.size() != vec2.size()) {std::cerr << "INVALID INNER PRODUCT DUE TO UNCOMPATIBLE SHAPE! ABORT!" << std::endl; exit(1);}
-	float inner_product = std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0);
-	float vec1_energy_sqrt = std::sqrt(compute_vector_energy(vec1));
-	float vec2_energy_sqrt = std::sqrt(128);
-	float angle_rad = std::acos( inner_product/(vec1_energy_sqrt * vec2_energy_sqrt) );
-	return angle_rad;
+std::vector<float> normalize_to_unit_energy(std::vector<float> vec) {
+	if (vec.empty()) return vec;
+	// Compute energy (sum of squares)
+	double energy = 0.0;
+	for (float v : vec) {
+			energy += static_cast<double>(v) * v;
+	}
+	if (energy == 0.0) {
+			throw std::runtime_error("Cannot normalize: zero energy vector.");
+	}
+	// Scale factor is 1/sqrt(energy)
+	double scale = 1.0 / std::sqrt(energy);
+	for (float& v : vec) {
+			v = static_cast<float>(v * scale);
+	}
+	return vec;
 }
 
 } // namespace utils
