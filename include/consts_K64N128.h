@@ -22,11 +22,11 @@ const std::vector<int> PUNCTURING_INDICES
 
 /* --- List Decoder Parameters --- */
 constexpr int MAX_LISTSIZE = 1e7;       /* Maximum list size */
-inline const std::vector<float> MAX_METRIC_VEC = {87.6096};
+inline const std::vector<float> MAX_METRIC_VEC = {78.6};
 inline const std::vector<double> MAX_ANGLE_VEC = {0.8052};    /* Maximum angle for the list decoder */
 inline double MAX_ANGLE;
 inline double MAX_METRIC;
-inline constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
+inline constexpr char STOPPING_RULE = 'M';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
 inline constexpr char ENCODING_RULE = 'T';     /* Encoding rule: {Z: zero-terminated, T: tail-biting} */
 constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-projected}*/
 constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
