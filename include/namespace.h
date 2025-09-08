@@ -99,6 +99,7 @@ float euclidean_distance(
 {
     if (v1.size() != v2.size()) {
         throw std::invalid_argument("Vectors must be of the same size");
+        exit(1);
     }
 
     float sum = 0.0;

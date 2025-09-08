@@ -23,7 +23,7 @@ const std::vector<int> PUNCTURING_INDICES
 /* --- List Decoder Parameters --- */
 constexpr int MAX_LISTSIZE = 1e7;       /* Maximum list size */
 inline const std::vector<float> MAX_METRIC_VEC = {87.6096};
-inline const std::vector<double> MAX_ANGLE_VEC = {0.808};    /* Maximum angle for the list decoder */
+inline const std::vector<double> MAX_ANGLE_VEC = {0.8052};    /* Maximum angle for the list decoder */
 inline double MAX_ANGLE;
 inline double MAX_METRIC;
 inline constexpr char STOPPING_RULE = 'A';     /* Stopping rule: {M: metric, L: listsize, A: angle} */
@@ -32,9 +32,9 @@ constexpr char DECODING_RULE = 'P';     /* Decoding rule: {P: projected, N: non-
 constexpr char ERROR_RUN_TYPE = 'T';    /* Accumulate to which type of error: {U: undetected, T: total}*/
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ERRORS = 10;           /* Maximum number of errors */
+constexpr int MAX_ERRORS = 100;           /* Maximum number of errors */
 constexpr bool NOISELESS = false;        /* Noiseless simulation */
-constexpr int LOGGING_ITERS = 1;      /* Logging Interval*/
+constexpr int LOGGING_ITERS = 1000;      /* Logging Interval*/
 constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
 inline const std::vector<float> EBN0 = {2.51};
 

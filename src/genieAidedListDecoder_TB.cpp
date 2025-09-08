@@ -301,6 +301,10 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
     // 2. Euclidean distance from projected received word to high-rate codeword.
     float highrate_to_tx = utils::euclidean_distance(codeword, transmittedCodeword, punctured_indices);
     float highrate_to_projected_rx = utils::euclidean_distance(codeword, receivedMessage, punctured_indices);
+    float tx_to_projected_rx = utils::euclidean_distance(transmittedCodeword, receivedMessage, punctured_indices);
+
+    std::cout << std::setprecision(3) << "highrate_to_tx: " << highrate_to_tx << "; highrate_to_projected_rx: " << highrate_to_projected_rx 
+    << "; tx_to_projected_rx: " << tx_to_projected_rx << std::endl; 
     running_min_highrate_to_tx = std::min(running_min_highrate_to_tx, highrate_to_tx);
 
     for (size_t id = last_end; id < sampling_points.size(); id++) {
