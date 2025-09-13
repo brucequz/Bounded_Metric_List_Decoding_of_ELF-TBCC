@@ -9,20 +9,31 @@ std::vector<float> LowRateListDecoder::push_to_angle_boundary(std::vector<float>
 
   size_t rec_length = receivedMessage.size();
   std::vector<float> direction_to_push(rec_length, 0.0);
+	// std::cout << "received length: " << rec_length << std::endl;
   for (size_t i = 0; i < rec_length; i++) {
-    direction_to_push[i] = receivedMessage[i] - transmittedCodeword[i];
+		if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()) {
+			continue;
+		} else {
+			direction_to_push[i] = receivedMessage[i] - transmittedCodeword[i];
+		}
   }
+	// std::cout << "direction to push: ";
+	// utils::print_float_vector(direction_to_push);
+	// std::cout << std::endl;
+
   direction_to_push = utils::normalize_to_unit_energy(direction_to_push);
+
   float direction_to_push_energy = utils::compute_vector_energy(direction_to_push);
   // std::cout << "printing the direction to push energy: " << direction_to_push_energy << std::endl;
+	// std::cout << "direction to push size: " << direction_to_push.size() << std::endl;
 
-  float original_angle_rad = utils::compute_angle_between_vectors_rad(receivedMessage, transmittedCodeword);
+  float original_angle_rad = utils::compute_angle_between_vectors_rad(receivedMessage, transmittedCodeword, punctured_indices);
   float received_word_energy = utils::compute_vector_energy(receivedMessage);
   // std::cout << "printing the original angle (rad) between received message and transmitted: " << std::setprecision(4) << original_angle_rad << std::endl;
   // std::cout << "printing the original energy of received message: " << received_word_energy << std::endl;
 
   // two_alpha is the angle between RX and TX
-  float two_alpha_rad = utils::compute_angle_between_vectors_rad(receivedMessage, transmittedCodeword);
+  float two_alpha_rad = utils::compute_angle_between_vectors_rad(receivedMessage, transmittedCodeword, punctured_indices);
   float alpha = two_alpha_rad / 2.0f;
   float beta = angle - two_alpha_rad;
   // std::cout << "printing angle: " << std::setprecision(4) << angle << ", printing two_alphas: " << two_alpha_rad << std::endl;
@@ -49,7 +60,7 @@ std::vector<float> LowRateListDecoder::push_to_angle_boundary(std::vector<float>
   float length_push_vector = std::sqrt(utils::compute_vector_energy(push_vector));
   // std::cout << "printing the length of the push vector: " << length_push_vector << std::endl; 
 
-  float test = utils::compute_angle_between_vectors_rad(received_on_verge, transmittedCodeword);
+  float test = utils::compute_angle_between_vectors_rad(received_on_verge, transmittedCodeword, punctured_indices);
   // std::cout << "printing angle (rad) between received on verge and transmitted: " << std::setprecision(4) << test << std::endl;
 
   std::vector<float> rx_verge_to_tx(rec_length, 0.0);
@@ -68,7 +79,7 @@ std::vector<float> LowRateListDecoder::push_to_angle_boundary(std::vector<float>
 
   float energy_check = utils::compute_vector_energy(projected_rx_verge);
   // std::cout << "energy check: " << energy_check << std::endl;
-  float test2 = utils::compute_angle_between_vectors_rad(projected_rx_verge, transmittedCodeword);
+  float test2 = utils::compute_angle_between_vectors_rad(projected_rx_verge, transmittedCodeword, punctured_indices);
   // std::cout << "printing angle (rad) between projected received on verge and transmitted: " << std::setprecision(4) << test2 << std::endl;
 
   return projected_rx_verge;
@@ -210,11 +221,6 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
 
   std::vector<std::vector<cell>> trellisInfo;
 	trellisInfo = constructLowRateTrellis_Punctured_ProductMetric(receivedMessage, punctured_indices);
-	// std::cout << "printing the first row of fixedp pathMetric." << std::endl;
-	// for (size_t i = 0; i < trellisInfo.size(); i++) {
-	// 	std::cout << trellisInfo[i].back().pathMetric << ", ";
-	// }
-	// std::cout << std::endl;
 
 	// start search
 	MessageInformation output;
@@ -301,10 +307,9 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
     // 2. Euclidean distance from projected received word to high-rate codeword.
     float highrate_to_tx = utils::euclidean_distance(codeword, transmittedCodeword, punctured_indices);
     float highrate_to_projected_rx = utils::euclidean_distance(codeword, receivedMessage, punctured_indices);
-    float tx_to_projected_rx = utils::euclidean_distance(transmittedCodeword, receivedMessage, punctured_indices);
-
-    std::cout << std::setprecision(3) << "highrate_to_tx: " << highrate_to_tx << "; highrate_to_projected_rx: " << highrate_to_projected_rx 
-    << "; tx_to_projected_rx: " << tx_to_projected_rx << std::endl; 
+		// output.vec_highrate_to_tx.push_back(highrate_to_tx);
+		// output.vec_highrate_to_projected_rx.push_back(highrate_to_projected_rx);
+    
     running_min_highrate_to_tx = std::min(running_min_highrate_to_tx, highrate_to_tx);
 
     for (size_t id = last_end; id < sampling_points.size(); id++) {
@@ -327,7 +332,20 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
 			output.metric = forwardPartialPathMetric;
 			output.TBListSize = TBPathsSearched + 1;
 			output.angle_received_decoded_rad = currentAngleExplored;
-			// std::cout << "list size: " << numPathsSearched << ", float p returning angle decoded = " << currentAngleExplored << ", metric = " << forwardPartialPathMetric << std::endl;
+			
+			// std::string folder_name = "output/temp";
+			// std::string highrate_to_tx_and_projected_rx_filename = folder_name + "/highrate_to_tx_and_projected_rx" + std::to_string(output.listSize) + ".txt";
+			// std::ofstream highrate_to_tx_and_projected_rx_File(highrate_to_tx_and_projected_rx_filename);
+
+			// if (highrate_to_tx_and_projected_rx_File.is_open()) {
+			// 	for (size_t i = 0; i < output.vec_highrate_to_tx.size(); i++) {
+			// 		highrate_to_tx_and_projected_rx_File << std::setprecision(3) << output.vec_highrate_to_tx[i] << ", " << output.vec_highrate_to_projected_rx[i] << std::endl;
+			// 	}
+			// } else {
+			// 	std::cerr << "file not opened." << std::endl;
+			// }
+
+			// highrate_to_tx_and_projected_rx_File.close();
 			
 			return output;
 		}

@@ -325,7 +325,8 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<floa
 
 		std::vector<int> message = pathToMessage(path);
 		std::vector<int> codeword = pathToCodeword(path);
-		currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword);
+		std::cout << "[DEBUG!] receivedMessage size: " << receivedMessage.size() << "codeword size: " << codeword.size() << std::endl;
+		currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword, punctured_indices);
 		
 		// one trellis decoding requires both a tb and crc check
 		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored < MAX_ANGLE){

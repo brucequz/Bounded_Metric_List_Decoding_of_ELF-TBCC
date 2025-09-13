@@ -26,9 +26,9 @@ struct MessageInformation{
 		log_Gamma  = 0.0;
 		rova_probability = 0.0;
 
-		vec_highrate_to_tx = std::vector<float>(100, 0);
-		vec_highrate_to_projected_rx = std::vector<float>(100, 0);
-		vec_running_minimum = std::vector<float>(100, 0);
+		vec_highrate_to_tx = std::vector<float>();
+		vec_highrate_to_projected_rx = std::vector<float>();
+		vec_running_minimum = std::vector<float>(100, -1.0f);
 	};
 	std::vector<int> message;
 	std::vector<int> path;

@@ -30,6 +30,9 @@ public:
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage);
 	MessageInformation lowRateDecoding_MaxMetric_EuclideanMetric_ZT(std::vector<float> receivedMessage);
 
+	// BCJR
+	MessageInformation lowRateDecoding_BCJR(std::vector<float> receivedMessage);
+
 	// ROVA
 	MessageInformation decode_ROVA(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd, float rova_t);
 	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd, float rova_t);

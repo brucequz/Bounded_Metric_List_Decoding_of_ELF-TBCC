@@ -75,14 +75,26 @@ float compute_vector_energy(
 template <typename T1, typename T2>
 float compute_angle_between_vectors_rad(
     const std::vector<T1>& vec1,
-    const std::vector<T2>& vec2) 
+    const std::vector<T2>& vec2,
+    const std::vector<int>& punctured_indices) 
 {
     // computes the angle (in radians) between a float vector and an integer vector
 	// assumes the energy of the integer vector is 128.
 	if (vec1.size() != vec2.size()) {std::cerr << "INVALID INNER PRODUCT DUE TO UNCOMPATIBLE SHAPE! ABORT!" << std::endl; exit(1);}
-	float inner_product = std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0);
-	float vec1_energy_sqrt = std::sqrt(compute_vector_energy(vec1));
-	float vec2_energy_sqrt = std::sqrt(compute_vector_energy(vec2));
+	float inner_product = 0.0f;
+    float vec1_energy_sqrt = 0.0f;
+    float vec2_energy_sqrt = 0.0f;
+    for (size_t i = 0; i < vec1.size(); i++) {
+        if (std::find(punctured_indices.begin(), punctured_indices.end(), i) != punctured_indices.end()) {
+            continue;
+        } else {
+            inner_product += vec1[i] * vec2[i];
+            vec1_energy_sqrt += vec1[i] * vec1[i];
+            vec2_energy_sqrt += vec2[i] * vec2[i];
+        }
+    }
+	vec1_energy_sqrt = std::sqrt(vec1_energy_sqrt);
+	vec2_energy_sqrt = std::sqrt(vec2_energy_sqrt);
 	float angle_rad = std::acos( inner_product/(vec1_energy_sqrt * vec2_energy_sqrt) );
 	return angle_rad;
 }

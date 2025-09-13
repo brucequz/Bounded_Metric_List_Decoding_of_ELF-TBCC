@@ -244,20 +244,22 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
 				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
         twoD_vec_running_minimum.push_back(decodingResult.vec_running_minimum);
+				std::cout << "Sim id " << num_trials << ": Correct decoding! " << std::endl;
 			} else if(decodingResult.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				num_failures++;
-				// std::cout << "List size exceeded! num_failures = " << num_failures << std::endl;
+				std::cout << "Sim id " << num_trials << ": List size exceeded! num_mistakes = " << num_mistakes << std::endl;
 			} else { 
 				// incorrect decoding
 				RRV_DecodedType.push_back(2);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
 				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
+				// twoD_vec_running_minimum.push_back(decodingResult.vec_running_minimum);
 				num_mistakes++;
-				std::cout << "Undetected error! num_mistakes = " << num_mistakes << std::endl;
+				std::cout << "Sim id " << num_trials << ": Undetected error! num_mistakes = " << num_mistakes << std::endl;
 			}
 
 			// Increment errors and trials
@@ -300,17 +302,25 @@ void ISTC_sim(CodeInformation code, int rank){
 					RRV_DecodedType.clear();
 				}
         if (Running_minimum_highrate_to_tx_File.is_open()) {
-          for (size_t i = 0; i < twoD_vec_running_minimum.size(); i++) {
-            for (size_t j = 0; j < twoD_vec_running_minimum[0].size()-1; j++) {
-              Running_minimum_highrate_to_tx_File << twoD_vec_running_minimum[i][j] << ", ";
-            }
-            Running_minimum_highrate_to_tx_File << twoD_vec_running_minimum[i].back() << std::endl;
-          }
+					if (!twoD_vec_running_minimum.empty()) {
+						for (size_t i = 0; i < twoD_vec_running_minimum.size(); i++) {
+							if (twoD_vec_running_minimum[i].empty()) {
+								continue;
+							} else {
+								for (size_t j = 0; j < twoD_vec_running_minimum[0].size()-1; j++) {
+									Running_minimum_highrate_to_tx_File << twoD_vec_running_minimum[i][j] << ", ";
+								}
+								Running_minimum_highrate_to_tx_File << twoD_vec_running_minimum[i].back() << std::endl;
+							}
+						}
+						// clear the 2d vectors
+						twoD_vec_running_minimum.clear();
+					}
         }
 
 				
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-			if (num_trials == 5) {num_errors = MAX_ERRORS;}
+			if (num_trials == 100) {num_errors = MAX_ERRORS;}
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;

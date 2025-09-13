@@ -10,7 +10,8 @@ CONFIG ?= K64N128
 
 # Create a list of all source and object files
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
-COMMON_SRC_FILES = $(filter-out $(SRC_DIR)/bald_sim.cpp $(SRC_DIR)/rova_sim.cpp $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp , $(SRC_FILES))
+COMMON_SRC_FILES = $(SRC_DIR)/minHeap.cpp $(SRC_DIR)/namespace.cpp $(SRC_DIR)/feedForwardTrellis.cpp $(SRC_DIR)/lowRateListDecoder_TB.cpp $(SRC_DIR)/lowRateListDecoder_ZT.cpp 
+# COMMON_SRC_FILES = $(filter-out $(SRC_DIR)/bald_sim.cpp $(SRC_DIR)/rova_sim.cpp $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp $(SRC_DIR)/lowRateListDecoder_BCJR.cpp, $(SRC_FILES))
 
 BALD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bald_sim.cpp
 ROVA_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/rova_sim.cpp
