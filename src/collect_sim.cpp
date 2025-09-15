@@ -155,10 +155,15 @@ void ISTC_sim(CodeInformation code, int rank){
     std::vector<float> sampling_points;
     float sample_start = 5.3f;
     float sample_end   = 8.9f;
+		std::vector<float> listsize_collect_sample_points;
+		float listsize_collect_start 	= 7.7f;
+		float listsize_collect_end 		= 8.8f;
     int   num_samples  = 100;
     float sample_step  = (sample_end - sample_start) / (num_samples - 1);
+		float listsize_sample_step = (listsize_collect_end - listsize_collect_start) / (num_samples - 1);
     for (int id_sample = 0; id_sample < num_samples; id_sample++) {
       sampling_points.push_back(sample_start + id_sample * sample_step);
+			listsize_collect_sample_points.push_back(listsize_collect_start + id_sample * listsize_sample_step);
     }
     std::cout << "printing sampling points: ";
     utils::print_float_vector(sampling_points);
@@ -220,7 +225,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			
 			// Project Received Message onto the codeword sphere
 			MessageInformation decodingResult;
-			float sigma_sqrd = pow(10.0, -esno_dB / 10.0) / 2.0;
+			// float sigma_sqrd = pow(10.0, -esno_dB / 10.0) / 2.0;
 			if (DECODING_RULE == 'P') {
 				float received_word_energy = utils::compute_vector_energy(receivedMessage);
 				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
@@ -230,9 +235,9 @@ void ISTC_sim(CodeInformation code, int rank){
 				}
 				// Decoding
 				// decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize(projected_received_word, puncturedIndices, transmittedMessage, sampling_points);
-        decodingResult = listDecoder.genieAided_LowRateDecoding_MaxAngle_ProductMetric(projected_received_word, transmittedMessage, puncturedIndices, sampling_points);
+        decodingResult = listDecoder.genieAided_LowRateDecoding_MaxAngle_ProductMetric(projected_received_word, transmittedMessage, puncturedIndices, sampling_points, listsize_collect_sample_points);
 			} else if (DECODING_RULE == 'N') {
-				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices, sigma_sqrd);
+				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices);
 			}
 			
 
@@ -320,8 +325,13 @@ void ISTC_sim(CodeInformation code, int rank){
 
 				
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
-			if (num_trials == 100) {num_errors = MAX_ERRORS;}
+			if (num_trials == BATCH_SIZE) {num_errors = MAX_ERRORS;}
 		} // while (num_mistakes < MAX_ERRORS)
+
+		std::cout << "printing max_listsize_upto_metric: " << std::endl;
+		utils::print_int_vector(listDecoder.max_listsize_upto_metric);
+		std::cout << "printing average_listsize_upto_metric: " << std::endl;
+		utils::print_float_vector(listDecoder.average_listsize_upto_metric);
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
 		std::cout << "number of total errors: " << num_errors << std::endl;

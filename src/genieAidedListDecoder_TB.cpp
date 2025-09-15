@@ -23,12 +23,12 @@ std::vector<float> LowRateListDecoder::push_to_angle_boundary(std::vector<float>
 
   direction_to_push = utils::normalize_to_unit_energy(direction_to_push);
 
-  float direction_to_push_energy = utils::compute_vector_energy(direction_to_push);
+  // float direction_to_push_energy = utils::compute_vector_energy(direction_to_push);
   // std::cout << "printing the direction to push energy: " << direction_to_push_energy << std::endl;
 	// std::cout << "direction to push size: " << direction_to_push.size() << std::endl;
 
-  float original_angle_rad = utils::compute_angle_between_vectors_rad(receivedMessage, transmittedCodeword, punctured_indices);
-  float received_word_energy = utils::compute_vector_energy(receivedMessage);
+  // float original_angle_rad = utils::compute_angle_between_vectors_rad(receivedMessage, transmittedCodeword, punctured_indices);
+  // float received_word_energy = utils::compute_vector_energy(receivedMessage);
   // std::cout << "printing the original angle (rad) between received message and transmitted: " << std::setprecision(4) << original_angle_rad << std::endl;
   // std::cout << "printing the original energy of received message: " << received_word_energy << std::endl;
 
@@ -43,7 +43,7 @@ std::vector<float> LowRateListDecoder::push_to_angle_boundary(std::vector<float>
   float ell =  0.5 * utils::euclidean_distance(receivedMessage, transmittedCodeword, punctured_indices);
   // std::cout << "printing ell: " << ell << std::endl;
 
-  float r_prime = ell / std::tan(alpha);
+  // float r_prime = ell / std::tan(alpha);
   // std::cout << "printing r_prime: " << r_prime << std::endl;
 
   float tangent_ratio = std::tan(alpha) / std::tan(alpha+beta);
@@ -57,10 +57,10 @@ std::vector<float> LowRateListDecoder::push_to_angle_boundary(std::vector<float>
     received_on_verge[i] = receivedMessage[i] + push_vector[i];
   }
 
-  float length_push_vector = std::sqrt(utils::compute_vector_energy(push_vector));
+  // float length_push_vector = std::sqrt(utils::compute_vector_energy(push_vector));
   // std::cout << "printing the length of the push vector: " << length_push_vector << std::endl; 
 
-  float test = utils::compute_angle_between_vectors_rad(received_on_verge, transmittedCodeword, punctured_indices);
+  // float test = utils::compute_angle_between_vectors_rad(received_on_verge, transmittedCodeword, punctured_indices);
   // std::cout << "printing angle (rad) between received on verge and transmitted: " << std::setprecision(4) << test << std::endl;
 
   std::vector<float> rx_verge_to_tx(rec_length, 0.0);
@@ -77,9 +77,9 @@ std::vector<float> LowRateListDecoder::push_to_angle_boundary(std::vector<float>
     projected_rx_verge[i] = received_on_verge[i] * energy_normalize_factor;
   }
 
-  float energy_check = utils::compute_vector_energy(projected_rx_verge);
+  // float energy_check = utils::compute_vector_energy(projected_rx_verge);
   // std::cout << "energy check: " << energy_check << std::endl;
-  float test2 = utils::compute_angle_between_vectors_rad(projected_rx_verge, transmittedCodeword, punctured_indices);
+  // float test2 = utils::compute_angle_between_vectors_rad(projected_rx_verge, transmittedCodeword, punctured_indices);
   // std::cout << "printing angle (rad) between projected received on verge and transmitted: " << std::setprecision(4) << test2 << std::endl;
 
   return projected_rx_verge;
@@ -214,7 +214,7 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxListsize(st
 }
 
 
-MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, std::vector<float> sampling_points){
+MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, std::vector<float> sampling_points, std::vector<float> listsize_collect_sample_points){
 	
   // push to angle boundary
   receivedMessage = push_to_angle_boundary(receivedMessage, transmittedCodeword, punctured_indices, MAX_ANGLE);
@@ -242,6 +242,8 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
 	float currentAngleExplored = 0.0;
   float running_min_highrate_to_tx = 1000.0;
   size_t last_end = 0;
+	size_t last_updated = 0;
+
 	
 	while(currentAngleExplored < MAX_ANGLE){
 		DetourObject detour = detourTree.pop();
@@ -320,6 +322,16 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
         break;
       }
     }
+
+		// check at listsize sample point, what is the current max and mean listsize
+		
+		
+		while (last_updated < listsize_collect_sample_points.size() && highrate_to_projected_rx > listsize_collect_sample_points[last_updated] ) {
+			// std::cout << "updating: " << last_updated << "; highrate_to_projected_rx: " << highrate_to_projected_rx << "; listsize_collect_sample_points[last_updated]: " << listsize_collect_sample_points[last_updated] << std::endl;
+			this->max_listsize_upto_metric[last_updated] = std::max(this->max_listsize_upto_metric[last_updated], numPathsSearched+1);
+			this->average_listsize_upto_metric[last_updated] += (numPathsSearched+1) /(float)BATCH_SIZE;
+			last_updated++;
+		}
 
 		// another way to compute the angle
 		currentAngleExplored = std::acos( std::max(-1.0f, std::min(1.0f, -forwardPartialPathMetric/N)) );

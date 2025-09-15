@@ -11,12 +11,16 @@ LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, in
   this->crc                   = crc;
 	this->stopping_rule					= stopping_rule;
 
+	this->max_listsize_upto_metric = std::vector<int>(100, -1);
+	this->average_listsize_upto_metric = std::vector<float>(100, -1.0f);
+
+
 	if (this->stopping_rule != 'M' && this->stopping_rule != 'L' && this->stopping_rule != 'A' && this->stopping_rule != 'R') {
 		std::cerr << "[ERROR] INVALID STOPPING RULE" << std::endl;
 	}
 }
 
-MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd) {
+MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices) {
 	/** Decode according to a policy passed into the constructor
 	 * 
 	 */

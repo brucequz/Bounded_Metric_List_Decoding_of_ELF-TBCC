@@ -1,15 +1,60 @@
 #include "lowRateListDecoder.h"
 
+
+// Compute log gamma
+void LowRateListDecoder::_bcjr_log_gamma(std::vector<float> receivedMessage, float sigma_sqrd) {
+	/* Compute log gammas and store the values in private member variables
+
+	*/
+
+	unsigned int num_trellis_transitions = receivedMessage.size() / n;
+
+	
+
+	for (unsigned int i = 0; i < receivedMessage.size(); i=i+n) {
+		for (j = i; j < i+n; j++) {
+			
+		}
+	}
+}
+
+// BCJR Forward Pass
+void LowRateListDecoder::_bcjr_forward_pass(std::vector<std::vector<LowRateListDecoder::bcjr_cell>> &trellis) {
+	/* Forward pass of the BCJR algorithm on a trellis with log domain metric
+	*/
+	unsigned int trellis_cols = trellis[0].size();
+	unsigned int trellis_rows = trellis.size();
+
+	for (unsigned int stage = 0; stage < trellis_cols; stage++) {
+		for (unsigned int currentState = 0; currentState < trellis_rows; currentState++) {
+			// if current cell is not active
+			if (!trellis[currentState][stage].init) {
+				continue;
+			}
+			// if current cell is active
+			// TODO!
+		}
+	}
+}
+
 // construct ZT trellis
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_ZT(std::vector<float> receivedMessage, METRIC_TYPE metric_type){
-	std::vector<std::vector<cell>> trellisInfo;
+std::vector<std::vector<LowRateListDecoder::bcjr_cell>> LowRateListDecoder::constructLowRateTrellis_ZT(std::vector<float> receivedMessage, METRIC_TYPE metric_type){
+	std::vector<std::vector<bcjr_cell>> trellisInfo;
 	lowrate_pathLength = (receivedMessage.size() / lowrate_symbolLength) + 1;
 
-	trellisInfo = std::vector<std::vector<cell>>(lowrate_numStates, std::vector<cell>(lowrate_pathLength));
+	trellisInfo = std::vector<std::vector<bcjr_cell>>(lowrate_numStates, std::vector<bcjr_cell>(lowrate_pathLength));
 
 	// initialize only 0 as the starting states
 	trellisInfo[0][0].pathMetric = 0;
 	trellisInfo[0][0].init = true;
+	trellisInfo[0][0]._log_alpha = 0.0f;
+	trellisInfo[0].back()._log_beta = 0.0f;
+
+	// compute log gammas
+
+	// forward pass
+
+	// backward pass
 	
 	// building the trellis
 	for(int stage = 0; stage < lowrate_pathLength - V - 1; stage++){
@@ -37,6 +82,8 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 						branchMetric += -1 * (receivedMessage[lowrate_symbolLength * stage + i] * (float)output_point[i]);
 					} else if (metric_type == METRIC_TYPE::EUCLIDEAN_METRIC) {
 						branchMetric += std::pow(receivedMessage[lowrate_symbolLength * stage + i] - (float)output_point[i], 2);
+					} else if (metric_type == METRIC_TYPE::LOG_EUCLIDEAN_METRIC) {
+						// TODO!
 					}
 				}
 				float totalPathMetric = branchMetric + trellisInfo[currentState][stage].pathMetric;
@@ -61,7 +108,7 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 
 		}
 	}
-	// ZT stage
+	// ZT stage, Termination mode
 	for(int stage = lowrate_pathLength - V - 1; stage < lowrate_pathLength - 1; stage++){
 		for(int currentState = 0; currentState < lowrate_numStates; currentState++){
 			// if the state / stage is invalid, we move on
@@ -113,7 +160,7 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 	return trellisInfo;
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding_BCJR(std::vector<float> receivedMessage) {
+MessageInformation LowRateListDecoder::lowRateDecoding_BCJR(std::vector<float> receivedMessage, float sigma_sqrd) {
 	std::vector<std::vector<cell>> trellisInfo;
 
 	trellisInfo = constructLowRateTrellis_ZT(receivedMessage, METRIC_TYPE::PRODUCT_METRIC);

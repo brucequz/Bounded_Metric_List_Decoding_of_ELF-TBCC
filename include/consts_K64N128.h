@@ -38,6 +38,9 @@ constexpr int LOGGING_ITERS = 10;      /* Logging Interval*/
 constexpr int BASE_SEED = 42;            /* Fixed base seed for simulation */
 inline const std::vector<float> EBN0 = {2.51};
 
+/* --- Collection Parameters --- */
+constexpr int BATCH_SIZE = 10;
+
 /* --- ROVA Parameters --- */
 inline const std::vector<float> ROVA_THRESHOLD = {0};
 
