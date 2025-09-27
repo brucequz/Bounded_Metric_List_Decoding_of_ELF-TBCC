@@ -12,7 +12,8 @@ LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, in
 	this->stopping_rule					= stopping_rule;
 
 	this->max_listsize_upto_metric = std::vector<int>(100, -1);
-	this->average_listsize_upto_metric = std::vector<float>(100, -1.0f);
+	this->average_listsize_upto_metric = std::vector<float>(100, 0.0f);
+	this->max_lower_envelop = std::vector<float>(100, -1.0f);
 
 
 	if (this->stopping_rule != 'M' && this->stopping_rule != 'L' && this->stopping_rule != 'A' && this->stopping_rule != 'R') {
@@ -127,6 +128,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<f
 		// one trellis decoding requires both a tb and crc check
 		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && numPathsSearched <= this->listSize){
 			output.message = message;
+			output.codeword = codeword;
 			output.path = path;
 		 	output.listSize = numPathsSearched + 1;
 			output.metric = forwardPartialPathMetric;

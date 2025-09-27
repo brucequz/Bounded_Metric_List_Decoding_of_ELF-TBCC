@@ -196,4 +196,22 @@ std::vector<float> normalize_to_unit_energy(std::vector<float> vec) {
 	return vec;
 }
 
+std::vector<float> normalized_to_target_energy(std::vector<float> vec, float target_energy) {
+	if (vec.empty()) return vec;
+	// Compute energy (sum of squares)
+	double energy = 0.0;
+	for (float v : vec) {
+			energy += static_cast<double>(v) * v;
+	}
+	if (energy == 0.0) {
+			throw std::runtime_error("Cannot normalize: zero energy vector.");
+	}
+	// Scale factor is 1/sqrt(energy)
+	double scale = std::sqrt(target_energy / energy);
+	for (float& v : vec) {
+			v = static_cast<float>(v * scale);
+	}
+	return vec;
+}
+
 } // namespace utils

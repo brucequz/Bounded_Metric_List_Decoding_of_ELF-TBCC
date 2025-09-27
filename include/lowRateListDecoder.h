@@ -40,11 +40,13 @@ public:
 	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd, float rova_t);
 
 	// genie-Aided
-	MessageInformation genieAided_LowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices, std::vector<int> transmittedCodeword, std::vector<float> sampling_points);
-	MessageInformation genieAided_LowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, std::vector<float> sampling_points, std::vector<float> listsize_collect_sample_points);
+	MessageInformation genieAided_LowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, bool push_to_boundary);
+	MessageInformation genieAided_LowRateDecoding_MaxListsize_Collect(std::vector<float> receivedMessage, std::vector<int> punctured_indices, std::vector<int> transmittedCodeword, std::vector<float> sampling_points, std::vector<float> listsize_collect_sample_points);
+	MessageInformation genieAided_LowRateDecoding_MaxAngle_ProductMetric_Collector(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, std::vector<float> sampling_points, std::vector<float> listsize_collect_sample_points);
 	static std::vector<float> push_to_angle_boundary(std::vector<float> receivedMessage, std::vector<int> transmittedCodeword, std::vector<int> punctured_indices, float angle);
 	std::vector<int> max_listsize_upto_metric;
 	std::vector<float> average_listsize_upto_metric;
+	std::vector<float> max_lower_envelop;
 
 private:
 	int numForwardPaths;
@@ -71,28 +73,16 @@ private:
 		bool init = false;
 	};
 
-	struct rova_cell {
+	struct rova_cell : public cell {
 		// ROVA
 		float log_Gamma = -INFINITY;
 		float log_Z = -INFINITY;
-		// regular cell
-		int optimalFatherState = -1;
-		int suboptimalFatherState = -1;
-		float pathMetric = INT_MAX;
-		float suboptimalPathMetric = INT_MAX;
-		bool init = false;
 	};
 
-	struct bcjr_cell {
+	struct bcjr_cell : public cell {
 		// BCJR
 		float _log_alpha 	= -INFINITY;
 		float _log_beta 	= -INFINITY;
-		// regular cell
-		int optimalFatherState = -1;
-		int suboptimalFatherState = -1;
-		float pathMetric = INT_MAX;
-		float suboptimalPathMetric = INT_MAX;
-		bool init = false;
 	};
 
 	std::vector<int> pathToMessage(std::vector<int>); 

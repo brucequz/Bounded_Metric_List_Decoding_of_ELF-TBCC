@@ -127,9 +127,6 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::string RtoD_Type_filename = folder_name + "/decoded_type.txt";
 		std::ofstream RRVtoDecoded_DecodeTypeFile(RtoD_Type_filename);
 
-    std::string Running_minimum_highrate_to_tx_filename = folder_name + "/running_minimum_highrate_to_tx.txt";
-    std::ofstream Running_minimum_highrate_to_tx_File(Running_minimum_highrate_to_tx_filename);
-
 		
 		/* - Simulation esno_dB setup - */
 		std::vector<int> puncturedIndices = PUNCTURING_INDICES;
@@ -150,13 +147,11 @@ void ISTC_sim(CodeInformation code, int rank){
 		std::vector<float> RRVtoDecoded_Angle;
 		std::vector<int>		RRV_DecodedType;
 
-    std::vector<std::vector<float>> twoD_vec_running_minimum;
-
     std::vector<float> sampling_points;
     float sample_start = 5.3f;
     float sample_end   = 8.9f;
 		std::vector<float> listsize_collect_sample_points;
-		float listsize_collect_start 	= 7.7f;
+		float listsize_collect_start 	= 7.5f;
 		float listsize_collect_end 		= 8.8f;
     int   num_samples  = 100;
     float sample_step  = (sample_end - sample_start) / (num_samples - 1);
@@ -213,6 +208,8 @@ void ISTC_sim(CodeInformation code, int rank){
 			// std::cout << "received message size: " << receivedMessage.size() << std::endl;
 			// std::cout << "received message: ";
 			// utils::print_float_vector(receivedMessage);
+
+			MessageInformation decodingResult;
 			
 			// Produce Raw Channel values
 			float esno = pow(10.0, esno_dB / 10.0);
@@ -224,22 +221,156 @@ void ISTC_sim(CodeInformation code, int rank){
 			RRVtoTransmitted_Metric.push_back(utils::sum_of_squares(receivedMessage, transmittedMessage, puncturedIndices));
 			
 			// Project Received Message onto the codeword sphere
-			MessageInformation decodingResult;
-			// float sigma_sqrd = pow(10.0, -esno_dB / 10.0) / 2.0;
-			if (DECODING_RULE == 'P') {
-				float received_word_energy = utils::compute_vector_energy(receivedMessage);
-				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
-				std::vector<float> projected_received_word(receivedMessage.size(), 0.0);
-				for (size_t i = 0; i < receivedMessage.size(); i++) {
-					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
+			std::vector<float> projected_received_word = utils::normalized_to_target_energy(receivedMessage, N);
+
+			// check if angle(Tx, Rx) > theta
+			// float Tx_to_Rx_angle = utils::compute_angle_between_vectors_rad(projected_received_word, transmittedMessage, puncturedIndices);
+
+			// std::cout << "printing Tx: ";
+			// utils::print_int_vector(transmittedMessage);
+			// std::cout << std::endl;
+			
+			// compute the unit Tx vector
+			float Tx_normalization_factor = std::sqrt(1.0f/N);
+			std::vector<float> Tx_unit(transmittedMessage.size(), 0.0f);
+			for (size_t i = 0; i < transmittedMessage.size(); i++) {
+				if (std::find(PUNCTURING_INDICES.begin(), PUNCTURING_INDICES.end(), i) == PUNCTURING_INDICES.end()) {
+					Tx_unit[i] = Tx_normalization_factor * transmittedMessage[i];
+				} else {
+					Tx_unit[i] = 0.0f;
 				}
-				// Decoding
-				// decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize(projected_received_word, puncturedIndices, transmittedMessage, sampling_points);
-        decodingResult = listDecoder.genieAided_LowRateDecoding_MaxAngle_ProductMetric(projected_received_word, transmittedMessage, puncturedIndices, sampling_points, listsize_collect_sample_points);
-			} else if (DECODING_RULE == 'N') {
-				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices);
 			}
 			
+			// find the inner product between Rx and Tx_unit
+			// std::cout << "check out Rx size: " << projected_received_word.size() << "; Rx: ";
+			// utils::print_float_vector(projected_received_word);
+			// std::cout << std::endl;
+			float inner_product = 0.0f;
+			for (size_t i = 0; i < projected_received_word.size(); i++) {
+				if (std::find(PUNCTURING_INDICES.begin(), PUNCTURING_INDICES.end(), i) == PUNCTURING_INDICES.end()) {
+					inner_product += (projected_received_word[i] * transmittedMessage[i]) / std::sqrt((float)N);
+				}
+			}
+
+			// std::cout << "inner product: " << inner_product << std::endl;
+			
+
+			// find the perpendicular element
+			std::vector<float> perp(projected_received_word.size(), 0.0f);
+			float perp_energy_sqrt = 0.0f;
+			for (size_t i = 0; i < perp.size(); i++) {
+				if (std::find(PUNCTURING_INDICES.begin(), PUNCTURING_INDICES.end(), i) == PUNCTURING_INDICES.end()) {
+					perp[i] = projected_received_word[i] - inner_product * Tx_unit[i];
+					perp_energy_sqrt += perp[i] * perp[i];
+				}
+			}
+			perp_energy_sqrt = std::sqrt(perp_energy_sqrt);
+			// std::cout << "perp_energy_sqrt: " << perp_energy_sqrt << std::endl;
+
+			// float check_inner_perp_original = std::inner_product(perp.begin(), perp.end(), transmittedMessage.begin(), 0.0);
+			// std::cout << "printing checkint inner prod original: " << check_inner_perp_original << std::endl;
+
+			// std::cout << "printing perp vector: ";
+			// utils::print_float_vector(perp);
+			// std::cout << std::endl;
+
+			// find the unit vector in the perp direction
+			std::vector<float> unit_perp(perp.size(), 0.0f);
+			for (size_t i = 0; i < unit_perp.size(); i++) {
+				if (std::find(PUNCTURING_INDICES.begin(), PUNCTURING_INDICES.end(), i) == PUNCTURING_INDICES.end()) {
+					unit_perp[i] = perp[i] * (1.0f/perp_energy_sqrt);
+				} else {
+					unit_perp[i] = 0.0f;
+				}
+			}
+			
+			// std::cout << "printing unit_prep: ";
+			// utils::print_float_vector(unit_perp);
+			// std::cout << std::endl;
+			// float unit_perp_energy = utils::compute_vector_energy(unit_perp);
+			// std::cout << "unit perp energy: " << unit_perp_energy << std::endl;
+			// float check_inner_prod = std::inner_product(unit_perp.begin(), unit_perp.end(), transmittedMessage.begin(), 0.0);
+			// std::cout << "printing checking inner prod: " << check_inner_prod << std::endl;
+
+			// use trig to find the length of the push
+			float push_factor = 0.0f;
+			float codeword_radius = std::sqrt((float)N);
+			push_factor = codeword_radius * std::tan(MAX_ANGLE);
+			// std::cout << "push_factor: " << push_factor << std::endl;
+			
+			// computing pushed_Rx
+			std::vector<float> pushed_Rx(projected_received_word.size(), 0.0f);
+			for (size_t i = 0; i < pushed_Rx.size(); i++) {
+				if (std::find(PUNCTURING_INDICES.begin(), PUNCTURING_INDICES.end(), i) == PUNCTURING_INDICES.end()) {
+					pushed_Rx[i] = transmittedMessage[i] + push_factor * unit_perp[i];
+				} else {
+					pushed_Rx[i] = 0.0f; 
+				}
+			}
+
+			// std::cout << "printing pushed_rx: ";
+			// utils::print_float_vector(pushed_Rx);
+			// std::cout << std::endl; 
+
+			// project back to codeword sphere
+			float pushed_Rx_energy = utils::compute_vector_energy(pushed_Rx);
+			float pushed_Rx_norm_factor = std::sqrt(N/pushed_Rx_energy);
+			std::vector<float> pushed_on_edge(projected_received_word.size(), 0.0f);
+			for (size_t i = 0; i < pushed_on_edge.size(); i++) {
+				pushed_on_edge[i] = pushed_Rx_norm_factor * pushed_Rx[i];
+			}
+			
+			// float sanity_check = 0.0f;
+			// sanity_check = utils::compute_vector_energy(pushed_on_edge);
+			// std::cout << "pushed on edge energy: " << sanity_check << std::endl;
+			float angle_check = utils::compute_angle_between_vectors_rad(pushed_on_edge, transmittedMessage, PUNCTURING_INDICES);
+			// std::cout << "angle check: " << angle_check << std::endl;
+			assert(std::abs(angle_check-MAX_ANGLE) <= 1e-3);
+		
+
+
+			// try normal decoding using pushed-away projected_received_word
+			MessageInformation first_try_result = listDecoder.lowRateDecoding_MaxListsize(pushed_on_edge, puncturedIndices);
+
+			if (!first_try_result.listSizeExceeded && first_try_result.message == originalMessage) {
+				// if decoded correctly, use recorder to record it
+				// std::cout << "decoded correctly, begin recording!" << std::endl;
+				decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize_Collect(pushed_on_edge, PUNCTURING_INDICES, transmittedMessage, sampling_points, listsize_collect_sample_points);
+			} else {
+				// std::cout << "decoded incorrectly, try middle point!" << std::endl;
+				// if decoded incorrectly, find middle point to begin decode, if correct, use collector to record it
+				if (first_try_result.listSizeExceeded) {
+					std::cerr << "[ERROR] list size exceeded, abort!" << std::endl;
+					exit(1);
+				} else {
+					std::vector<int> incorrect_codeword = first_try_result.codeword;
+					// find the middle point
+					std::vector<float> middle_point;
+					for (size_t i_symbol = 0; i_symbol < incorrect_codeword.size(); i_symbol++) {
+						if (std::find(puncturedIndices.begin(), puncturedIndices.end(), i_symbol) == puncturedIndices.end()) {
+							middle_point.push_back( (0.5f-EPSILON)*incorrect_codeword[i_symbol] + (0.5f+EPSILON)*transmittedMessage[i_symbol] );
+						} else {
+							middle_point.push_back(0.0f);
+						}
+					}
+					
+					// verifying the angle between middle point and Tx
+					// float middle_point_to_Tx = utils::compute_angle_between_vectors_rad(middle_point, transmittedMessage, puncturedIndices);
+					// std::cout << "middle_point_to_Tx: " << middle_point_to_Tx << std::endl;
+
+
+					MessageInformation middle_point_decode_result = listDecoder.lowRateDecoding_MaxListsize(middle_point, puncturedIndices);
+					if (!middle_point_decode_result.listSizeExceeded && middle_point_decode_result.message == originalMessage) {
+						// decoded correctly, begin recording!
+						// std::cout << "middle point decoded correctly, begin recording!" << std::endl;
+						decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize_Collect(pushed_on_edge, PUNCTURING_INDICES, transmittedMessage, sampling_points, listsize_collect_sample_points);
+					} else {
+						// if decoded incorrectly again, throw away.
+						// std::cout << "middle point decoded incorrectly, discarding!" << std::endl;
+						decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize_Collect(pushed_on_edge, PUNCTURING_INDICES, transmittedMessage, sampling_points, listsize_collect_sample_points);
+					}
+				}
+			}
 
 			// RRV
 			if (!decodingResult.listSizeExceeded && decodingResult.message == originalMessage) {
@@ -248,23 +379,21 @@ void ISTC_sim(CodeInformation code, int rank){
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
 				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
-        twoD_vec_running_minimum.push_back(decodingResult.vec_running_minimum);
-				std::cout << "Sim id " << num_trials << ": Correct decoding! " << std::endl;
+				// std::cout << "Sim id " << num_trials << ": Correct decoding! " << std::endl;
 			} else if(decodingResult.listSizeExceeded) {
 				// list size exceeded
 				RRV_DecodedType.push_back(1);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				num_failures++;
-				std::cout << "Sim id " << num_trials << ": List size exceeded! num_mistakes = " << num_mistakes << std::endl;
+				// std::cout << "Sim id " << num_trials << ": List size exceeded! num_mistakes = " << num_mistakes << std::endl;
 			} else { 
 				// incorrect decoding
 				RRV_DecodedType.push_back(2);
 				RRVtoDecoded_ListSize.push_back(decodingResult.listSize);
 				RRVtoDecoded_Metric.push_back(decodingResult.metric);
 				RRVtoDecoded_Angle.push_back(decodingResult.angle_received_decoded_rad);
-				// twoD_vec_running_minimum.push_back(decodingResult.vec_running_minimum);
 				num_mistakes++;
-				std::cout << "Sim id " << num_trials << ": Undetected error! num_mistakes = " << num_mistakes << std::endl;
+				// std::cout << "Sim id " << num_trials << ": Undetected error! num_mistakes = " << num_mistakes << std::endl;
 			}
 
 			// Increment errors and trials
@@ -306,25 +435,11 @@ void ISTC_sim(CodeInformation code, int rank){
 					}
 					RRV_DecodedType.clear();
 				}
-        if (Running_minimum_highrate_to_tx_File.is_open()) {
-					if (!twoD_vec_running_minimum.empty()) {
-						for (size_t i = 0; i < twoD_vec_running_minimum.size(); i++) {
-							if (twoD_vec_running_minimum[i].empty()) {
-								continue;
-							} else {
-								for (size_t j = 0; j < twoD_vec_running_minimum[0].size()-1; j++) {
-									Running_minimum_highrate_to_tx_File << twoD_vec_running_minimum[i][j] << ", ";
-								}
-								Running_minimum_highrate_to_tx_File << twoD_vec_running_minimum[i].back() << std::endl;
-							}
-						}
-						// clear the 2d vectors
-						twoD_vec_running_minimum.clear();
-					}
-        }
 
 				
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
+
+			std::cout << "num_trail: " << num_trials << "; num_error: " << num_errors << std::endl;
 			if (num_trials == BATCH_SIZE) {num_errors = MAX_ERRORS;}
 		} // while (num_mistakes < MAX_ERRORS)
 
@@ -332,6 +447,8 @@ void ISTC_sim(CodeInformation code, int rank){
 		utils::print_int_vector(listDecoder.max_listsize_upto_metric);
 		std::cout << "printing average_listsize_upto_metric: " << std::endl;
 		utils::print_float_vector(listDecoder.average_listsize_upto_metric);
+		std::cout << "printing max_lower_envelop: " << std::endl;
+		utils::print_float_vector(listDecoder.max_lower_envelop);
 
 		std::cout << std::endl << "At Eb/N0 = " << std::fixed << std::setprecision(2) << EbN0 << std::endl;
 		std::cout << "number of total errors: " << num_errors << std::endl;
@@ -350,7 +467,6 @@ void ISTC_sim(CodeInformation code, int rank){
 		RRVtoDecoded_ListSizeFile.close();
 		RRVtoDecoded_DecodeTypeFile.close();
 		RRVtoDecoded_AngleFile.close();
-    Running_minimum_highrate_to_tx_File.close();
 	} // for (size_t ebn0_id = 0; ebn0_id < EBN0.size(); ebn0_id++) 
 
 	std::cout << "***--- Simulation Concluded ---***" << std::endl;

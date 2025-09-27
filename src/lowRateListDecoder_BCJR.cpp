@@ -8,7 +8,8 @@ void LowRateListDecoder::_bcjr_log_gamma(std::vector<float> receivedMessage, flo
 	*/
 
 	unsigned int num_trellis_transitions = receivedMessage.size() / n;
-
+	float constant_offset = - k * log(2.0f) + 2.0f .* log( 1.0f/std::sqrt(2.0f * PI * sigma_sqrd) );
+	float constant_factor = - 1.0f / (2 * sigma_sqrd);
 	
 
 	for (unsigned int i = 0; i < receivedMessage.size(); i=i+n) {

@@ -17,6 +17,7 @@ struct CodeInformation {
 struct MessageInformation{
 	MessageInformation() {
 		message 					= std::vector<int>();
+		codeword 					= std::vector<int>();
 		path 							= std::vector<int>();
 		listSize 					= -1;
     TBListSize        = -1;
@@ -28,9 +29,9 @@ struct MessageInformation{
 
 		vec_highrate_to_tx = std::vector<float>();
 		vec_highrate_to_projected_rx = std::vector<float>();
-		vec_running_minimum = std::vector<float>(100, -1.0f);
 	};
 	std::vector<int> message;
+	std::vector<int> codeword;
 	std::vector<int> path;
 	int listSize;
   int TBListSize;
@@ -41,7 +42,6 @@ struct MessageInformation{
 	double rova_probability;
 	std::vector<float> vec_highrate_to_tx;
 	std::vector<float> vec_highrate_to_projected_rx;
-	std::vector<float> vec_running_minimum;
 };
 
 #endif

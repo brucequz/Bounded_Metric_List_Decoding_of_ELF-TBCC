@@ -102,6 +102,9 @@ float compute_angle_between_vectors_rad(
 // normalize vector to unit energy
 std::vector<float> normalize_to_unit_energy(std::vector<float> vec);
 
+// normalize vector to target energy
+std::vector<float> normalized_to_target_energy(std::vector<float> vec, float target_energy);
+
 // Euclidean distance metric
 template <typename T1, typename T2>
 float euclidean_distance(
