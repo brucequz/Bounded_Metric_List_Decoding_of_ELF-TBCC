@@ -42,7 +42,7 @@ inline const std::vector<float> EBN0 = {2.51};
 inline const std::vector<float> ROVA_THRESHOLD = {0};
 
 /* --- Collection Parameters --- */
-constexpr int BATCH_SIZE = 2;
+constexpr int BATCH_SIZE = 20;
 constexpr float EPSILON  = 0.05;
 const double PI = 3.14159265358979323846;
 
