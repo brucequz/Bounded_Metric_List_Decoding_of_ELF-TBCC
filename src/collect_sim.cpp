@@ -363,7 +363,8 @@ void ISTC_sim(CodeInformation code, int rank){
 					if (!middle_point_decode_result.listSizeExceeded && middle_point_decode_result.message == originalMessage) {
 						// decoded correctly, begin recording!
 						// std::cout << "middle point decoded correctly, begin recording!" << std::endl;
-						decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize_Collect(pushed_on_edge, PUNCTURING_INDICES, transmittedMessage, sampling_points, listsize_collect_sample_points);
+						decodingResult = listDecoder.genieAided_LowRateDecoding_MaxListsize_Collect(middle_point, PUNCTURING_INDICES, transmittedMessage, sampling_points, listsize_collect_sample_points);
+
 					} else {
 						// if decoded incorrectly again, throw away.
 						std::cout << "middle point decoded incorrectly, discarding!" << std::endl;
@@ -439,8 +440,8 @@ void ISTC_sim(CodeInformation code, int rank){
 				
 			} // if (num_trials % LOGGING_ITERS == 0 || num_errors == MAX_ERRORS)
 
-			std::cout << "num_trail: " << num_trials << "; num_error: " << num_errors << std::endl;
-			// if (num_trials == BATCH_SIZE) {num_errors = MAX_ERRORS;}
+			// std::cout << "num_trail: " << num_trials << "; num_error: " << num_errors << std::endl;
+			if (num_trials == BATCH_SIZE) {num_errors = MAX_ERRORS;}
 		} // while (num_mistakes < MAX_ERRORS)
 
 		std::cout << "printing max_listsize_upto_metric: " << std::endl;
