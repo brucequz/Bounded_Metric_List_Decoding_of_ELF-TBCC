@@ -8,13 +8,24 @@ void LowRateListDecoder::_bcjr_log_gamma(std::vector<float> receivedMessage, flo
 	*/
 
 	unsigned int num_trellis_transitions = receivedMessage.size() / n;
-	float constant_offset = - k * log(2.0f) + 2.0f .* log( 1.0f/std::sqrt(2.0f * PI * sigma_sqrd) );
-	float constant_factor = - 1.0f / (2 * sigma_sqrd);
+	log_gammas_ = std::vector<std::vector<float>>(num_trellis_transitions, std::vector<float>(std::pow(n,2), 0.0f));
 	
 
-	for (unsigned int i = 0; i < receivedMessage.size(); i=i+n) {
-		for (j = i; j < i+n; j++) {
-			
+	float constant_offset = - k * log(2.0f) + 2.0f * log( 1.0f/std::sqrt(2.0f * PI * sigma_sqrd) );
+	float constant_factor = - 1.0f / (2 * sigma_sqrd);
+	
+	std::vector<std::vector<int>> x_pairs = {{1,1}, {1, -1}, {-1, 1}, {-1, -1}};
+
+	for (unsigned int i = 0; i < receivedMessage.size()/n; i++) {
+		// for each subgroup of symbols in the received message
+		for (unsigned int pair_id = 0; pair_id < x_pairs.size(); pair_id++) {
+			// for each potential output pairs, compute the sum of squares
+			assert(static_cast<size_t>(n) == x_pairs[0].size());
+			float sum_squares = 0.0f;
+			for (unsigned int j = 0; j < x_pairs[0].size(); j++) {
+				sum_squares += std::pow(receivedMessage[i * n + j] - x_pairs[pair_id][j], 2);
+			}
+			log_gammas_[i][pair_id] = constant_offset + constant_factor * sum_squares;
 		}
 	}
 }
@@ -39,7 +50,7 @@ void LowRateListDecoder::_bcjr_forward_pass(std::vector<std::vector<LowRateListD
 }
 
 // construct ZT trellis
-std::vector<std::vector<LowRateListDecoder::bcjr_cell>> LowRateListDecoder::constructLowRateTrellis_ZT(std::vector<float> receivedMessage, METRIC_TYPE metric_type){
+std::vector<std::vector<LowRateListDecoder::bcjr_cell>> LowRateListDecoder::constructLowRateTrellis_ZT_BCJR(std::vector<float> receivedMessage, METRIC_TYPE metric_type){
 	std::vector<std::vector<bcjr_cell>> trellisInfo;
 	lowrate_pathLength = (receivedMessage.size() / lowrate_symbolLength) + 1;
 
@@ -267,120 +278,120 @@ MessageInformation LowRateListDecoder::lowRateDecoding_BCJR(std::vector<float> r
 	return output;
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric_EuclideanMetric_ZT(std::vector<float> receivedMessage) {
-	std::vector<std::vector<cell>> trellisInfo;
+// MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric_EuclideanMetric_ZT(std::vector<float> receivedMessage) {
+// 	std::vector<std::vector<cell>> trellisInfo;
 
-	trellisInfo = constructLowRateTrellis_ZT(receivedMessage, METRIC_TYPE::EUCLIDEAN_METRIC);
+// 	trellisInfo = constructLowRateTrellis_ZT(receivedMessage, METRIC_TYPE::EUCLIDEAN_METRIC);
 
-	// start search
-	MessageInformation output;
-	//RBTree detourTree;
-	MinHeap detourTree;
-	std::vector<std::vector<int>> previousPaths;
+// 	// start search
+// 	MessageInformation output;
+// 	//RBTree detourTree;
+// 	MinHeap detourTree;
+// 	std::vector<std::vector<int>> previousPaths;
 	
 
-	// create nodes for each valid ending state with no detours
-	for(int i = 0; i < lowrate_numStates; i++){
-		DetourObject detour;
-		detour.startingState = i;
-		detour.pathMetric = trellisInfo[i][lowrate_pathLength - 1].pathMetric;
-		detourTree.insert(detour);
-	}
+// 	// create nodes for each valid ending state with no detours
+// 	for(int i = 0; i < lowrate_numStates; i++){
+// 		DetourObject detour;
+// 		detour.startingState = i;
+// 		detour.pathMetric = trellisInfo[i][lowrate_pathLength - 1].pathMetric;
+// 		detourTree.insert(detour);
+// 	}
 
-	int numPathsSearched = 0;
-	int TBPathsSearched = 0;
-	float currentMetricExplored = 0.0;
+// 	int numPathsSearched = 0;
+// 	int TBPathsSearched = 0;
+// 	float currentMetricExplored = 0.0;
 	
-	while(currentMetricExplored < MAX_METRIC){
-		DetourObject detour = detourTree.pop();
-		// std::cout << "floatp detour tree item: " << detour.pathMetric << std::endl;
-		std::vector<int> path(lowrate_pathLength);
+// 	while(currentMetricExplored < MAX_METRIC){
+// 		DetourObject detour = detourTree.pop();
+// 		// std::cout << "floatp detour tree item: " << detour.pathMetric << std::endl;
+// 		std::vector<int> path(lowrate_pathLength);
 
-		int newTracebackStage = lowrate_pathLength - 1;
-		float forwardPartialPathMetric = 0;
-		int currentState = detour.startingState;
+// 		int newTracebackStage = lowrate_pathLength - 1;
+// 		float forwardPartialPathMetric = 0;
+// 		int currentState = detour.startingState;
 
-		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
-		// detour from the previous path
-		if(detour.originalPathIndex != -1){
-			forwardPartialPathMetric = detour.forwardPathMetric;
-			newTracebackStage = detour.detourStage;
+// 		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
+// 		// detour from the previous path
+// 		if(detour.originalPathIndex != -1){
+// 			forwardPartialPathMetric = detour.forwardPathMetric;
+// 			newTracebackStage = detour.detourStage;
 
-			// while we only need to copy the path from the detour to the end, this simplifies things,
-			// and we'll write over the earlier data in any case
-			path = previousPaths[detour.originalPathIndex];
-			currentState = path[newTracebackStage];
+// 			// while we only need to copy the path from the detour to the end, this simplifies things,
+// 			// and we'll write over the earlier data in any case
+// 			path = previousPaths[detour.originalPathIndex];
+// 			currentState = path[newTracebackStage];
 
-			float suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
+// 			float suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
 
-			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
-			newTracebackStage--;
+// 			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
+// 			newTracebackStage--;
 			
-			float prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
+// 			float prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
 
-			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
+// 			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
 			
-		}
-		path[newTracebackStage] = currentState;
+// 		}
+// 		path[newTracebackStage] = currentState;
 
-		// actually tracing back
-		for(int stage = newTracebackStage; stage > 0; stage--){
-			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
-			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
+// 		// actually tracing back
+// 		for(int stage = newTracebackStage; stage > 0; stage--){
+// 			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
+// 			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
 
-			// if there is a detour we add to the detourTree
-			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
-				DetourObject localDetour;
-				localDetour.detourStage = stage;
-				localDetour.originalPathIndex = numPathsSearched;
-				localDetour.pathMetric = suboptimalPathMetric + forwardPartialPathMetric;
-				localDetour.forwardPathMetric = forwardPartialPathMetric;
-				localDetour.startingState = detour.startingState;
-				detourTree.insert(localDetour);
-			}
-			currentState = trellisInfo[currentState][stage].optimalFatherState;
-			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
-			forwardPartialPathMetric += currPathMetric - prevPathMetric;
-			path[stage - 1] = currentState;
-		} // for(int stage = newTracebackStage; stage > 0; stage--)
+// 			// if there is a detour we add to the detourTree
+// 			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
+// 				DetourObject localDetour;
+// 				localDetour.detourStage = stage;
+// 				localDetour.originalPathIndex = numPathsSearched;
+// 				localDetour.pathMetric = suboptimalPathMetric + forwardPartialPathMetric;
+// 				localDetour.forwardPathMetric = forwardPartialPathMetric;
+// 				localDetour.startingState = detour.startingState;
+// 				detourTree.insert(localDetour);
+// 			}
+// 			currentState = trellisInfo[currentState][stage].optimalFatherState;
+// 			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
+// 			forwardPartialPathMetric += currPathMetric - prevPathMetric;
+// 			path[stage - 1] = currentState;
+// 		} // for(int stage = newTracebackStage; stage > 0; stage--)
 		
-		previousPaths.push_back(path);
-		std::vector<int> message = pathToMessage_ZT(path);
-		currentMetricExplored = forwardPartialPathMetric;
-		// std::cout << "current Metric Explored: " << currentMetricExplored << std::endl;
+// 		previousPaths.push_back(path);
+// 		std::vector<int> message = pathToMessage_ZT(path);
+// 		currentMetricExplored = forwardPartialPathMetric;
+// 		// std::cout << "current Metric Explored: " << currentMetricExplored << std::endl;
 		
-		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcDegree, crc) && currentMetricExplored <= MAX_METRIC){
-			output.message = message;
-			output.path = path;
-			output.listSize = numPathsSearched + 1;
-			output.metric = forwardPartialPathMetric;
-			output.TBListSize = TBPathsSearched + 1;
-			// std::cout << "returning metric = " << forwardPartialPathMetric << std::endl;
-			// std::cout << "--" << std::endl;
-			return output;
-		}
+// 		// one trellis decoding requires both a tb and crc check
+// 		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcDegree, crc) && currentMetricExplored <= MAX_METRIC){
+// 			output.message = message;
+// 			output.path = path;
+// 			output.listSize = numPathsSearched + 1;
+// 			output.metric = forwardPartialPathMetric;
+// 			output.TBListSize = TBPathsSearched + 1;
+// 			// std::cout << "returning metric = " << forwardPartialPathMetric << std::endl;
+// 			// std::cout << "--" << std::endl;
+// 			return output;
+// 		}
 
-		numPathsSearched++;
-		if(path[0] == path[lowrate_pathLength - 1])
-			TBPathsSearched++;
-	} // while(currentMetricExplored < MAX_METRIC)
+// 		numPathsSearched++;
+// 		if(path[0] == path[lowrate_pathLength - 1])
+// 			TBPathsSearched++;
+// 	} // while(currentMetricExplored < MAX_METRIC)
 
-	output.listSizeExceeded = true;
-	output.listSize = numPathsSearched;
-	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
-	return output;
-}
+// 	output.listSizeExceeded = true;
+// 	output.listSize = numPathsSearched;
+// 	// std::cerr << "[WARNING]: TC IS NOT FOUND!!! " << std::endl;
+// 	return output;
+// }
 
 
-// converts a path through the ztcc trellis to the binary message it corresponds with
-std::vector<int> LowRateListDecoder::pathToMessage_ZT(std::vector<int> path){
-	std::vector<int> message;
-	for(size_t pathIndex = 0; pathIndex < path.size() - 1 - V; pathIndex++){
-		for(int forwardPath = 0; forwardPath < numForwardPaths; forwardPath++){
-			if(lowrate_nextStates[path[pathIndex]][forwardPath] == path[pathIndex + 1])
-				message.push_back(forwardPath);
-		}
-	}
-	return message;
-}
+// // converts a path through the ztcc trellis to the binary message it corresponds with
+// std::vector<int> LowRateListDecoder::pathToMessage_ZT(std::vector<int> path){
+// 	std::vector<int> message;
+// 	for(size_t pathIndex = 0; pathIndex < path.size() - 1 - V; pathIndex++){
+// 		for(int forwardPath = 0; forwardPath < numForwardPaths; forwardPath++){
+// 			if(lowrate_nextStates[path[pathIndex]][forwardPath] == path[pathIndex + 1])
+// 				message.push_back(forwardPath);
+// 		}
+// 	}
+// 	return message;
+// }

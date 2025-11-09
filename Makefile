@@ -16,15 +16,18 @@ COMMON_SRC_FILES = $(SRC_DIR)/minHeap.cpp $(SRC_DIR)/namespace.cpp $(SRC_DIR)/fe
 BALD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bald_sim.cpp
 ROVA_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/rova_sim.cpp
 COLLECT_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp
+BCJR_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bcjr_sim.cpp $(SRC_DIR)/lowRateListDecoder_BCJR.cpp
 
 BALD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BALD_SRC_FILES))
 ROVA_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(ROVA_SRC_FILES))
 COLLECT_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(COLLECT_SRC_FILES))
+BCJR_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BCJR_SRC_FILES))
 
 # Executable name
 BALD_TARGET = bald
 ROVA_TARGET = rova
 COLLECT_TARGET = collect
+BCJR_TARGET = bcjr
 
 # Default rule
 $(BALD_TARGET): clean consts.h $(BALD_OBJ_FILES) 
@@ -34,7 +37,11 @@ $(ROVA_TARGET): clean consts.h $(ROVA_OBJ_FILES)
 	$(CXX) $(LDFLAGS) $(ROVA_OBJ_FILES) -o $@
 
 $(COLLECT_TARGET): clean consts.h $(COLLECT_OBJ_FILES)
+	echo $(PWD)
 	$(CXX) $(LDFLAGS) $(COLLECT_OBJ_FILES) -o $@
+
+$(BCJR_TARGET): clean consts.h $(BCJR_OBJ_FILES)
+	$(CXX) $(LDFLAGS) $(BCJR_OBJ_FILES) -o $@
 
 consts.h:
 	cp $(INCLUDE_DIR)/consts_$(CONFIG).h consts.h
@@ -49,7 +56,7 @@ $(BUILD_DIR):
 
 # Clean up build files
 clean:
-	rm -rf $(BUILD_DIR) $(BALD_TARGET) $(ROVA_TARGET) $(COLLECT_TARGET) consts.h
+	rm -rf $(BUILD_DIR) $(BALD_TARGET) $(ROVA_TARGET) $(COLLECT_TARGET) $(BCJR_TARGET) consts.h
 
 # Rule to clean up object files
 clean_obj:

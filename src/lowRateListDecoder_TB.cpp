@@ -30,7 +30,9 @@ MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage
 		return lowRateDecoding_MaxMetric_EuclideanMetric_ZT(receivedMessage);
 	} else if (ENCODING_RULE == 'Z' && STOPPING_RULE == 'A') {
 		return lowRateDecoding_MaxAngle_ProductMetric_ZT(receivedMessage);
-	}
+	} else if (ENCODING_RULE == 'Z' && STOPPING_RULE == 'L') {
+		return lowRateDecoding_MaxListsize_ZT(receivedMessage);
+	} 
 	if (this->stopping_rule == 'L') {
 		// max listsize restriction
 		return lowRateDecoding_MaxListsize(receivedMessage, punctured_indices);

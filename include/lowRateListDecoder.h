@@ -29,6 +29,7 @@ public:
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 
 	// ZT
+	MessageInformation lowRateDecoding_MaxListsize_ZT(std::vector<float>& receivedMessage);
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric_ZT(std::vector<float> receivedMessage);
 	MessageInformation lowRateDecoding_MaxMetric_EuclideanMetric_ZT(std::vector<float> receivedMessage);
 
@@ -48,6 +49,8 @@ public:
 	std::vector<float> average_listsize_upto_metric;
 	std::vector<float> max_lower_envelop;
 
+	void _bcjr_log_gamma(std::vector<float> receivedMessage, float sigma_sqrd);
+
 private:
 	int numForwardPaths;
 	int listSize;
@@ -63,8 +66,7 @@ private:
 	int lowrate_pathLength;
 
 	// ROVA
-	std::vector<std::vector<std::vector<float>>> log_gammas_;
-
+	std::vector<std::vector<float>> log_gammas_;
 	struct cell {
 		int optimalFatherState = -1;
 		int suboptimalFatherState = -1;
@@ -101,6 +103,8 @@ private:
 	float compute_logGamma(std::vector<float> receivedMessage, std::vector<int> codeword, float sigma_sqrd);
 	// computes max star approximation in BCJR decoding
 	float max_star(float lnx, float lny);
+	// constructs the trellis with bcjr information
+	std::vector<std::vector<bcjr_cell>> constructLowRateTrellis_ZT_BCJR(std::vector<float> receivedMessage, METRIC_TYPE metric_type);
 
 	// TB Punctured
   std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
@@ -109,7 +113,6 @@ private:
 	// BCJR
 	void _bcjr_forward_pass(std::vector<std::vector<bcjr_cell>> &trellis);
 	void _bcjr_backward_pass(std::vector<std::vector<bcjr_cell>> &trellis);
-	void _bcjr_log_gamma(std::vector<float> receivedMessage, float sigma_sqrd);
 };
 
 

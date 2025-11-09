@@ -71,6 +71,8 @@ int main(int argc, char *argv[]) {
 				ISTC_sim(code, world_rank);  // Run simulation
 			}
 		}
+	} else {
+		ISTC_sim(code, world_rank);
 	}
 
 	MPI_Finalize();
@@ -110,8 +112,10 @@ void ISTC_sim(CodeInformation code, int rank){
 		} else if (DECODING_RULE == 'P' && STOPPING_RULE == 'M') {
 			// for projected distance decoding
 			folder_name = "output/BPDLD/Curve_Sim_dist_" + metric_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
+		} else if (STOPPING_RULE == 'L') {
+			folder_name = "output/ListDecoder/Curve_Sim_dist_" + metric_str.str() + "/EbN0_" + ebn0_str.str() + "/Proc" + std::to_string(rank);
 		} else {
-			std::cerr << "Incorrect config! Abort!" << std::endl;
+			std::cout << "Incorrect config! Abort!" << std::endl;
 			exit(1);
 		}
 		system(("mkdir -p " + folder_name).c_str());
@@ -182,13 +186,11 @@ void ISTC_sim(CodeInformation code, int rank){
 
 		while (should_continue()) {
 			
-			// std::cout << "Checkpoint 0" << std::endl; 
 			std::vector<int> originalMessage = crc::generateRandomCRCMessage(code);
 			// std::cout << "original message: ";
 			// utils::print_int_vector(originalMessage);
-			// std::cout << std::endl;
+			// std::cout << ", size: " << originalMessage.size() << std::endl;
 			std::vector<int> transmittedMessage = generateTransmittedMessage(originalMessage, encodingTrellis);
-			// transmittedMessage = {1, 1, -1, -1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, 1, -1, -1, -1, -1, 1, -1, 1, 1, 1, -1, 1, -1, 1, -1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1};
 			// std::cout << "transmitted message: ";
 			// utils::print_int_vector(transmittedMessage);
 			// std::cout << ", length = " << transmittedMessage.size() << std::endl;
@@ -197,7 +199,7 @@ void ISTC_sim(CodeInformation code, int rank){
 			// std::cout << "received message: ";
 			// utils::print_float_vector(receivedMessage);
 			
-			// [DEBUG:]
+			// Channel
 			float esno = pow(10.0, esno_dB / 10.0);
 			for (size_t i = 0; i < receivedMessage.size(); i++) {
 				receivedMessage[i] = receivedMessage[i] / (4 * esno);
@@ -208,7 +210,6 @@ void ISTC_sim(CodeInformation code, int rank){
 			
 			// Project Received Message onto the codeword sphere
 			MessageInformation decodingResult;
-			float sigma_sqrd = pow(10.0, -esno_dB / 10.0) / 2.0;
 			if (DECODING_RULE == 'P') {
 				float received_word_energy = utils::compute_vector_energy(receivedMessage);
 				float energy_normalize_factor = std::sqrt(N / received_word_energy);  // normalizing received message
@@ -217,9 +218,9 @@ void ISTC_sim(CodeInformation code, int rank){
 					projected_received_word[i] = receivedMessage[i] * energy_normalize_factor;
 				}
 				// Decoding
-				decodingResult = listDecoder.decode(projected_received_word, puncturedIndices, sigma_sqrd);
+				decodingResult = listDecoder.decode(projected_received_word, puncturedIndices);
 			} else if (DECODING_RULE == 'N') {
-				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices, sigma_sqrd);
+				decodingResult = listDecoder.decode(receivedMessage, puncturedIndices);
 			}
 			
 
@@ -378,7 +379,7 @@ void logSimulationParams() {
 	if (DECODING_RULE == 'P' || DECODING_RULE == 'N') {
 		std::cout << "| " << std::left << std::setw(20) << "DECODING RULE"
 						<< "| " << std::setw(10) << DECODING_RULE << "|\n";
-	} else {std::cerr << "INCORRECT DECODING RULE! ABORT!"; exit(1);}
+	} else {std::cout << "INCORRECT DECODING RULE! ABORT!"; exit(1);}
 	/// ---------------- SIMULATION PARAMS ----------------
 	std::cout << "| " << std::left << std::setw(20) << "MAX ERRORS"
 						<< "| " << std::setw(10) << MAX_ERRORS << "|\n";

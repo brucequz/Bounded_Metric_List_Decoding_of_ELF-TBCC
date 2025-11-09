@@ -37,5 +37,6 @@ inline const std::vector<float> EBN0 = {2.51};
 
 /* --- Collection Parameters --- */
 constexpr int BATCH_SIZE = 10;
+const double PI = 3.14159265358979323846;
 
 #endif
