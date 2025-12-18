@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <limits>
 
 #include "feedForwardTrellis.h"
 #include "minHeap.h"
@@ -70,8 +71,8 @@ private:
 	struct cell {
 		int optimalFatherState = -1;
 		int suboptimalFatherState = -1;
-		float pathMetric = INT_MAX;
-		float suboptimalPathMetric = INT_MAX;
+		float pathMetric = std::numeric_limits<float>::max();
+		float suboptimalPathMetric = std::numeric_limits<float>::max();
 		bool init = false;
 	};
 

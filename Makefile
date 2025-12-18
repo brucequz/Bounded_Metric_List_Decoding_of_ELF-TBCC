@@ -1,5 +1,5 @@
 CXX = mpicxx
-CXXFLAGS = -std=c++17 -Wall -Wextra -I include -O2
+CXXFLAGS = -std=c++20 -Wall -Wextra -I include -O2
 LDFLAGS = 
 
 # Directories
@@ -11,23 +11,25 @@ CONFIG ?= K64N128
 # Create a list of all source and object files
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 COMMON_SRC_FILES = $(SRC_DIR)/minHeap.cpp $(SRC_DIR)/namespace.cpp $(SRC_DIR)/feedForwardTrellis.cpp $(SRC_DIR)/lowRateListDecoder_TB.cpp $(SRC_DIR)/lowRateListDecoder_ZT.cpp 
-# COMMON_SRC_FILES = $(filter-out $(SRC_DIR)/bald_sim.cpp $(SRC_DIR)/rova_sim.cpp $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp $(SRC_DIR)/lowRateListDecoder_BCJR.cpp, $(SRC_FILES))
 
 BALD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bald_sim.cpp
 ROVA_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/rova_sim.cpp
 COLLECT_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp
 BCJR_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bcjr_sim.cpp $(SRC_DIR)/lowRateListDecoder_BCJR.cpp
+SSD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_sim.cpp
 
 BALD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BALD_SRC_FILES))
 ROVA_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(ROVA_SRC_FILES))
 COLLECT_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(COLLECT_SRC_FILES))
 BCJR_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BCJR_SRC_FILES))
+SSD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SSD_SRC_FILES))
 
 # Executable name
 BALD_TARGET = bald
 ROVA_TARGET = rova
 COLLECT_TARGET = collect
 BCJR_TARGET = bcjr
+SSD_TARGET = ssd
 
 # Default rule
 $(BALD_TARGET): clean consts.h $(BALD_OBJ_FILES) 
@@ -42,6 +44,9 @@ $(COLLECT_TARGET): clean consts.h $(COLLECT_OBJ_FILES)
 
 $(BCJR_TARGET): clean consts.h $(BCJR_OBJ_FILES)
 	$(CXX) $(LDFLAGS) $(BCJR_OBJ_FILES) -o $@
+
+$(SSD_TARGET): consts.h $(SSD_OBJ_FILES) 
+	$(CXX) $(LDFLAGS) $(SSD_OBJ_FILES) -o $@
 
 consts.h:
 	cp $(INCLUDE_DIR)/consts_$(CONFIG).h consts.h

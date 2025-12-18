@@ -72,7 +72,7 @@ void FeedForwardTrellis::computeNextStates(){
 }
 
 // for zero-terminated message, start encoding at state-0
-std::vector<int> FeedForwardTrellis::encode_zt(std::vector<int> originalMessage){
+std::vector<int> FeedForwardTrellis::encode_zt(std::vector<int> originalMessage) const {
 	std::vector<int> output;
 	int State = 0;
 	for (size_t i = 0; i < originalMessage.size(); i += k){
@@ -90,7 +90,7 @@ std::vector<int> FeedForwardTrellis::encode_zt(std::vector<int> originalMessage)
 }
 
 
-std::vector<int> FeedForwardTrellis::encode(std::vector<int> originalMessage){
+std::vector<int> FeedForwardTrellis::encode(std::vector<int> originalMessage) const {
 	// brute force approach, there is a better way to do this assuming invertibility
 	// that allows us to precompute starting / ending states, reducing complexity in
 	// each encoding from O(numStates) to O(2). revisit when available

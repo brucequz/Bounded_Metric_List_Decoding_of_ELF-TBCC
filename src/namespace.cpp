@@ -39,8 +39,7 @@ float log_normpdf(float x, float mu, float sigma) {
 	return std::log(1.0/(sqrt(2*M_PI)*sigma)) - 0.5 * pow(((x - mu) / sigma), 2);
 }
 
-// this takes the transmitted message and adds AWGN noise to it
-// it also punctures the bits that are not used in the trellis
+/* adds noise and puncturing */
 std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector<int> puncturedIndices, float esno_dB, bool noiseless){
 	std::vector<float> receivedMessage;
 	if(noiseless){
@@ -152,7 +151,7 @@ void print_float_vector(std::vector<float> vector){
 	if(vector.size() == 0)
 		return;
 	for(size_t i = 0; i < vector.size() - 1; i++){
-		std::cout << std::setprecision(5) << vector[i] << ", ";
+		std::cout << std::setprecision(5) << vector[i] << " ";
 	}
 	std::cout << vector[vector.size() - 1] << std::endl;
 }
@@ -162,7 +161,7 @@ void print_int_vector(std::vector<int> vector){
 	if(vector.size() == 0)
 		return;
 	for(size_t i = 0; i < vector.size() - 1; i++){
-		std::cout << vector[i] << ", ";
+		std::cout << vector[i] << " ";
 	}
 	std::cout << vector[vector.size() - 1] << std::endl;
 }
@@ -172,7 +171,7 @@ void output_int_vector(std::vector<int> vector, std::ofstream& file){
 	if(vector.size() == 0)
 		return;
 	for(size_t i = 0; i < vector.size() - 1; i++){
-		file << vector[i] << ", ";
+		file << vector[i] << " ";
 	}
 	file << vector[vector.size() - 1] << std::endl;
 }
