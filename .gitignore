@@ -20,3 +20,5 @@ presentation/
 .clangd
 .clang-format
 ssd
+*.dSYM/
+run_tests

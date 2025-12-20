@@ -1,5 +1,5 @@
 CXX = mpicxx
-CXXFLAGS = -std=c++20 -Wall -Wextra -I include -O2
+CXXFLAGS = -g -std=c++20 -Wall -Wextra -I include 
 LDFLAGS = 
 
 # Directories
@@ -45,14 +45,15 @@ $(COLLECT_TARGET): clean consts.h $(COLLECT_OBJ_FILES)
 $(BCJR_TARGET): clean consts.h $(BCJR_OBJ_FILES)
 	$(CXX) $(LDFLAGS) $(BCJR_OBJ_FILES) -o $@
 
-$(SSD_TARGET): consts.h $(SSD_OBJ_FILES) 
+$(SSD_TARGET): clean consts.h $(SSD_OBJ_FILES) 
 	$(CXX) $(LDFLAGS) $(SSD_OBJ_FILES) -o $@
 
-consts.h:
+consts.h: $(INCLUDE_DIR)/consts_$(CONFIG).h
+	@echo "Updating consts.h from consts_$(CONFIG).h"
 	cp $(INCLUDE_DIR)/consts_$(CONFIG).h consts.h
 
 # Rule to compile source files into object files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp consts.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -DCONFIG_$(CONFIG) -c $< -o $@
 
 # Rule to create the build directory if it doesn't exist

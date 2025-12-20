@@ -24,7 +24,7 @@ public:
 	MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 
 	// TB
-	MessageInformation lowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+	MessageInformation lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices);
 	MessageInformation lowRateDecoding_MaxMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxAngle(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
@@ -108,7 +108,7 @@ private:
 	std::vector<std::vector<bcjr_cell>> constructLowRateTrellis_ZT_BCJR(std::vector<float> receivedMessage, METRIC_TYPE metric_type);
 
 	// TB Punctured
-  std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
+  std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices);
 	std::vector<std::vector<cell>> constructLowRateTrellis_Punctured_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 
 	// BCJR

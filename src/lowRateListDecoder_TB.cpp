@@ -46,7 +46,7 @@ MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage
 	throw std::invalid_argument("INVALID DECODING CHOICE!");
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(std::vector<float> receivedMessage, std::vector<int> punctured_indices){
+MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices){
 	// trellisInfo is indexed [state][stage]
 	std::vector<std::vector<cell>> trellisInfo;
 	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
@@ -544,7 +544,7 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 	return trellisInfo;
 }
 
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured(std::vector<float> receivedMessage, std::vector<int> punctured_indices){
+std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices){
 	/* Constructs a trellis for a low rate code, with puncturing
 		Args:
 			receivedMessage (std::vector<float>): the received message

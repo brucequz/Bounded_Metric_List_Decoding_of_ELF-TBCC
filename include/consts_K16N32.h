@@ -13,7 +13,13 @@ const int K = 16;                     /* Number of input bits */
 const int N = 32;                     /* Number of output bits */
 const int V = 6;                     /* Number of memory elements */
 const int M = 8;                      /* Degree of CRC - 1 */
+const int Kcrc = 16;
+const int Ncrc = 24;
+const int Kconv = 24;
+const int Nconv = 48;
+
 const unsigned int CRC = 0b110001001; /* CRC polynomial */
+const std::vector<int> CRC_VEC = {1,1,0,0,0,1,0,0,1};
 const std::vector<int> NUMERATORS = {133, 171}; /* in octal */
 
 const std::vector<int> PUNCTURING_INDICES = {

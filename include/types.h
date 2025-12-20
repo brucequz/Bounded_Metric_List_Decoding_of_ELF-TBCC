@@ -11,7 +11,7 @@ struct CodeInformation {
   int crc;            // CRC polynomial
   int numInfoBits;    // number of information bits
   
-  std::vector<int> numerators; // optimal code numerators
+  const std::vector<int> numerators; // optimal code numerators
 };
 
 struct MessageInformation{
