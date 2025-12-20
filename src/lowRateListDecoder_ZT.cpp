@@ -1,4 +1,4 @@
-#include "lowRateListDecoder.h"
+#include "../include/lowRateListDecoder.h"
 
 // construct ZT trellis
 std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_ZT(std::vector<float> receivedMessage, METRIC_TYPE metric_type){

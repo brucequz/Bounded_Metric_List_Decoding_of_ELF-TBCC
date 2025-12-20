@@ -1,4 +1,6 @@
 #include "../include/lowRateListDecoder.h"
+#include <algorithm>
+#include <cstdlib>
 
 LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, int listSize, int crcDegree, int crc, char stopping_rule) {
   this->lowrate_nextStates    = feedforwardTrellis.getNextStates();
@@ -44,6 +46,112 @@ MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage
 		return lowRateDecoding_MaxAngle_ProductMetric(receivedMessage, punctured_indices);
 	}
 	throw std::invalid_argument("INVALID DECODING CHOICE!");
+}
+
+MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices, const std::vector<int>& codeword, const int listsize) {
+	// trellisInfo is indexed [state][stage]
+	std::vector<std::vector<cell>> trellisInfo;
+	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
+
+	// start search
+	MessageInformation output;
+	//RBTree detourTree;
+	MinHeap detourTree;
+	std::vector<std::vector<int>> previousPaths;
+	
+
+	// create nodes for each valid ending state with no detours
+	// std::cout<< "end path metrics:" <<std::endl;
+	for(int i = 0; i < lowrate_numStates; i++){
+		DetourObject detour;
+		detour.startingState = i;
+		detour.pathMetric = trellisInfo[i][lowrate_pathLength - 1].pathMetric;
+		detourTree.insert(detour);
+	}
+
+	int numPathsSearched = 0;
+  
+	while(numPathsSearched < listsize){
+		DetourObject detour = detourTree.pop();
+		std::vector<int> path(lowrate_pathLength);
+
+		int newTracebackStage = lowrate_pathLength - 1;
+		float forwardPartialPathMetric = 0;
+		int currentState = detour.startingState;
+
+		// if we are taking a detour from a previous path, we skip backwards to the point where we take the
+		// detour from the previous path
+		if(detour.originalPathIndex != -1){
+			forwardPartialPathMetric = detour.forwardPathMetric;
+			newTracebackStage = detour.detourStage;
+
+			// while we only need to copy the path from the detour to the end, this simplifies things,
+			// and we'll write over the earlier data in any case
+			path = previousPaths[detour.originalPathIndex];
+			currentState = path[newTracebackStage];
+
+			float suboptimalPathMetric = trellisInfo[currentState][newTracebackStage].suboptimalPathMetric;
+
+			currentState = trellisInfo[currentState][newTracebackStage].suboptimalFatherState;
+			newTracebackStage--;
+			
+			float prevPathMetric = trellisInfo[currentState][newTracebackStage].pathMetric;
+
+			forwardPartialPathMetric += suboptimalPathMetric - prevPathMetric;
+			
+		}
+		path[newTracebackStage] = currentState;
+
+		// actually tracing back
+		for(int stage = newTracebackStage; stage > 0; stage--){
+			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
+			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
+
+			// if there is a detour we add to the detourTree
+			if(trellisInfo[currentState][stage].suboptimalFatherState != -1){
+				DetourObject localDetour;
+				localDetour.detourStage = stage;
+				localDetour.originalPathIndex = numPathsSearched;
+				localDetour.pathMetric = suboptimalPathMetric + forwardPartialPathMetric;
+				localDetour.forwardPathMetric = forwardPartialPathMetric;
+				localDetour.startingState = detour.startingState;
+				detourTree.insert(localDetour);
+			}
+			currentState = trellisInfo[currentState][stage].optimalFatherState;
+			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
+			forwardPartialPathMetric += currPathMetric - prevPathMetric;
+			path[stage - 1] = currentState;
+		}
+		
+		previousPaths.push_back(path);
+
+		std::vector<int> message = pathToMessage(path);
+		std::vector<int> cand_codeword = pathToCodeword(path);
+		unsigned long syndrome = crc::remdr(message, CRC, Ncrc, M);
+		int ESD = path[0] ^ path[Kconv];
+
+		int hamming_dist = 0;
+		float euclidean_dist = 0.0f;
+		for (size_t i = 0; i < codeword.size(); i++) {
+			if (std::find(punctured_indices.begin(), punctured_indices.end(), i) == punctured_indices.end()) {
+				hamming_dist += (int)cand_codeword[i]!=codeword[i];
+				euclidean_dist += std::pow(std::abs(cand_codeword[i]-codeword[i]),2);
+			}
+		}
+
+		std::cout << "candidate codeword: " << numPathsSearched << std::endl;
+		std::cout << "outputing syndrome: " << syndrome << std::endl;
+		std::cout << "path[0]: " << path[0] << "; path[Kconv]: " << path[Kconv] << "; ESD: " << ESD << std::endl;
+		std::cout << "message: "; utils::print_int_vector(message);
+		std::cout << "codeword: "; utils::print_int_vector(cand_codeword);
+		std::cout << "hamming dist: " << hamming_dist << "; euclidean dist: " << euclidean_dist << "; forwardPathMetric: " << forwardPartialPathMetric << std::endl;
+		std::cout << std::endl;
+ 
+		numPathsSearched++;
+	} // while(numPathsSearched < this->listSize)
+
+	output.listSizeExceeded = true;
+	return output;
 }
 
 MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices){

@@ -25,6 +25,7 @@ public:
 
 	// TB
 	MessageInformation lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices);
+	MessageInformation forceDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices, const std::vector<int>& codeword, const int listsize);
 	MessageInformation lowRateDecoding_MaxMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxAngle(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 	MessageInformation lowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
@@ -38,7 +39,6 @@ public:
 	MessageInformation lowRateDecoding_BCJR(std::vector<float> receivedMessage, float sigma_sqrd);
 
 	// ROVA
-	MessageInformation decode_ROVA(std::vector<float> receivedMessage, std::vector<int> punctured_indices, float sigma_sqrd, float rova_t);
 	MessageInformation lowRateDecoding_SquaredDistanceMetric_ROVA_ZT(std::vector<float> receivedMessage, float sigma_sqrd, float rova_t);
 
 	// genie-Aided
@@ -50,7 +50,9 @@ public:
 	std::vector<float> average_listsize_upto_metric;
 	std::vector<float> max_lower_envelop;
 
-	void _bcjr_log_gamma(std::vector<float> receivedMessage, float sigma_sqrd);
+	// Linearity
+	void generateNeighborList_sequential(const std::vector<float>& allZerosMessage, std::string dir, double thre);
+	void writeDataToFile(const std::vector<std::vector<int>>& data, const std::string& filename);
 
 private:
 	int numForwardPaths;

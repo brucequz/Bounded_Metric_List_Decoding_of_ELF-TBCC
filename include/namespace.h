@@ -45,7 +45,8 @@ void crc_calculation(std::vector<int>& input_data, int crc_bits_num, int crc_dec
 
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
 
-std::vector<int> remdr(const std::vector<int>& dividend, const std::vector<int>& generator);
+std::vector<int> remdr_slidingWindow(const std::vector<int>& dividend, const std::vector<int>& generator);
+unsigned long remdr(std::vector<int> p, unsigned long crc, int n, int m);
 
 } // namespace crc
 

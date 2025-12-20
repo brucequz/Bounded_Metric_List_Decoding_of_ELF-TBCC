@@ -3,8 +3,6 @@
 #include <iostream>
 #include <string>
 #include <cmath>
-#include <queue>
-#include <algorithm>
 
 FeedForwardTrellis::FeedForwardTrellis(int k, int n, int v, std::vector<int> numerators){
 	this->k = k;
