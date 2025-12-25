@@ -73,7 +73,7 @@ void ROVA_sim(CodeInformation code, int rank) {
 			FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
 
 			/* - Decoder setup - */
-			LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
+			LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc, STOPPING_RULE);
 
 			/* - Output Temporary Holder setup - */
 			std::vector<float> RRVtoTransmitted_Metric;

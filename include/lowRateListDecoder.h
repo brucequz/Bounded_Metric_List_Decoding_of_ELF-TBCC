@@ -19,7 +19,7 @@ enum class METRIC_TYPE {
 
 class LowRateListDecoder{
 public:
-	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcDegree, int crc, char stopping_rule);
+	LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcLength, int crc, char stopping_rule);
 
 	MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 
@@ -52,12 +52,14 @@ public:
 
 	// Linearity
 	void generateNeighborList_sequential(const std::vector<float>& allZerosMessage, std::string dir, double thre);
+	void generateNeighborList_sequential_TBonly(const std::vector<float>& allZerosMessage, std::string dir, double thre);
+	MessageInformation lowrateDecoding_neighbors(const std::vector<float>& receivedMessage, std::vector<std::vector<int>> G_mat);
 	void writeDataToFile(const std::vector<std::vector<int>>& data, const std::string& filename);
 
 private:
 	int numForwardPaths;
 	int listSize;
-	int crcDegree;
+	int crcLength;
 	int crc;
 	int n;
 	char stopping_rule;
@@ -90,32 +92,18 @@ private:
 		float _log_beta 	= -INFINITY;
 	};
 
-	std::vector<int> pathToMessage(std::vector<int>); 
-  std::vector<int> pathToCodeword(std::vector<int>); 
+	std::vector<int> pathToMessage(const std::vector<int>& path) const; 
+  std::vector<int> pathToCodeword(const std::vector<int>& path) const ; 
 	std::vector<int> pathToMessage_ZT(std::vector<int> path);
 
-	/* - Floating Point - */
-	std::vector<std::vector<cell>> constructLowRateTrellis(std::vector<float> receivedMessage);
-
-	// ZT
-	// constructs the trellis with rova information
-	std::vector<std::vector<rova_cell>> constructLowRateTrellis_ROVA_Alg4_ZT(std::vector<float> receivedMessage, float sigma_sqrd);
+	/* ZT */
 	// construct the trellis using either product/euclidean distance metric
 	std::vector<std::vector<cell>> constructLowRateTrellis_ZT(std::vector<float> receivedMessage, METRIC_TYPE metric_type);
-	// computes the path likelihood Gamma in logarithm
-	float compute_logGamma(std::vector<float> receivedMessage, std::vector<int> codeword, float sigma_sqrd);
-	// computes max star approximation in BCJR decoding
-	float max_star(float lnx, float lny);
-	// constructs the trellis with bcjr information
-	std::vector<std::vector<bcjr_cell>> constructLowRateTrellis_ZT_BCJR(std::vector<float> receivedMessage, METRIC_TYPE metric_type);
-
-	// TB Punctured
+	
+	/* TB */
+	std::vector<std::vector<cell>> constructLowRateTrellis(const std::vector<float>& receivedMessage);
   std::vector<std::vector<cell>> constructLowRateTrellis_Punctured(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices);
-	std::vector<std::vector<cell>> constructLowRateTrellis_Punctured_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
-
-	// BCJR
-	void _bcjr_forward_pass(std::vector<std::vector<bcjr_cell>> &trellis);
-	void _bcjr_backward_pass(std::vector<std::vector<bcjr_cell>> &trellis);
+	std::vector<std::vector<cell>> constructLowRateTrellis_Punctured_ProductMetric(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices);
 };
 
 

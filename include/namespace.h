@@ -9,6 +9,7 @@
 #include <vector>
 #include <random>
 #include <stdexcept>
+#include <sstream>
 #include <algorithm>
 
 #include "types.h"
@@ -46,7 +47,7 @@ void crc_calculation(std::vector<int>& input_data, int crc_bits_num, int crc_dec
 std::vector<int> generateRandomCRCMessage(CodeInformation code);
 
 std::vector<int> remdr_slidingWindow(const std::vector<int>& dividend, const std::vector<int>& generator);
-unsigned long remdr(std::vector<int> p, unsigned long crc, int n, int m);
+unsigned long remdr(const std::vector<int>& p, unsigned long crc, int n, int m);
 
 } // namespace crc
 
@@ -177,5 +178,11 @@ std::vector<float> elementwise_squared_distance(
 }
 
 } // namespace utils
+
+namespace io {
+
+std::vector<std::vector<int>> read2DVectorFromFile(const std::string& filename);
+
+}
 
 #endif

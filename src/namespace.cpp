@@ -165,11 +165,11 @@ namespace crc
       info_crc.push_back(rand() % 2);
 
     // compute the CRC
-    crc_calculation(info_crc, code.crcDeg, code.crc);
+    crc_calculation(info_crc, code.crcLen, code.crc);
     return info_crc;
   }
 
-  unsigned long remdr(std::vector<int> p, unsigned long crc, int n, int m)
+  unsigned long remdr(const std::vector<int>& p, unsigned long crc, int n, int m)
   {
     assert((int)p.size() >= n);
     unsigned long state;
@@ -233,7 +233,7 @@ namespace utils
       return;
     for (size_t i = 0; i < vector.size() - 1; i++)
     {
-      std::cout << std::setprecision(5) << vector[i] << " ";
+      std::cout << std::setprecision(2) << vector[i] << " ";
     }
     std::cout << vector[vector.size() - 1] << std::endl;
   }
@@ -309,3 +309,39 @@ namespace utils
   }
 
 } // namespace utils
+
+namespace io {
+
+std::vector<std::vector<int>> read2DVectorFromFile(const std::string& filename) {
+    std::vector<std::vector<int>> data;
+    std::ifstream file(filename);
+
+    // Check if the file opened successfully
+    if (!file.is_open()) {
+        // You could also throw an exception here
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return data;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::vector<int> row;
+        std::stringstream ss(line);
+        int value;
+
+        // Extract integers from the current line
+        while (ss >> value) {
+            row.push_back(value);
+        }
+
+        // Only add the row if it's not empty (skips blank lines)
+        if (!row.empty()) {
+            data.push_back(row);
+        }
+    }
+
+    file.close();
+    return data;
+}
+
+}

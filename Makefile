@@ -15,21 +15,21 @@ COMMON_SRC_FILES = $(SRC_DIR)/minHeap.cpp $(SRC_DIR)/namespace.cpp $(SRC_DIR)/fe
 BALD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bald_sim.cpp
 ROVA_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/rova_sim.cpp
 COLLECT_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp
-BCJR_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bcjr_sim.cpp $(SRC_DIR)/lowRateListDecoder_BCJR.cpp
-SSD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_sim.cpp
+SSD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_sim.cpp $(SRC_DIR)/linearityDecoding.cpp
+GEN_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_table_gen.cpp $(SRC_DIR)/linearityDecoding.cpp
 
 BALD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BALD_SRC_FILES))
 ROVA_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(ROVA_SRC_FILES))
 COLLECT_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(COLLECT_SRC_FILES))
-BCJR_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BCJR_SRC_FILES))
 SSD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SSD_SRC_FILES))
+GEN_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(GEN_SRC_FILES))
 
 # Executable name
 BALD_TARGET = bald
 ROVA_TARGET = rova
 COLLECT_TARGET = collect
-BCJR_TARGET = bcjr
 SSD_TARGET = ssd
+GEN_SSD_TABLE_TARGET = gen
 
 # Default rule
 $(BALD_TARGET): clean consts.h $(BALD_OBJ_FILES) 
@@ -42,11 +42,11 @@ $(COLLECT_TARGET): clean consts.h $(COLLECT_OBJ_FILES)
 	echo $(PWD)
 	$(CXX) $(LDFLAGS) $(COLLECT_OBJ_FILES) -o $@
 
-$(BCJR_TARGET): clean consts.h $(BCJR_OBJ_FILES)
-	$(CXX) $(LDFLAGS) $(BCJR_OBJ_FILES) -o $@
-
 $(SSD_TARGET): clean consts.h $(SSD_OBJ_FILES) 
 	$(CXX) $(LDFLAGS) $(SSD_OBJ_FILES) -o $@
+
+$(GEN_SSD_TABLE_TARGET): $(INCLUDE_DIR)/consts_$(CONFIG).h $(GEN_OBJ_FILES) 
+	$(CXX) $(LDFLAGS) $(GEN_OBJ_FILES) -o $@
 
 consts.h: $(INCLUDE_DIR)/consts_$(CONFIG).h
 	@echo "Updating consts.h from consts_$(CONFIG).h"
@@ -62,7 +62,7 @@ $(BUILD_DIR):
 
 # Clean up build files
 clean:
-	rm -rf $(BUILD_DIR) $(BALD_TARGET) $(ROVA_TARGET) $(COLLECT_TARGET) $(BCJR_TARGET) consts.h
+	rm -rf $(BUILD_DIR) $(BALD_TARGET) $(ROVA_TARGET) $(COLLECT_TARGET) $(SSD_TARGET) $(GEN_SSD_TABLE_TARGET) consts.h
 
 # Rule to clean up object files
 clean_obj:

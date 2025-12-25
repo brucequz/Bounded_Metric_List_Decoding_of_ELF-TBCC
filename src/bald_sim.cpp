@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   code.k = k;         // numerator of the rate
   code.n = n;         // denominator of the rate
   code.v = V;         // number of memory elements
-  code.crcDeg = M+1;  // m+1, degree of CRC, # bits of CRC polynomial
+  code.crcLen = M+1;  // m+1, degree of CRC, # bits of CRC polynomial
   code.crc = CRC;     // CRC polynomial
   code.numInfoBits = K; // number of information bits
   code.numerators = NUMERATORS;
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	/* Check */
-	if ((code.numInfoBits + code.crcDeg - 1) % code.k != 0) {
+	if ((code.numInfoBits + code.crcLen - 1) % code.k != 0) {
 			std::cerr << "invalid msg + crc length" << std::endl;
 			exit(1);
 	}
@@ -146,7 +146,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
 
 		/* - Decoder setup - */
-		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcDeg, code.crc, STOPPING_RULE);
+		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc, STOPPING_RULE);
 
 		/* - Output Temporary Holder setup - */
 		std::vector<float> RRVtoTransmitted_Metric;

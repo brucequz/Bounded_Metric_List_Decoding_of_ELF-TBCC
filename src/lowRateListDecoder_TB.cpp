@@ -2,14 +2,14 @@
 #include <algorithm>
 #include <cstdlib>
 
-LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, int listSize, int crcDegree, int crc, char stopping_rule) {
+LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, int listSize, int crcLength, int crc, char stopping_rule) {
   this->lowrate_nextStates    = feedforwardTrellis.getNextStates();
 	this->lowrate_outputs       = feedforwardTrellis.getOutputs();
 	this->lowrate_numStates     = feedforwardTrellis.getNumStates();
 	this->lowrate_symbolLength  = feedforwardTrellis.getN();
 	this->numForwardPaths       = lowrate_nextStates[0].size();
   this->listSize              = listSize;
-  this->crcDegree             = crcDegree;
+  this->crcLength             = crcLength;
   this->crc                   = crc;
 	this->stopping_rule					= stopping_rule;
 
@@ -127,8 +127,8 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 
 		std::vector<int> message = pathToMessage(path);
 		std::vector<int> cand_codeword = pathToCodeword(path);
-		unsigned long syndrome = crc::remdr(message, CRC, Ncrc, M);
-		int ESD = path[0] ^ path[Kconv];
+		unsigned long syndrome = crc::remdr(message, this->crc, (int)message.size(), this->crcLength-1);
+		int ESD = path[0] ^ path[this->lowrate_pathLength-1];
 
 		int hamming_dist = 0;
 		float euclidean_dist = 0.0f;
@@ -139,14 +139,16 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 			}
 		}
 
-		std::cout << "candidate codeword: " << numPathsSearched << std::endl;
-		std::cout << "outputing syndrome: " << syndrome << std::endl;
-		std::cout << "path[0]: " << path[0] << "; path[Kconv]: " << path[Kconv] << "; ESD: " << ESD << std::endl;
-		std::cout << "message: "; utils::print_int_vector(message);
-		std::cout << "codeword: "; utils::print_int_vector(cand_codeword);
-		std::cout << "hamming dist: " << hamming_dist << "; euclidean dist: " << euclidean_dist << "; forwardPathMetric: " << forwardPartialPathMetric << std::endl;
-		std::cout << std::endl;
- 
+		if (path[0] == path.back()) {
+			std::cout << "candidate codeword: " << numPathsSearched << std::endl;
+			std::cout << "outputing syndrome: " << syndrome << std::endl;
+			std::cout << "path[0]: " << path[0] << "; path[Kconv]: " << path[this->lowrate_pathLength-1] << "; ESD: " << ESD << std::endl;
+			std::cout << "message: "; utils::print_int_vector(message);
+			std::cout << "codeword: "; utils::print_int_vector(cand_codeword);
+			std::cout << "hamming dist: " << hamming_dist << "; euclidean dist: " << euclidean_dist << "; forwardPathMetric: " << forwardPartialPathMetric << std::endl;
+			std::cout << std::endl;
+		}
+		
 		numPathsSearched++;
 	} // while(numPathsSearched < this->listSize)
 
@@ -236,7 +238,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::ve
 		std::vector<int> codeword = pathToCodeword(path);
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && numPathsSearched <= this->listSize){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && numPathsSearched <= this->listSize){
 			output.message = message;
 			output.codeword = codeword;
 			output.path = path;
@@ -341,7 +343,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric(std::vector<flo
 		currentMetricExplored = forwardPartialPathMetric;
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentMetricExplored <= MAX_METRIC){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && currentMetricExplored <= MAX_METRIC){
 			output.message = message;
 			output.path = path;
 		 	output.listSize = numPathsSearched + 1;
@@ -445,7 +447,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle(std::vector<floa
 		currentAngleExplored = utils::compute_angle_between_vectors_rad(receivedMessage, codeword, punctured_indices);
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored < MAX_ANGLE){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && currentAngleExplored < MAX_ANGLE){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
@@ -567,7 +569,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric(st
 		// std::cout << "max angle: " << MAX_ANGLE << std::endl;
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored <= MAX_ANGLE){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && currentAngleExplored <= MAX_ANGLE){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
@@ -590,7 +592,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric(st
 	return output;
 }
 
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis(std::vector<float> receivedMessage){
+std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis(const std::vector<float>& receivedMessage){
 	std::vector<std::vector<cell>> trellisInfo;
 	lowrate_pathLength = (receivedMessage.size() / lowrate_symbolLength) + 1;
 
@@ -652,7 +654,7 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 	return trellisInfo;
 }
 
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices){
+std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices) {
 	/* Constructs a trellis for a low rate code, with puncturing
 		Args:
 			receivedMessage (std::vector<float>): the received message
@@ -728,7 +730,7 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 	return trellisInfo;
 }
 
-std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured_ProductMetric(std::vector<float> receivedMessage, std::vector<int> punctured_indices){
+std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::constructLowRateTrellis_Punctured_ProductMetric(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices){
 	/* Constructs a trellis for a low rate code, with puncturing
 		Args:
 			receivedMessage (std::vector<float>): the received message
@@ -807,7 +809,7 @@ std::vector<std::vector<LowRateListDecoder::cell>> LowRateListDecoder::construct
 
 
 // converts a path through the tb trellis to the binary message it corresponds with
-std::vector<int> LowRateListDecoder::pathToMessage(std::vector<int> path){
+std::vector<int> LowRateListDecoder::pathToMessage(const std::vector<int>& path) const {
 	std::vector<int> message;
 	for(size_t pathIndex = 0; pathIndex < path.size() - 1; pathIndex++){
 		for(int forwardPath = 0; forwardPath < numForwardPaths; forwardPath++){
@@ -820,7 +822,7 @@ std::vector<int> LowRateListDecoder::pathToMessage(std::vector<int> path){
 
 // converts a path through the tb trellis to the BPSK it corresponds with
 // currently does NOT puncture the codeword
-std::vector<int> LowRateListDecoder::pathToCodeword(std::vector<int> path){
+std::vector<int> LowRateListDecoder::pathToCodeword(const std::vector<int>& path) const {
 	std::vector<int> nopunc_codeword;
 	for(size_t pathIndex = 0; pathIndex < path.size() - 1; pathIndex++){
 		for(int forwardPath = 0; forwardPath < numForwardPaths; forwardPath++){

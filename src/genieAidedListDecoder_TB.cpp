@@ -198,7 +198,7 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxListsize_Co
 
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && numPathsSearched <= this->listSize){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && numPathsSearched <= this->listSize){
 			output.message = message;
 			output.codeword = codeword;
 			output.path = path;
@@ -367,7 +367,7 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
 		currentAngleExplored = std::acos( std::max(-1.0f, std::min(1.0f, -forwardPartialPathMetric/N)) );
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored <= MAX_ANGLE){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && currentAngleExplored <= MAX_ANGLE){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
@@ -503,7 +503,7 @@ MessageInformation LowRateListDecoder::genieAided_LowRateDecoding_MaxAngle_Produ
 		// std::cout << "current angle: " << std::setprecision(4) << currentAngleExplored << std::endl;
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcDegree, crc) && currentAngleExplored <= MAX_ANGLE){
+		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && currentAngleExplored <= MAX_ANGLE){
 			output.message = message;
 			output.path = path;
 			output.codeword = codeword;

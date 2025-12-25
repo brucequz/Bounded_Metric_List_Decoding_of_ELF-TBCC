@@ -7,7 +7,7 @@ struct CodeInformation {
   int k;              // numerator of the rate
   int n;              // denominator of the rate
   int v;              // number of memory elements
-  int crcDeg;         // m+1, degree of CRC, # bits of CRC polynomial
+  int crcLen;         // m+1, length of CRC, degree of CRC + 1
   int crc;            // CRC polynomial
   int numInfoBits;    // number of information bits
   
@@ -23,12 +23,6 @@ struct MessageInformation{
     TBListSize        = -1;
 		listSizeExceeded 	= false;
 		metric 						= -1.0;
-		angle_received_decoded_rad = 0.0;
-		log_Gamma  = 0.0;
-		rova_probability = 0.0;
-
-		vec_highrate_to_tx = std::vector<float>();
-		vec_highrate_to_projected_rx = std::vector<float>();
 	};
 	std::vector<int> message;
 	std::vector<int> codeword;
@@ -37,11 +31,7 @@ struct MessageInformation{
   int TBListSize;
 	bool listSizeExceeded;
 	double metric;
-	double angle_received_decoded_rad;
-	double log_Gamma;
-	double rova_probability;
-	std::vector<float> vec_highrate_to_tx;
-	std::vector<float> vec_highrate_to_projected_rx;
+	float angle_received_decoded_rad;
 };
 
 #endif

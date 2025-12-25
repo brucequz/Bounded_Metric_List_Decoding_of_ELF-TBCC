@@ -195,7 +195,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize_ZT(std::vecto
 		
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcDegree, crc)){
+		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcLength, crc)){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
@@ -299,7 +299,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxAngle_ProductMetric_ZT
 		currentAngleExplored = std::acos( std::max(-1.0f, std::min(1.0f, -forwardPartialPathMetric/N)) );
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcDegree, crc) && currentAngleExplored <= MAX_ANGLE){
+		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcLength, crc) && currentAngleExplored <= MAX_ANGLE){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
@@ -404,7 +404,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxMetric_EuclideanMetric
 		// std::cout << "current Metric Explored: " << currentMetricExplored << std::endl;
 		
 		// one trellis decoding requires both a tb and crc check
-		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcDegree, crc) && currentMetricExplored <= MAX_METRIC){
+		if(path[0] == path[lowrate_pathLength - 1] && path[0] == 0 && crc::crc_check(message, crcLength, crc) && currentMetricExplored <= MAX_METRIC){
 			output.message = message;
 			output.path = path;
 			output.listSize = numPathsSearched + 1;
