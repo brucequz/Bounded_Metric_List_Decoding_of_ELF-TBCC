@@ -7,7 +7,6 @@ rova
 collect
 build/
 manim/
-output/
 matlab/
 secure_data/
 python/
