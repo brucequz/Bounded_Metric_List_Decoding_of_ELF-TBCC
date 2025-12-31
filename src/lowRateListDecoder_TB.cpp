@@ -55,7 +55,6 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 
 	// start search
 	MessageInformation output;
-	//RBTree detourTree;
 	MinHeap detourTree;
 	std::vector<std::vector<int>> previousPaths;
 	
@@ -70,6 +69,7 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 	}
 
 	int numPathsSearched = 0;
+	int numTBPathsSearched = 0;
   
 	while(numPathsSearched < listsize){
 		DetourObject detour = detourTree.pop();
@@ -140,11 +140,12 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 		}
 
 		if (path[0] == path.back()) {
-			std::cout << "candidate codeword: " << numPathsSearched << std::endl;
-			std::cout << "outputing syndrome: " << syndrome << std::endl;
-			std::cout << "path[0]: " << path[0] << "; path[Kconv]: " << path[this->lowrate_pathLength-1] << "; ESD: " << ESD << std::endl;
-			std::cout << "message: "; utils::print_int_vector(message);
-			std::cout << "codeword: "; utils::print_int_vector(cand_codeword);
+			numTBPathsSearched++;
+			std::cout << "candidate codeword: " << numTBPathsSearched << std::endl;
+			// std::cout << "outputing syndrome: " << syndrome << std::endl;
+			// std::cout << "path[0]: " << path[0] << "; path[Kconv]: " << path[this->lowrate_pathLength-1] << "; ESD: " << ESD << std::endl;
+			// std::cout << "message: "; utils::print_int_vector(message);
+			// std::cout << "codeword: "; utils::print_int_vector(cand_codeword);
 			std::cout << "hamming dist: " << hamming_dist << "; euclidean dist: " << euclidean_dist << "; forwardPathMetric: " << forwardPartialPathMetric << std::endl;
 			std::cout << std::endl;
 		}

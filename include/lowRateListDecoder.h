@@ -10,6 +10,7 @@
 #include "feedForwardTrellis.h"
 #include "minHeap.h"
 #include "types.h"
+#include "outputFile.h"
 
 enum class METRIC_TYPE {
 	PRODUCT_METRIC = 1,
@@ -54,6 +55,7 @@ public:
 	void generateNeighborList_sequential(const std::vector<float>& allZerosMessage, std::string dir, double thre);
 	void generateNeighborList_sequential_TBonly(const std::vector<float>& allZerosMessage, std::string dir, double thre);
 	MessageInformation lowrateDecoding_neighbors(const std::vector<float>& receivedMessage, std::vector<std::vector<int>> G_mat);
+	bool isGabrielNeighbor(std::vector<std::vector<int>> G_mat, const std::vector<int>& modulated_codeword) const; //!< pass in by value is intentional
 	void writeDataToFile(const std::vector<std::vector<int>>& data, const std::string& filename);
 
 private:

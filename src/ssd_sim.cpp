@@ -7,17 +7,22 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
+#include <exception>
 #include <iostream>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 std::vector<int> generateTransmittedMessage(std::vector<int> info_crc,
                                             const FeedForwardTrellis& encodingTrellis);
+std::vector<int> find_positive_divisor(int num);
 void find_gabriel_neighbors(const CodeInformation& code);
+std::vector<std::vector<int>> find_lyndon_words(int s, size_t n);
+void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const LowRateListDecoder& decoder);
 
 int main() {
 
   /* Code config */
-  // CodeInformation code;
   CodeInformation code{.k = k,
                        .n = n,
                        .v = V,
@@ -59,9 +64,6 @@ int main() {
   /* Convolutional encoder */
   std::vector<int> transmittedMessage = generateTransmittedMessage(info_crc, encodingTrellis);
 
-  /* Convolutional code generator matrix */
-  encodingTrellis.computeGeneratorMatrix();
-
   /* LLR generation */
   std::vector<float> receivedMessage =
       awgn::addAWNGNoise(transmittedMessage, PUNCTURING_INDICES, esno_dB, NOISELESS);
@@ -83,13 +85,145 @@ int main() {
   // }
 
   /* List decoding */
-  MessageInformation decodingResult;
-  decodingResult = listDecoder.forceDecoding_MaxListsize(receivedMessage, PUNCTURING_INDICES,
-                                                         transmittedMessage, 1000);
-  utils::print_int_vector(decodingResult.message);
+  // MessageInformation decodingResult;
+  // decodingResult = listDecoder.forceDecoding_MaxListsize(receivedMessage, PUNCTURING_INDICES,
+  //                                                        transmittedMessage, 866);
+  // utils::print_int_vector(decodingResult.message);
 
   /* Find Gabriel Neighbors */
-  find_gabriel_neighbors(code);
+  // find_gabriel_neighbors(code);
+
+  /* Search for Gabriel neighbors by using Lyndon messages */
+  search_message_gabriel_neighbors(encodingTrellis, listDecoder);
+
+}
+
+std::vector<int> find_positive_divisor(int num) {
+  if (num <= 0) {
+    std::cerr << "num needs to be positive !" << std::endl;
+  }
+  std::vector<int> positive_divisors;
+  for (int i = 1; i <= num; ++i){
+    if (num % i == 0)
+        positive_divisors.push_back(i);
+  }
+  return positive_divisors;
+}
+
+std::vector<std::vector<int>> find_lyndon_words(int s, size_t n) {
+  /** Generate nonempty Lyndon words of length <= n over an s-symbol alphabet.
+  The words are generated in lexicographic order, using an algorithm from
+  J.-P. Duval, Theor. Comput. Sci. 1988, doi:10.1016/0304-3975(88)90113-2.
+  As shown by Berstel and Pocchiola, it takes constant average time
+  per generated word.
+  */
+  std::vector<std::vector<int>> result;
+  std::vector<int> w = {-1};
+  while (!w.empty()) {
+    w.back() += 1;
+    if (w.size() == n) {
+      result.push_back(w);
+    }
+    size_t m = w.size();
+    while (w.size() < n) {
+      w.push_back(w[w.size()-m]);
+    }
+    while (!w.empty() && w.back() == s-1) {
+      w.pop_back();
+    }
+  }
+  return result;
+}
+
+void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const LowRateListDecoder& decoder) {
+
+  /* - Compute Lyndon words */
+  std::vector<std::vector<int>> lyndon_messages;
+
+  /* Find positive divisors */
+  std::vector<int> positive_divisors = find_positive_divisor(Kconv);
+  for (int div : positive_divisors) {
+    std::vector<std::vector<int>> truncated_lyndon_messages = find_lyndon_words(2, div);
+    
+    for (size_t i = 0; i < truncated_lyndon_messages.size(); i++) {
+      std::vector<int> lyndon_message(Kconv);
+      for (size_t j = 0; j < lyndon_message.size(); j++) {
+        lyndon_message[j] = truncated_lyndon_messages[i][j % div];
+      }
+      lyndon_messages.push_back(lyndon_message);
+    }
+  }
+
+  std::cout << "number of lyndon messages: " << lyndon_messages.size() << std::endl;
+
+  /* Records messages that lead to weight 12 codewords */
+  std::string LyndonMFile = "output/lyndon_message_cwd_12.txt";
+  std::vector<std::vector<int>> weight_12_messages;
+
+  /* Read in generator matrix */
+  std::string filename = "params/K24N48_TBCC_GenMatrix.txt";
+  std::vector<std::vector<int>> G_mat = io::read2DVectorFromFile(filename);
+
+  /* Initialize neighbor spectra */
+  //!< key = hamming weight; pair.first = num_nei; pair.second = num_nonnei
+  std::unordered_map<int, std::pair<int, int>> neighbor_spectra;
+
+  for (size_t i_lyndon_w = 0; i_lyndon_w < lyndon_messages.size(); i_lyndon_w++) {
+    /* Encode Lyndon messages */
+    std::vector<int> m = lyndon_messages[i_lyndon_w];
+    if (m.size() == 1) {
+      int val = m[0];
+      m = std::vector<int>(Kconv, val);
+    } 
+    std::vector<int> modulated_codeword = generateTransmittedMessage(m, trellis);
+    // std::cout << "printing modulated_codeword: "; utils::print_int_vector(modulated_codeword);
+
+    /* Check if they are Gabriel neighbor of the all-zero codeword */
+    bool is_neighbor = decoder.isGabrielNeighbor(G_mat, modulated_codeword);
+
+    int hamming_distance = 0;
+    for (size_t i = 0; i < modulated_codeword.size(); i++) {
+      if (modulated_codeword[i] < 0) {
+        hamming_distance++;
+      }
+    }
+
+    if (hamming_distance == 12) {
+      weight_12_messages.push_back(m);
+    }
+
+    if (neighbor_spectra.find(hamming_distance) != neighbor_spectra.end()) {
+      //!< if hamming distance already discovered
+      if (is_neighbor) {
+        neighbor_spectra[hamming_distance].first++;
+      } else {
+        neighbor_spectra[hamming_distance].second++;
+      }
+    } else {
+      //!< if hamming distance entry not discovered
+      if (is_neighbor) {
+        neighbor_spectra[hamming_distance].first = 1;
+        neighbor_spectra[hamming_distance].second = 0;
+      } else {
+        neighbor_spectra[hamming_distance].first = 0;
+        neighbor_spectra[hamming_distance].second = 1;
+      }
+    }
+  }
+
+  /* Output lyndon messages with codeword weight 12 to file */
+  try {
+    OutputFile LyndonMessageCwd12_File(LyndonMFile);
+    LyndonMessageCwd12_File.write2DVector(weight_12_messages);
+    weight_12_messages.clear();
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
+
+  /* Output neighbor spectra to console */
+  for (const auto& kvpair : neighbor_spectra) {
+    std::cout << "Hamming weight: " << kvpair.first << "; " << "nei: " << kvpair.second.first << "; non-nei: " << kvpair.second.second << std::endl;
+  }
 }
 
 void find_gabriel_neighbors(const CodeInformation& code) {

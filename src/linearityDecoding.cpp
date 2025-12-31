@@ -1,6 +1,9 @@
 #include "../include/lowRateListDecoder.h"
 
 #include <cstddef>
+#include <exception>
+#include <format>
+#include <fstream>
 
 void LowRateListDecoder::generateNeighborList_sequential(const std::vector<float>& allZerosMessage,
                                                          std::string dir, double thre) {
@@ -365,30 +368,31 @@ void LowRateListDecoder::generateNeighborList_sequential_TBonly(
   return;
 }
 
-MessageInformation LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& receivedMessage,
+MessageInformation
+LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& receivedMessage,
                                               std::vector<std::vector<int>> G_mat) {
   std::vector<std::vector<cell>> trellisInfo;
   trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, PUNCTURING_INDICES);
-  std::string filename = "output/K24N48_Neighbor.txt";
-  std::ofstream ZTtable;
-  ZTtable.open(filename, std::ios::app);
+  std::string neighborSpectraFileName = "output/K24N48_Neighbor.txt";
+  std::ofstream neighborSpectra(neighborSpectraFileName, std::ios::out);
 
   // start search
   MessageInformation output;
   MinHeap detourTree;
   std::vector<std::vector<int>> previousPaths;
 
-  for(int i = 0; i < lowrate_numStates; i++){
-		DetourObject detour;
-		detour.startingState = i;
-		detour.pathMetric = trellisInfo[i][lowrate_pathLength - 1].pathMetric;
-		detourTree.insert(detour);
-	}
+  for (int i = 0; i < lowrate_numStates; i++) {
+    DetourObject detour;
+    detour.startingState = i;
+    detour.pathMetric = trellisInfo[i][lowrate_pathLength - 1].pathMetric;
+    detourTree.insert(detour);
+  }
   int numPathsSearched = 0;
+  int numTBPathsSearched = 0;
   // // for printing codewords
-  // std::ofstream outputfile; // distance between the received word and the decoding center
+  // std::ofstream outputCodewords; // distance between the received word and the decoding center
   // std::string filename = "v14_codewords_ZT.txt";
-  // outputfile.open(filename, std::fstream::app);
+  // outputCodewords.open(filename, std::fstream::app);
   // std::ofstream outputfile_m; // distance between the received word and the decoding center
   // std::string filename_m = "v14_messages_ZT.txt";
   // outputfile_m.open(filename_m, std::fstream::app);
@@ -396,7 +400,10 @@ MessageInformation LowRateListDecoder::lowrateDecoding_neighbors(const std::vect
   int currmetric = 0;
   int neighbors = 0;
   int non_neighbors = 0;
-  while (currmetric < 20) {
+  std::vector<std::vector<int>> neighbor_codewords;
+  std::vector<std::vector<int>> neighbor_messages;
+
+  while (currmetric < 14) {
     int last_curr_metric = currmetric;
     DetourObject detour = detourTree.pop();
     std::vector<int> path(lowrate_pathLength);
@@ -443,12 +450,16 @@ MessageInformation LowRateListDecoder::lowrateDecoding_neighbors(const std::vect
     std::vector<int> message = pathToMessage(path);
     std::vector<int> codeword = pathToCodeword(path);
 
-    /* Recoding TB Gabriel Neighbors */
+    /* - Recoding TB Gabriel Neighbors */
     if (path.front() == path.back()) {
-      // std::cout << "path[0]: " << path[0] << "; path[Kconv]: " << path[this->lowrate_pathLength-1] << std::endl;
-      // std::cout << "printing candidate message: "; utils::print_int_vector(message);
-      // std::cout << "printing candidate codeword: "; utils::print_int_vector(codeword);
+      numTBPathsSearched++;
+      // std::cout << "codeword " << numTBPathsSearched;
+      // std::cout << ": path[0]: " << path[0] << "; path[Kconv]: " <<
+      // path[this->lowrate_pathLength-1] << std::endl; std::cout << "printing candidate message: ";
+      // utils::print_int_vector(message); std::cout << "printing candidate codeword " <<
+      // numTBPathsSearched << ": "; utils::print_int_vector(codeword);
 
+      /* Convert to on-off keying codewords + identify location of zeros */
       std::vector<int> ookcw;
       std::vector<int> positions_of_zeros;
       for (size_t i_iter = 0; i_iter < codeword.size(); i_iter++) {
@@ -459,23 +470,42 @@ MessageInformation LowRateListDecoder::lowrateDecoding_neighbors(const std::vect
           positions_of_zeros.push_back(i_iter);
         }
       }
+
+      /* Compute hamming weight*/
       int dist_from_all_zeros = 0;
       for (size_t i_iter = 0; i_iter < ookcw.size(); i_iter++) {
         dist_from_all_zeros = dist_from_all_zeros + ookcw[i_iter];
       }
       currmetric = dist_from_all_zeros;
-      if (last_curr_metric != currmetric) {
-        ZTtable << "Neighbors of Hamming Weight " << last_curr_metric << ": " << neighbors
-                << std::endl;
+
+      /* Output to file if the latest codeword has a larger hamming weight */
+      if (currmetric != last_curr_metric) {
+        std::string codewordFileName = std::format("output/codeword_{}.txt", last_curr_metric);
+        std::string messageFileName = std::format("output/message_{}.txt", last_curr_metric);
+        try {
+          OutputFile CwdFile(codewordFileName);
+          CwdFile.write2DVector(neighbor_codewords);
+          neighbor_codewords.clear();
+
+          OutputFile MsgFile(messageFileName);
+          MsgFile.write2DVector(neighbor_messages);
+          neighbor_messages.clear();
+        } catch (const std::exception& e) {
+          std::cerr << "Error: " << e.what() << std::endl;
+        }
+
+        neighborSpectra << "Neighbors of Hamming Weight " << last_curr_metric << ": " << neighbors
+                        << std::endl;
+        neighborSpectra << "Non-Neighbors of Hamming Weight " << last_curr_metric << ": "
+                        << non_neighbors << std::endl;
+        neighborSpectra << currmetric << " " << std::endl;
         neighbors = 0;
-        ZTtable << "Non-Neighbors of Hamming Weight " << last_curr_metric << ": " << non_neighbors
-                << std::endl;
         non_neighbors = 0;
-        // ZTtable << currmetric << " " << std::endl;
+
         std::cout << "current metric: " << currmetric << std::endl;
       }
 
-      /* Agrell's algorithm */
+      /* Agrell's algorithm to check if latest codeword is a Gabriel neighbor of all-zero */
       int app_i = 0;
       int pivot;
       std::vector<std::vector<int>> G_mat_temp = G_mat;
@@ -505,11 +535,8 @@ MessageInformation LowRateListDecoder::lowrateDecoding_neighbors(const std::vect
           G_mat_temp[pivot] = temp;
           app_i = app_i + 1;
           if (app_i == Kconv - 1) {
-
-            // for(int print_cw = 0; print_cw < codeword.size(); print_cw++){
-            //   ZTtable << ookcw[print_cw] << " ";
-            // }
-            // ZTtable << std::endl;
+            neighbor_messages.push_back(message);
+            neighbor_codewords.push_back(ookcw);
             neighbors++;
             is_neighbor = 1;
             break;
@@ -523,8 +550,60 @@ MessageInformation LowRateListDecoder::lowrateDecoding_neighbors(const std::vect
 
     numPathsSearched++;
   }
-  ZTtable.close();
+  neighborSpectra.close();
   return output;
+}
+
+bool LowRateListDecoder::isGabrielNeighbor(std::vector<std::vector<int>> G_mat,
+                                           const std::vector<int>& modulated_codeword) const {
+
+  /* demodulation */
+  std::vector<int> ookcw;
+  std::vector<int> positions_of_zeros;
+  for (size_t i_iter = 0; i_iter < modulated_codeword.size(); i_iter++) {
+    if (modulated_codeword[i_iter] < 0) {
+      ookcw.push_back(1);
+    } else {
+      ookcw.push_back(0);
+      positions_of_zeros.push_back(i_iter);
+    }
+  }
+
+  int app_i = 0;
+  int pivot;
+  std::vector<std::vector<int>> G_mat_temp = G_mat;
+  bool is_neighbor = false;
+
+  for (size_t p_iter = 0; p_iter < positions_of_zeros.size(); p_iter++) {
+    int p = positions_of_zeros[p_iter];
+    bool firstone = true;
+    for (int j = app_i; j < Kconv; j++) {
+      if (G_mat_temp[j][p] == 1) {
+        if (firstone) {
+          pivot = j;
+          firstone = false;
+        } else {
+          std::vector<int> g_j = G_mat_temp[j];
+          std::vector<int> g_pivot = G_mat_temp[pivot];
+          for (size_t pivot_iter = 0; pivot_iter < g_j.size(); ++pivot_iter) {
+            g_j[pivot_iter] ^= g_pivot[pivot_iter]; // a = a XOR b
+          }
+          G_mat_temp[j] = g_j;
+        }
+      }
+    }
+    if (firstone == false) {
+      std::vector<int> temp = G_mat_temp[app_i];
+      G_mat_temp[app_i] = G_mat_temp[pivot];
+      G_mat_temp[pivot] = temp;
+      app_i = app_i + 1;
+      if (app_i == Kconv - 1) {
+        is_neighbor = true;
+        break;
+      }
+    }
+  }
+  return is_neighbor;
 }
 
 void LowRateListDecoder::writeDataToFile(const std::vector<std::vector<int>>& data,

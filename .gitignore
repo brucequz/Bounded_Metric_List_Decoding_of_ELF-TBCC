@@ -21,3 +21,4 @@ presentation/
 ssd
 *.dSYM/
 run_tests
+*.txt
