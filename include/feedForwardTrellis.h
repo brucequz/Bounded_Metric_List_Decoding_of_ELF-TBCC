@@ -9,7 +9,7 @@
 
 class FeedForwardTrellis {
 public:
-  FeedForwardTrellis(int k, int n, int v, std::vector<int> numerators);
+  FeedForwardTrellis(int kconv, int nconv, int v, std::vector<int> numerators);
 
   std::vector<int> encode(const std::vector<int>& originalMessage) const;
   std::vector<int> encode_zt(const std::vector<int>& originalMessage) const;
@@ -27,8 +27,8 @@ public:
   int getN();
 
 private:
-  int k;
-  int n;
+  int kconv;
+  int nconv;
   int v;
   int numInputSymbols;
   int numOutputSymbols;

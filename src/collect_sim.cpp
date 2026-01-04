@@ -22,8 +22,8 @@ void logSimulationParams();
 int main(int argc, char *argv[]) {
     
   CodeInformation code;
-  code.k = k;         // numerator of the rate
-  code.n = n;         // denominator of the rate
+  code.kconv = kconv;         // numerator of the rate
+  code.nconv = nconv;         // denominator of the rate
   code.v = V;         // number of memory elements
   code.crcLen = M+1;  // m+1, degree of CRC, # bits of CRC polynomial
   code.crc = CRC;     // CRC polynomial
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	/* Check */
-	if ((code.numInfoBits + code.crcLen - 1) % code.k != 0) {
+	if ((code.numInfoBits + code.crcLen - 1) % code.kconv != 0) {
 			std::cerr << "invalid msg + crc length" << std::endl;
 			exit(1);
 	}
@@ -135,7 +135,7 @@ void ISTC_sim(CodeInformation code, int rank){
 		esno_dB = EbN0 + offset;
 		
 		/* - Trellis setup - */
-		FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
+		FeedForwardTrellis encodingTrellis(code.kconv, code.nconv, code.v, code.numerators);
 
 		/* - Decoder setup - */
 		LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc, STOPPING_RULE);
@@ -486,7 +486,7 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwa
 	std::vector<int> encodedMessage;
 	if (ENCODING_RULE == 'T') {
 		encodedMessage = encodingTrellis.encode(info_crc);
-		assert(encodedMessage.size() == (K+M) / k * n);
+		assert(encodedMessage.size() == (K+M) / kconv * nconv);
 	} else if (ENCODING_RULE == 'Z') {
 		for (int i=0; i<V; i++){
 			info_crc.push_back(0);
@@ -495,7 +495,7 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwa
 		// utils::print_int_vector(info_crc);
 		// std::cout << std::endl;
 		encodedMessage = encodingTrellis.encode_zt(info_crc);
-		assert(encodedMessage.size() == (K+M+V) / k * n);
+		assert(encodedMessage.size() == (K+M+V) / kconv * nconv);
 		
 	}
 	return encodedMessage;

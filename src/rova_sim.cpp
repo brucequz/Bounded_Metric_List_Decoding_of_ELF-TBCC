@@ -70,7 +70,7 @@ void ROVA_sim(CodeInformation code, int rank) {
 			esn0 = EbN0 + offset;
 			
 			/* - Trellis setup - */
-			FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
+			FeedForwardTrellis encodingTrellis(code.kconv, code.nconv, code.v, code.numerators);
 
 			/* - Decoder setup - */
 			LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc, STOPPING_RULE);
@@ -238,7 +238,7 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwa
 	std::vector<int> encodedMessage;
 	if (ENCODING_RULE == 'T') {
 		encodedMessage = encodingTrellis.encode(info_crc);
-		assert(encodedMessage.size() == (K+M) / k * n);
+		assert(encodedMessage.size() == (K+M) / kconv * nconv);
 	} else if (ENCODING_RULE == 'Z') {
 		for (int i=0; i<V; i++){
 			info_crc.push_back(0);
@@ -247,7 +247,7 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc, FeedForwa
 		// utils::print_int_vector(info_crc);
 		// std::cout << std::endl;
 		encodedMessage = encodingTrellis.encode_zt(info_crc);
-		assert(encodedMessage.size() == (K+M+V) / k * n);
+		assert(encodedMessage.size() == (K+M+V) / kconv * nconv);
 		
 	}
 	return encodedMessage;

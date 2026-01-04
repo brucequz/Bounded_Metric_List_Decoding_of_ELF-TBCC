@@ -5,11 +5,12 @@
 #include "../include/types.h"
 
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
-#include <unordered_map>
+#include <map>
 #include <utility>
 #include <vector>
 
@@ -19,12 +20,13 @@ std::vector<int> find_positive_divisor(int num);
 void find_gabriel_neighbors(const CodeInformation& code);
 std::vector<std::vector<int>> find_lyndon_words(int s, size_t n);
 void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const LowRateListDecoder& decoder);
+void compute_serial_coded_spectra(const FeedForwardTrellis& trellis);
 
 int main() {
 
   /* Code config */
-  CodeInformation code{.k = k,
-                       .n = n,
+  CodeInformation code{.kconv = kconv,
+                       .nconv = nconv,
                        .v = V,
                        .crcLen = M + 1,
                        .crc = CRC,
@@ -36,7 +38,7 @@ int main() {
   float esno_dB = EBN0 + offset;
 
   /* - Trellis setup - */
-  FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
+  FeedForwardTrellis encodingTrellis(code.kconv, code.nconv, code.v, code.numerators);
 
   /* - Decoder setup - */
   LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc,
@@ -49,34 +51,32 @@ int main() {
 
   /* Generate info */
   std::vector<int> info(K, 0);
-
+    
   /* CRC encoder */
   std::vector<int> info_crc(Ncrc, 0);
   for (size_t i = 0; i < info.size(); i++) {
     info_crc[i] = info[i];
   }
-  unsigned long remainder = crc::remdr(info_crc, CRC, Ncrc, M);
-  for (size_t i = 0; i < M; i++) {
-    std::cout << "remainder " << ((remainder >> (M - 1 - i)) & 1) << std::endl;
-    info_crc[Kcrc + i] = (remainder >> (M - 1 - i)) & 1;
+  std::vector<int> remainder = crc::remdr_slidingWindow(info_crc, CRC_VEC, false);
+  for (size_t i = 0; i < remainder.size(); i++) {
+    info_crc[Kcrc+i] = remainder[i];
   }
 
   /* Convolutional encoder */
-  std::vector<int> transmittedMessage = generateTransmittedMessage(info_crc, encodingTrellis);
+  std::vector<int> modulatedCodeword = generateTransmittedMessage(info_crc, encodingTrellis);
 
-  /* LLR generation */
-  std::vector<float> receivedMessage =
-      awgn::addAWNGNoise(transmittedMessage, PUNCTURING_INDICES, esno_dB, NOISELESS);
 
   std::cout << "info: ";
   utils::print_int_vector(info);
   std::cout << "info_crc: ";
   utils::print_int_vector(info_crc);
-  std::cout << "remainder at encoding: " << remainder << std::endl;
+  std::cout << "remainder: ";
+  utils::print_int_vector(remainder);
   std::cout << "transmitted codeword: ";
-  utils::print_int_vector(transmittedMessage);
-  std::cout << "received sequence: ";
-  utils::print_float_vector(receivedMessage);
+  utils::print_int_vector(modulatedCodeword);
+  // std::cout << "received sequence: ";
+  // utils::print_float_vector(receivedWord);
+  
 
   // /* Channel */
   // float esno = pow(10.0, esno_dB / 10.0);
@@ -87,14 +87,17 @@ int main() {
   /* List decoding */
   // MessageInformation decodingResult;
   // decodingResult = listDecoder.forceDecoding_MaxListsize(receivedMessage, PUNCTURING_INDICES,
-  //                                                        transmittedMessage, 866);
+  //                                                        transmittedMessage, 10000);
   // utils::print_int_vector(decodingResult.message);
+
+  /* Compute distance spectra for serially-concatenated code */
+  compute_serial_coded_spectra(encodingTrellis);
 
   /* Find Gabriel Neighbors */
   // find_gabriel_neighbors(code);
 
   /* Search for Gabriel neighbors by using Lyndon messages */
-  search_message_gabriel_neighbors(encodingTrellis, listDecoder);
+  // search_message_gabriel_neighbors(encodingTrellis, listDecoder);
 
 }
 
@@ -144,7 +147,7 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const L
   std::vector<int> positive_divisors = find_positive_divisor(Kconv);
   for (int div : positive_divisors) {
     std::vector<std::vector<int>> truncated_lyndon_messages = find_lyndon_words(2, div);
-    
+    std::cout << "Lyndon word length: " << div << "; number of truncated lyndon messages: " << truncated_lyndon_messages.size() << std::endl;
     for (size_t i = 0; i < truncated_lyndon_messages.size(); i++) {
       std::vector<int> lyndon_message(Kconv);
       for (size_t j = 0; j < lyndon_message.size(); j++) {
@@ -154,15 +157,14 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const L
     }
   }
 
-  std::cout << "number of lyndon messages: " << lyndon_messages.size() << std::endl;
-
-  /* Records messages that lead to weight 12 codewords */
-  std::string LyndonMFile = "output/lyndon_message_cwd_12.txt";
+  
+  /* - Records messages that lead to weight 12 codewords */
+  int hamming_weight_of_interest = 6;
+  std::string LyndonMFile = OUTPUTFILEPATH + std::format("lyndon_message_cwd_{}.txt", hamming_weight_of_interest);
   std::vector<std::vector<int>> weight_12_messages;
 
-  /* Read in generator matrix */
-  std::string filename = "params/K24N48_TBCC_GenMatrix.txt";
-  std::vector<std::vector<int>> G_mat = io::read2DVectorFromFile(filename);
+  /* - Read in generator matrix */
+  std::vector<std::vector<int>> G_mat = io::read2DVectorFromFile(GENMATRIXFILEPATH);
 
   /* Initialize neighbor spectra */
   //!< key = hamming weight; pair.first = num_nei; pair.second = num_nonnei
@@ -171,10 +173,7 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const L
   for (size_t i_lyndon_w = 0; i_lyndon_w < lyndon_messages.size(); i_lyndon_w++) {
     /* Encode Lyndon messages */
     std::vector<int> m = lyndon_messages[i_lyndon_w];
-    if (m.size() == 1) {
-      int val = m[0];
-      m = std::vector<int>(Kconv, val);
-    } 
+
     std::vector<int> modulated_codeword = generateTransmittedMessage(m, trellis);
     // std::cout << "printing modulated_codeword: "; utils::print_int_vector(modulated_codeword);
 
@@ -188,7 +187,7 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const L
       }
     }
 
-    if (hamming_distance == 12) {
+    if (hamming_distance == hamming_weight_of_interest) {
       weight_12_messages.push_back(m);
     }
 
@@ -229,19 +228,18 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const L
 void find_gabriel_neighbors(const CodeInformation& code) {
   srand(0);
 
-  if ((code.numInfoBits + code.crcLen - 1) % code.k != 0) {
+  if ((code.numInfoBits + code.crcLen - 1) % code.kconv != 0) {
     std::cout << "invalid msg + crc length" << std::endl;
     return;
   }
 
-  FeedForwardTrellis encodingTrellis(code.k, code.n, code.v, code.numerators);
+  FeedForwardTrellis encodingTrellis(code.kconv, code.nconv, code.v, code.numerators);
 
   int listSize = 1e4; // normal Viterbi
   LowRateListDecoder listDecoder(encodingTrellis, listSize, code.crcLen, code.crc, STOPPING_RULE);
   std::cout << "beginning simulations" << std::endl;
   // simulate the comms system
-  std::string filename = "params/K24N48_TBCC_GenMatrix.txt";
-  std::vector<std::vector<int>> G_mat = io::read2DVectorFromFile(filename);
+  std::vector<std::vector<int>> G_mat = io::read2DVectorFromFile(GENMATRIXFILEPATH);
 
   std::vector<float> zeroscwdb(Nconv, 1.0f);
   MessageInformation decodedMessage = listDecoder.lowrateDecoding_neighbors(zeroscwdb, G_mat);
@@ -260,7 +258,7 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc,
   std::vector<int> encodedMessage;
   if (ENCODING_RULE == 'T') {
     encodedMessage = encodingTrellis.encode(info_crc);
-    assert(encodedMessage.size() == (K + M) / k * n);
+    assert(encodedMessage.size() == (K + M) / kconv * nconv);
   } else if (ENCODING_RULE == 'Z') {
     for (int i = 0; i < V; i++) {
       info_crc.push_back(0);
@@ -269,7 +267,61 @@ std::vector<int> generateTransmittedMessage(std::vector<int> info_crc,
     // utils::print_int_vector(info_crc);
     // std::cout << std::endl;
     encodedMessage = encodingTrellis.encode_zt(info_crc);
-    assert(encodedMessage.size() == (K + M + V) / k * n);
+    assert(encodedMessage.size() == (K + M + V) / kconv * nconv);
   }
   return encodedMessage;
+}
+
+void compute_serial_coded_spectra(const FeedForwardTrellis& trellis)
+{
+  /* Initialize neighbor spectra */
+  //!< key = hamming weight; pair.first = num_nei; pair.second = num_nonnei
+  std::map<int, int> dist_spectra;
+  
+  std::vector<int> info;
+  
+  for (int i = 0; i < std::pow(2,K); i++) {
+    info.clear();
+    
+    /* Generate info */
+    for (int j = 0; j < K; j++) {
+      info.push_back(((i >> j) & 1));
+    }
+
+    /* CRC encoder */
+    std::vector<int> info_crc(Ncrc, 0);
+    for (size_t i = 0; i < info.size(); i++) {
+      info_crc[i] = info[i];
+    }
+    std::vector<int> remainder = crc::remdr_slidingWindow(info_crc, CRC_VEC, false);
+    for (size_t i = 0; i < remainder.size(); i++) {
+      info_crc[Kcrc+i] = remainder[i];
+    }
+
+    /* Convolutional encoder */
+    std::vector<int> modulatedCodeword = generateTransmittedMessage(info_crc, trellis);
+
+    /* Compute hamming weight of codeword */
+    int hamming_weight = 0;
+    for (int i_codeword = 0; i_codeword < modulatedCodeword.size(); i_codeword++) {
+      if (modulatedCodeword[i_codeword] < 0) {
+        hamming_weight++;
+      }
+    }
+    
+    /*record to distance spectrum */
+    if (dist_spectra.find(hamming_weight) != dist_spectra.end()) {
+      //!< if hamming distance already discovered
+      dist_spectra[hamming_weight]++;
+    } else {
+      //!< if hamming distance entry not discovered
+      dist_spectra[hamming_weight] = 1;
+    }
+  }
+
+  /* Output neighbor spectra to console */
+  std::cout << "CRC: "; utils::print_int_vector(CRC_VEC);
+  for (const auto& kvpair : dist_spectra) {
+    std::cout << "Hamming weight: " << kvpair.first << "; " << "num of codewords: " << kvpair.second << std::endl;
+  }
 }

@@ -5,8 +5,8 @@
 #include <vector>
 
 /* --- Convolutional Code Parameters --- */
-constexpr int k = 1;                                   /* Number of input bits */
-constexpr int n = 2;                                   /* Number of output bits */
+constexpr int kconv = 1;                                   /* Number of input bits */
+constexpr int nconv = 2;                                   /* Number of output bits */
 constexpr int K = 64;                                  /* Number of input bits */
 constexpr int N = 128;                                 /* Number of output bits */
 constexpr int V = 8;                                   /* Number of memory elements */

@@ -5,15 +5,15 @@
 #include <iostream>
 #include <string>
 
-FeedForwardTrellis::FeedForwardTrellis(int k, int n, int v, std::vector<int> numerators) {
-  this->k = k;
-  this->n = n;
+FeedForwardTrellis::FeedForwardTrellis(int kconv, int nconv, int v, std::vector<int> numerators) {
+  this->kconv = kconv;
+  this->nconv = nconv;
   this->v = v;
   for (size_t i = 0; i < numerators.size(); i++) {
     this->numerators.push_back(numerators[i]);
   }
-  this->numInputSymbols = pow(2.0, k);
-  this->numOutputSymbols = pow(2.0, n);
+  this->numInputSymbols = pow(2.0, kconv);
+  this->numOutputSymbols = pow(2.0, nconv);
   this->numStates = pow(2.0, v);
   this->nextStates = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
   this->outputs = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
@@ -27,8 +27,8 @@ FeedForwardTrellis::FeedForwardTrellis(int k, int n, int v, std::vector<int> num
 
 void FeedForwardTrellis::computeNextStates() {
   // convert to binary numerators
-  std::vector<std::vector<int>> bin_numerators(n, std::vector<int>(v + 1));
-  for (int i = 0; i < n; i++) {
+  std::vector<std::vector<int>> bin_numerators(nconv, std::vector<int>(v + 1));
+  for (int i = 0; i < nconv; i++) {
     int tempNum = numerators[i]; // octal number in numerator(135)
     int decIn = 0;
     std::string in = std::to_string(tempNum);
@@ -47,11 +47,11 @@ void FeedForwardTrellis::computeNextStates() {
     std::vector<int> mem_elements = dec2Bin(currentState, v + 1);
     for (int input = 0; input < numInputSymbols; input++) {
       mem_elements[0] = input;
-      std::vector<int> output(n);
-      for (int i = 0; i < n; i++) {
+      std::vector<int> output(nconv);
+      for (int i = 0; i < nconv; i++) {
         output[i] = 0;
       }
-      for (int x_bit = 0; x_bit < n; x_bit++) {
+      for (int x_bit = 0; x_bit < nconv; x_bit++) {
         for (int m_bit = 0; m_bit < V + 1; m_bit++) {
           if (bin_numerators[x_bit][m_bit] == 1) {
             output[x_bit] ^= mem_elements[m_bit];
@@ -87,14 +87,14 @@ void FeedForwardTrellis::computeGeneratorMatrix() {
 std::vector<int> FeedForwardTrellis::encode_zt(const std::vector<int>& originalMessage) const {
   std::vector<int> output;
   int State = 0;
-  for (size_t i = 0; i < originalMessage.size(); i += k) {
+  for (size_t i = 0; i < originalMessage.size(); i += kconv) {
     int decimal = 0;
-    for (int j = 0; j < k; j++) {
-      decimal += (originalMessage[i + j] * pow(2, k - j - 1));
+    for (int j = 0; j < kconv; j++) {
+      decimal += (originalMessage[i + j] * pow(2, kconv - j - 1));
     }
-    std::vector<int> outputBinary = crc::get_point(outputs[State][decimal], n);
+    std::vector<int> outputBinary = crc::get_point(outputs[State][decimal], nconv);
     State = nextStates[State][decimal];
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < nconv; j++) {
       output.push_back(outputBinary[j]);
     }
   }
@@ -109,14 +109,14 @@ std::vector<int> FeedForwardTrellis::encode(const std::vector<int>& originalMess
   for (int m = 0; m < numStates; m++) {
     std::vector<int> output;
     int State = m;
-    for (size_t i = 0; i < originalMessage.size(); i += k) {
+    for (size_t i = 0; i < originalMessage.size(); i += kconv) {
       int decimal = 0;
-      for (int j = 0; j < k; j++) {
-        decimal += (originalMessage[i + j] * pow(2, k - j - 1));
+      for (int j = 0; j < kconv; j++) {
+        decimal += (originalMessage[i + j] * pow(2, kconv - j - 1));
       }
-      std::vector<int> outputBinary = crc::get_point(outputs[State][decimal], n);
+      std::vector<int> outputBinary = crc::get_point(outputs[State][decimal], nconv);
       State = nextStates[State][decimal];
-      for (int j = 0; j < n; j++) {
+      for (int j = 0; j < nconv; j++) {
         output.push_back(outputBinary[j]);
       }
     }
@@ -159,4 +159,4 @@ int FeedForwardTrellis::getNumStates() { return numStates; }
 
 int FeedForwardTrellis::getV() { return v; }
 
-int FeedForwardTrellis::getN() { return n; }
+int FeedForwardTrellis::getN() { return nconv; }

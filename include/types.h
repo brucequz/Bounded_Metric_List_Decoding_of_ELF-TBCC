@@ -4,8 +4,8 @@
 #include <vector>
 
 struct CodeInformation {
-  int k;              // numerator of the rate
-  int n;              // denominator of the rate
+  int kconv;              // numerator of the rate
+  int nconv;              // denominator of the rate
   int v;              // number of memory elements
   int crcLen;         // m+1, length of CRC, degree of CRC + 1
   int crc;            // CRC polynomial

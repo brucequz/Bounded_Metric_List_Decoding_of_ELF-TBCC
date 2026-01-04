@@ -63,7 +63,7 @@ private:
 	int listSize;
 	int crcLength;
 	int crc;
-	int n;
+	int nconv;
 	char stopping_rule;
 
 	std::vector<std::vector<int>> lowrate_nextStates;

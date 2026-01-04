@@ -373,7 +373,7 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
                                               std::vector<std::vector<int>> G_mat) {
   std::vector<std::vector<cell>> trellisInfo;
   trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, PUNCTURING_INDICES);
-  std::string neighborSpectraFileName = "output/K24N48_Neighbor.txt";
+  std::string neighborSpectraFileName = OUTPUTFILEPATH + "K24N48_Neighbor.txt";
   std::ofstream neighborSpectra(neighborSpectraFileName, std::ios::out);
 
   // start search
@@ -480,8 +480,8 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
 
       /* Output to file if the latest codeword has a larger hamming weight */
       if (currmetric != last_curr_metric) {
-        std::string codewordFileName = std::format("output/codeword_{}.txt", last_curr_metric);
-        std::string messageFileName = std::format("output/message_{}.txt", last_curr_metric);
+        std::string codewordFileName = OUTPUTFILEPATH + std::format("codeword_{}.txt", last_curr_metric);
+        std::string messageFileName = OUTPUTFILEPATH + std::format("message_{}.txt", last_curr_metric);
         try {
           OutputFile CwdFile(codewordFileName);
           CwdFile.write2DVector(neighbor_codewords);
