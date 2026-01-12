@@ -1,6 +1,9 @@
 #include "../include/lowRateListDecoder.h"
 #include <algorithm>
 #include <cstdlib>
+#include <exception>
+#include <map>
+#include <vector>
 
 LowRateListDecoder::LowRateListDecoder(FeedForwardTrellis feedforwardTrellis, int listSize, int crcLength, int crc, char stopping_rule) {
   this->lowrate_nextStates    = feedforwardTrellis.getNextStates();
@@ -49,18 +52,19 @@ MessageInformation LowRateListDecoder::decode(std::vector<float> receivedMessage
 }
 
 MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices, const std::vector<int>& codeword, const int listsize) {
-	// trellisInfo is indexed [state][stage]
-	std::vector<std::vector<cell>> trellisInfo;
+	/* Output file name & output data structure */
+	std::string cosetLeaderFileName = OUTPUTFILEPATH + "coset_leaders_msgs.txt";
+	std::map<int, std::vector<std::vector<int>>> coset_leaders;
+	
+	std::vector<std::vector<cell>> trellisInfo; // trellisInfo is indexed [state][stage]
 	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
 
 	// start search
 	MessageInformation output;
 	MinHeap detourTree;
 	std::vector<std::vector<int>> previousPaths;
-	
 
 	// create nodes for each valid ending state with no detours
-	// std::cout<< "end path metrics:" <<std::endl;
 	for(int i = 0; i < lowrate_numStates; i++){
 		DetourObject detour;
 		detour.startingState = i;
@@ -103,7 +107,7 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 		path[newTracebackStage] = currentState;
 
 		// actually tracing back
-		for(int stage = newTracebackStage; stage > 0; stage--){
+		for(int stage = newTracebackStage; stage > 0; stage--) {
 			float suboptimalPathMetric = trellisInfo[currentState][stage].suboptimalPathMetric;
 			float currPathMetric = trellisInfo[currentState][stage].pathMetric;
 
@@ -121,15 +125,18 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 			float prevPathMetric = trellisInfo[currentState][stage - 1].pathMetric;
 			forwardPartialPathMetric += currPathMetric - prevPathMetric;
 			path[stage - 1] = currentState;
-		}
+		} // for(int stage = newTracebackStage; stage > 0; stage--)
 		
 		previousPaths.push_back(path);
-
 		std::vector<int> message = pathToMessage(path);
 		std::vector<int> cand_codeword = pathToCodeword(path);
-		unsigned long syndrome = crc::remdr(message, this->crc, (int)message.size(), this->crcLength-1);
-		int ESD = path[0] ^ path[this->lowrate_pathLength-1];
 
+		/* Computes ESD & ED */
+		std::vector<int> ED = crc::remdr_slidingWindow(message, CRC_VEC);
+		// int ESD = path[0] ^ path[this->lowrate_pathLength-1];
+		int ED_int = utils::short_int_vector_to_int(ED);
+
+		/* Computes Hamming & Euclidean distances */
 		int hamming_dist = 0;
 		float euclidean_dist = 0.0f;
 		for (size_t i = 0; i < codeword.size(); i++) {
@@ -139,25 +146,40 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 			}
 		}
 
+		if (hamming_dist == 8) {
+			break;
+		}
+
 		if (path[0] == path.back()) {
+			
+			coset_leaders[ED_int].push_back(message);
 			numTBPathsSearched++;
 			std::cout << "candidate codeword: " << numTBPathsSearched << std::endl;
 			// std::cout << "outputing syndrome: " << syndrome << std::endl;
 			// std::cout << "path[0]: " << path[0] << "; path[Kconv]: " << path[this->lowrate_pathLength-1] << "; ESD: " << ESD << std::endl;
 			// std::cout << "message: "; utils::print_int_vector(message);
 			// std::cout << "codeword: "; utils::print_int_vector(cand_codeword);
-			std::cout << "hamming dist: " << hamming_dist << "; euclidean dist: " << euclidean_dist << "; forwardPathMetric: " << forwardPartialPathMetric << std::endl;
-			std::cout << std::endl;
+			// std::cout << "hamming dist: " << hamming_dist << "; euclidean dist: " << euclidean_dist << "; forwardPathMetric: " << forwardPartialPathMetric << std::endl;
+			// std::cout << std::endl;
 		}
 		
 		numPathsSearched++;
 	} // while(numPathsSearched < this->listSize)
 
+	for (auto kv_pair : coset_leaders) {
+		try {
+			FileHandler CosetLeadersFile(cosetLeaderFileName);
+			CosetLeadersFile.write2DVector(kv_pair.second);
+		} catch (const std::exception& e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+	}
+
 	output.listSizeExceeded = true;
 	return output;
 }
 
-MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices){
+MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage, const std::vector<int>& punctured_indices) {
 	// trellisInfo is indexed [state][stage]
 	std::vector<std::vector<cell>> trellisInfo;
 	trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, punctured_indices);
@@ -237,6 +259,8 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::ve
 
 		std::vector<int> message = pathToMessage(path);
 		std::vector<int> codeword = pathToCodeword(path);
+
+		// std::cout << "forwardPartialPathMetric: " << forwardPartialPathMetric << std::endl;
 		
 		// one trellis decoding requires both a tb and crc check
 		if(path[0] == path[lowrate_pathLength - 1] && crc::crc_check(message, crcLength, crc) && numPathsSearched <= this->listSize){

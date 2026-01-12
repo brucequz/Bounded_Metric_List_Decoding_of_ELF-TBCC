@@ -373,7 +373,7 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
                                               std::vector<std::vector<int>> G_mat) {
   std::vector<std::vector<cell>> trellisInfo;
   trellisInfo = constructLowRateTrellis_Punctured(receivedMessage, PUNCTURING_INDICES);
-  std::string neighborSpectraFileName = OUTPUTFILEPATH + "K24N48_Neighbor.txt";
+  std::string neighborSpectraFileName = OUTPUTFILEPATH + "K15N30_Neighbor.txt";
   std::ofstream neighborSpectra(neighborSpectraFileName, std::ios::out);
 
   // start search
@@ -389,13 +389,6 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
   }
   int numPathsSearched = 0;
   int numTBPathsSearched = 0;
-  // // for printing codewords
-  // std::ofstream outputCodewords; // distance between the received word and the decoding center
-  // std::string filename = "v14_codewords_ZT.txt";
-  // outputCodewords.open(filename, std::fstream::app);
-  // std::ofstream outputfile_m; // distance between the received word and the decoding center
-  // std::string filename_m = "v14_messages_ZT.txt";
-  // outputfile_m.open(filename_m, std::fstream::app);
 
   int currmetric = 0;
   int neighbors = 0;
@@ -403,7 +396,7 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
   std::vector<std::vector<int>> neighbor_codewords;
   std::vector<std::vector<int>> neighbor_messages;
 
-  while (currmetric < 14) {
+  while (currmetric < 20) {
     int last_curr_metric = currmetric;
     DetourObject detour = detourTree.pop();
     std::vector<int> path(lowrate_pathLength);
@@ -450,8 +443,12 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
     std::vector<int> message = pathToMessage(path);
     std::vector<int> codeword = pathToCodeword(path);
 
+    /* Computes EDS, ED to store message and codeword neighbors */
+    int ESD = path[0] ^ path[lowrate_pathLength - 1];
+    std::vector<int> ED = crc::remdr_slidingWindow(message, CRC_VEC);
+
     /* - Recoding TB Gabriel Neighbors */
-    if (path.front() == path.back()) {
+    if (std::vector<int> all_zero(M, 0); path.front() == path.back() && ED == all_zero) {
       numTBPathsSearched++;
       // std::cout << "codeword " << numTBPathsSearched;
       // std::cout << ": path[0]: " << path[0] << "; path[Kconv]: " <<
@@ -480,14 +477,15 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
 
       /* Output to file if the latest codeword has a larger hamming weight */
       if (currmetric != last_curr_metric) {
+        /* Write cwd&msg to files */
         std::string codewordFileName = OUTPUTFILEPATH + std::format("codeword_{}.txt", last_curr_metric);
         std::string messageFileName = OUTPUTFILEPATH + std::format("message_{}.txt", last_curr_metric);
         try {
-          OutputFile CwdFile(codewordFileName);
+          FileHandler CwdFile(codewordFileName);
           CwdFile.write2DVector(neighbor_codewords);
           neighbor_codewords.clear();
 
-          OutputFile MsgFile(messageFileName);
+          FileHandler MsgFile(messageFileName);
           MsgFile.write2DVector(neighbor_messages);
           neighbor_messages.clear();
         } catch (const std::exception& e) {
@@ -535,14 +533,16 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
           G_mat_temp[pivot] = temp;
           app_i = app_i + 1;
           if (app_i == Kconv - 1) {
-            neighbor_messages.push_back(message);
-            neighbor_codewords.push_back(ookcw);
+            // neighbor_messages.push_back(message);
+            // neighbor_codewords.push_back(ookcw);
             neighbors++;
             is_neighbor = 1;
             break;
           }
         }
       }
+      neighbor_messages.push_back(message);
+      neighbor_codewords.push_back(ookcw);
       if (is_neighbor == 0) {
         non_neighbors++;
       }

@@ -1,5 +1,9 @@
 #include "../include/namespace.h"
+#include <bitset>
 #include <cassert>
+#include <cstddef>
+#include <iostream>
+#include <vector>
 
 namespace awgn
 {
@@ -11,9 +15,11 @@ namespace awgn
     std::vector<float> noisyMsg;
 
     float variance = pow(10.0, -esno_dB / 10.0) / 2.0;
-    // std::cout << "variance" << std::fixed << std::setprecision(4) << variance << std::endl;
 
     float sigma = sqrt(variance);
+    // std::cout << "esno_dB" << std::fixed << std::setprecision(4) << esno_dB << std::endl;
+    // std::cout << "variance" << std::fixed << std::setprecision(4) << variance << std::endl;
+    // std::cout << "sigma" << std::fixed << std::setprecision(4) << sigma << std::endl;
     std::normal_distribution<float> distribution(0.0, sigma);
 
     float esno = pow(10.0, esno_dB / 10.0);
@@ -76,6 +82,25 @@ namespace awgn
   }
 
 } // namespace awgn
+
+
+namespace distance
+{
+  int compute_hamming_distance(const std::vector<int>& vec1, const std::vector<int>& vec2) {
+    if (vec1.size() != vec2.size()) {
+      std::cerr << "vec1 and vec2 do not have the same lengths" << std::endl;
+    }
+
+    int hamming_dist = 0;
+    for (size_t i = 0; i < vec1.size(); i++) {
+      if (vec1[i] != vec2[i]) {
+        hamming_dist++;
+      }
+    }
+    return hamming_dist;
+  }
+}
+
 
 namespace crc
 {
@@ -262,7 +287,7 @@ namespace utils
       return;
     for (size_t i = 0; i < vector.size() - 1; i++)
     {
-      std::cout << std::setprecision(2) << vector[i] << " ";
+      std::cout << std::setprecision(2) << vector[i] << ",";
     }
     std::cout << vector[vector.size() - 1] << std::endl;
   }
@@ -274,21 +299,9 @@ namespace utils
       return;
     for (size_t i = 0; i < vector.size() - 1; i++)
     {
-      std::cout << vector[i] << " ";
+      std::cout << vector[i] << ",";
     }
     std::cout << vector[vector.size() - 1] << std::endl;
-  }
-
-  // outputs a vector of ints to a file
-  void output_int_vector(std::vector<int> vector, std::ofstream& file)
-  {
-    if (vector.size() == 0)
-      return;
-    for (size_t i = 0; i < vector.size() - 1; i++)
-    {
-      file << vector[i] << " ";
-    }
-    file << vector[vector.size() - 1] << std::endl;
   }
 
   std::vector<float> normalize_to_unit_energy(std::vector<float> vec)
@@ -335,6 +348,20 @@ namespace utils
       v = static_cast<float>(v * scale);
     }
     return vec;
+  }
+
+  int short_int_vector_to_int(std::vector<int> int_vector) {
+    if (int_vector.size() > 31) {
+      std::cerr << "int vector too long! ABORT!" << std::endl;
+    }
+
+    int result = 0;
+    int bitwidth = int_vector.size();
+    for (int i = 0; i < bitwidth; i++) {
+      result |= (int_vector.back() & 1) << i;
+      int_vector.pop_back();
+    }
+    return result;
   }
 
 } // namespace utils

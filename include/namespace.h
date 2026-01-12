@@ -28,6 +28,11 @@ std::vector<float> addAWNGNoise(std::vector<int> transmittedMessage, std::vector
 
 } // namespace awgn
 
+namespace distance
+{
+  int compute_hamming_distance(const std::vector<int>& vec1, const std::vector<int>& vec2);
+}
+
 namespace crc {
 
 // binary sum, used in crc_check
@@ -176,6 +181,8 @@ std::vector<float> elementwise_squared_distance(
     }
     return distances;
 }
+
+int short_int_vector_to_int(std::vector<int> int_vector);
 
 } // namespace utils
 

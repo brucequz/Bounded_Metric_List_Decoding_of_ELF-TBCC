@@ -1,5 +1,5 @@
 CXX = mpicxx
-CXXFLAGS = -g -std=c++20 -Wall -Wextra -I include 
+CXXFLAGS = -O2 -std=c++20 -Wall -Wextra -I include 
 LDFLAGS = 
 
 # Directories
@@ -9,13 +9,12 @@ BUILD_DIR = build
 CONFIG ?= K64N128
 
 # Create a list of all source and object files
-SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 COMMON_SRC_FILES = $(SRC_DIR)/minHeap.cpp $(SRC_DIR)/namespace.cpp $(SRC_DIR)/feedForwardTrellis.cpp $(SRC_DIR)/lowRateListDecoder_TB.cpp $(SRC_DIR)/lowRateListDecoder_ZT.cpp 
 
 BALD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bald_sim.cpp
 ROVA_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/rova_sim.cpp
 COLLECT_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp
-SSD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_sim.cpp $(SRC_DIR)/linearityDecoding.cpp
+SSD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_sim.cpp $(SRC_DIR)/linearityDecoding.cpp $(SRC_DIR)/ssdSLVDDecoding.cpp
 GEN_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_table_gen.cpp $(SRC_DIR)/linearityDecoding.cpp
 
 BALD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BALD_SRC_FILES))
@@ -42,7 +41,7 @@ $(COLLECT_TARGET): clean consts.h $(COLLECT_OBJ_FILES)
 	echo $(PWD)
 	$(CXX) $(LDFLAGS) $(COLLECT_OBJ_FILES) -o $@
 
-$(SSD_TARGET): clean consts.h $(SSD_OBJ_FILES) 
+$(SSD_TARGET): $(INCLUDE_DIR)/consts_$(CONFIG).h $(SSD_OBJ_FILES) 
 	$(CXX) $(LDFLAGS) $(SSD_OBJ_FILES) -o $@
 
 $(GEN_SSD_TABLE_TARGET): $(INCLUDE_DIR)/consts_$(CONFIG).h $(GEN_OBJ_FILES) 
