@@ -11,24 +11,20 @@
 /* --- Convolutional Code Parameters --- */
 const int kconv = 1;  /* Number of input bits */
 const int nconv = 2;  /* Number of output bits */
-const int K = 11; /* Number of input bits */
-const int N = 30; /* Number of output bits */
+const int K = 21; /* Number of input bits */
+const int N = 62; /* Number of output bits */
 const int V = 6;  /* Number of memory elements */
-const int M = 4;  /* Degree of CRC - 1 */
-const int Kcrc = 11;
-const int Ncrc = 15;
-const int Kconv = 15;
-const int Nconv = 30;
+const int M = 10;  /* Degree of CRC */
+const int Kcrc = 21;
+const int Ncrc = 31;
+const int Kconv = 31;
+const int Nconv = 62;
 
-const unsigned int CRC = 0b10011;           /* CRC polynomial */
-const std::vector<int> CRC_VEC = {1,0,0,1,1};
+const unsigned int CRC = 0b11101101001;           /* CRC polynomial */
+const std::vector<int> CRC_VEC = {1,1,1,0,1,1,0,1,0,0,1};
 const std::vector<int> NUMERATORS = {133, 171}; /* in octal */
-const std::string GENMATRIXFILEPATH = "params/K15N30_TBCC_GenMatrix.txt";
-const std::string OUTPUTFILEPATH = "output/K15N30/";
-
-
-// const std::vector<int> PUNCTURING_INDICES = {3,  4,  9,  10, 15, 16, 21, 22, 27,
-//                                              28, 33, 34, 39, 40, 45, 46};
+const std::string GENMATRIXFILEPATH = "params/K31N62_TBCC_GenMatrix.txt";
+const std::string OUTPUTFILEPATH = "output/K31N62/";
 const std::vector<int> PUNCTURING_INDICES = {};
 
 /* --- List Decoder Parameters --- */
@@ -47,5 +43,5 @@ constexpr int MAX_ERRORS = 200;     /* Maximum number of errors */
 constexpr bool NOISELESS = false;    /* Noiseless simulation */
 constexpr int LOGGING_ITERS = 1000; /* Logging Interval*/
 constexpr int BASE_SEED = 42;       /* Fixed base seed for simulation */
-const std::vector<float> EBN0 = {5.5};
+const std::vector<float> EBN0 = {3.5};
 #endif

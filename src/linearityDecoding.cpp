@@ -396,7 +396,7 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
   std::vector<std::vector<int>> neighbor_codewords;
   std::vector<std::vector<int>> neighbor_messages;
 
-  while (currmetric < 20) {
+  while (currmetric < 18) {
     int last_curr_metric = currmetric;
     DetourObject detour = detourTree.pop();
     std::vector<int> path(lowrate_pathLength);

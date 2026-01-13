@@ -39,15 +39,6 @@ int main() {
                        .numInfoBits = K,
                        .numerators = NUMERATORS};
 
-  /* - Generator setup - */
-  std::mt19937 gen(BASE_SEED);
-  std::bernoulli_distribution d(0.5);
-
-  /* - esno_dB setup - */
-  float offset = 10 * log10((float) K / N);
-  float esno_dB = EBN0 + offset;
-  std::cout << "esno_dB: " << std::fixed << std::setprecision(4) << esno_dB << std::endl;
-
   /* - Trellis setup - */
   FeedForwardTrellis encodingTrellis(code.kconv, code.nconv, code.v, code.numerators);
 
@@ -55,113 +46,8 @@ int main() {
   LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc,
                                  STOPPING_RULE);
 
-  /* Reading in coset leaders */
-  std::vector<std::vector<int>> cosetLeaderMsgs;
-  std::vector<std::vector<int>> cosetLeaderCwds;
-  std::vector<std::vector<int>> gabrielNeighbors;
-  try {
-    std::string cosetLeaderMsgName = OUTPUTFILEPATH + "coset_leaders_msgs.txt";
-    FileHandler cosetLeaderMsgFile(cosetLeaderMsgName);
-    cosetLeaderMsgs = cosetLeaderMsgFile.read2DVector<int>();
-
-    std::string cosetLeaderCwdFileName = OUTPUTFILEPATH + "coset_leaders_cwds.txt";
-    FileHandler cosetLeaderCwdFile(cosetLeaderCwdFileName);
-    cosetLeaderCwds = cosetLeaderCwdFile.read2DVector<int>(' ');
-
-    std::vector<int> neightborList = {0,8,10,12, 14, 16};
-    for (int hamming_dist : neightborList) {
-      std::string gabrielNeighborFileName = OUTPUTFILEPATH + std::format("codeword_{}.txt", hamming_dist);
-      FileHandler gabrielNeighborFile(gabrielNeighborFileName);
-      std::vector<std::vector<int>> temp = gabrielNeighborFile.read2DVector<int>();
-      gabrielNeighbors.insert(gabrielNeighbors.end(), temp.begin(), temp.end());
-    }
-
-  } catch (const std::exception& e) {
-    std::cerr << "Error: " << e.what() << std::endl;
-  }
-
-  // std::cout << "cosetLeaderCwds[10]: ";
-  // utils::print_int_vector(cosetLeaderCwds[10]);
-  std::cout << "gabrielNeighbor size: " << gabrielNeighbors.size() << std::endl;
-  // std::cout << "gabrielNeighbor[0]: ";
-  // utils::print_int_vector(gabrielNeighbors[0]);
-
-  int num_ssd_slvd_error = 0;
-  int num_slvd_error = 0;
-  int num_sims = 0;
-
-  while (num_ssd_slvd_error < MAX_ERRORS) {
-    num_sims++;
-
-    /* Generate info */
-    std::vector<int> info(K, 0);
-    for (size_t i = 0; i < info.size(); ++i) {
-      int bit = d(gen);
-      info[i] = bit;
-    }
-
-    /* CRC encoder */
-    std::vector<int> info_crc(Ncrc, 0);
-    for (size_t i = 0; i < info.size(); i++) {
-      info_crc[i] = info[i];
-    }
-    std::vector<int> remainder = crc::remdr_slidingWindow(info_crc, CRC_VEC, false);
-    for (size_t i = 0; i < remainder.size(); i++) {
-      info_crc[Kcrc + i] = remainder[i];
-    }
-
-    /* Convolutional encoder */
-    std::vector<int> modulatedCodeword = generateTransmittedMessage(info_crc, encodingTrellis);
-
-    /* Channel */
-    std::vector<float> receivedWord =
-        awgn::addAWNGNoise(modulatedCodeword, PUNCTURING_INDICES, esno_dB, NOISELESS);
-    float esno = pow(10.0, esno_dB / 10.0);
-    for (size_t i = 0; i < receivedWord.size(); i++) {
-      receivedWord[i] = receivedWord[i] / (4 * esno);
-    }
-
-    /* Correlation metric */
-    // float corr = 0.0f;
-    // for (size_t i = 0; i < receivedWord.size(); i++) {
-    //   corr += modulatedCodeword[i] * receivedWord[i];
-    // }
-    // std::cout << "transmitted codeword corr: " << corr << std::endl;
-
-    // std::cout << "info: " << std::endl;
-    // utils::print_int_vector(info);
-    // std::cout << "info_crc: " << std::endl;
-    // utils::print_int_vector(info_crc);
-    // std::cout << "remainder: ";
-    // utils::print_int_vector(remainder);
-    // std::cout << "transmitted codeword: " << std::endl;
-    // utils::print_int_vector(modulatedCodeword);
-    // std::cout << "received sequence: " << std::endl;
-    // utils::print_float_vector(receivedWord);
-    
-
-    /* SSD-SLVD decoding*/
-    MessageInformation decodingResult;
-    decodingResult = listDecoder.ssdSLVDDecoding(receivedWord, PUNCTURING_INDICES, modulatedCodeword, cosetLeaderMsgs, cosetLeaderCwds, gabrielNeighbors);
-    if (decodingResult.codeword != modulatedCodeword) {
-      num_ssd_slvd_error++;
-    }
-
-    /* SLVD decoding */
-    MessageInformation SLVDResult;
-    SLVDResult = listDecoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
-    if (SLVDResult.message != info_crc) {
-      // std::cout << "SLVD failed! " << std::endl;
-      num_slvd_error++;
-    }
-  }
-
-  std::cout << "num_sim: " << num_sims << std::endl;
-  std::cout << "num_slvd_error: " << num_slvd_error << std::endl;
-  std::cout << "num_ssd_slvd_error: " << num_ssd_slvd_error << std::endl;
-
   /* FER simulation */
-  // FER_simulation(encodingTrellis, listDecoder);
+  FER_simulation(encodingTrellis, listDecoder);
 
   // MessageInformation decodingResult;
   // decodingResult = listDecoder.forceDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES,
@@ -250,6 +136,9 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis,
   //!< key = hamming weight; pair.first = num_nei; pair.second = num_nonnei
   std::unordered_map<int, std::pair<int, int>> neighbor_spectra;
 
+  /* Initialize codeword distance spectra */
+  std::map<int, int> cwd_dist_spectra;
+
   for (size_t i_lyndon_w = 0; i_lyndon_w < lyndon_messages.size(); i_lyndon_w++) {
     /* Encode Lyndon messages */
     std::vector<int> m = lyndon_messages[i_lyndon_w];
@@ -268,9 +157,19 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis,
 
     if (hamming_distance == hamming_weight_of_interest) {
       weight_12_messages.push_back(m);
-      std::cout << "printing modulated_codeword: "; utils::print_int_vector(modulated_codeword);
+      // std::cout << "printing modulated_codeword: "; utils::print_int_vector(modulated_codeword);
     }
 
+    /* cwd dist spectra */
+    if (cwd_dist_spectra.find(hamming_distance) != cwd_dist_spectra.end()) {
+      //!< if hamming distance already discovered
+      cwd_dist_spectra[hamming_distance]++;
+    } else {
+      //!< if hamming distance entry not discovered
+      cwd_dist_spectra[hamming_distance] = 1;
+    }
+
+    /* neighbor spectra */
     if (neighbor_spectra.find(hamming_distance) != neighbor_spectra.end()) {
       //!< if hamming distance already discovered
       if (is_neighbor) {
@@ -303,6 +202,12 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis,
   for (const auto& kvpair : neighbor_spectra) {
     std::cout << "Hamming weight: " << kvpair.first << "; " << "nei: " << kvpair.second.first
               << "; non-nei: " << kvpair.second.second << std::endl;
+  }
+
+  std::cout << "printing cwd dist spectra: " << std::endl;
+  /* Output cwd dist spectra to console */
+  for (const auto& kvpair : cwd_dist_spectra) {
+    std::cout << "Hamming weight: " << kvpair.first << "; " << "number of cwds: " << kvpair.second << std::endl;
   }
 }
 
@@ -410,93 +315,124 @@ void compute_serial_coded_spectra(const FeedForwardTrellis& trellis) {
 
 void FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decoder) {
 
-  /* - esno_dB setup - */
-  float offset = 10 * log10((float) K / N);
-  float esno_dB = EBN0 + offset;
-  std::cout << "esno_dB: " << std::fixed << std::setprecision(4) << esno_dB << std::endl;
-
   /* - Generator setup - */
   std::mt19937 gen(BASE_SEED);
   std::bernoulli_distribution d(0.5);
 
-  /* ==== SIMULATION begins ==== */
-  std::cout << std::endl
-            << "**- Simulation Started for EbN0 = " << std::fixed << std::setprecision(2) << EBN0
-            << " -**" << std::endl;
-  int num_erasures = 0;
-  int num_errors = 0;
-  int num_sims = 0;
+  /* Reading in coset leaders */
+  std::vector<std::vector<int>> cosetLeaderMsgs;
+  std::vector<std::vector<int>> cosetLeaderCwds;
+  std::vector<std::vector<int>> gabrielNeighbors;
+  try {
+    std::string cosetLeaderMsgName = OUTPUTFILEPATH + "coset_leaders_msgs.txt";
+    FileHandler cosetLeaderMsgFile(cosetLeaderMsgName);
+    cosetLeaderMsgs = cosetLeaderMsgFile.read2DVector<int>();
 
-  while (num_errors < MAX_ERRORS) {
-    num_sims++;
-    if (num_sims % 10000 == 0) {
-      std::cout << "num_sims: " <<  num_sims << "; num_errors: " << num_errors << std::endl;
-    }
-    /* Generate info */
-    std::vector<int> info(K, 0);
-    for (size_t i = 0; i < info.size(); ++i) {
-      int bit = d(gen);
-      info[i] = bit;
-    }
+    std::string cosetLeaderCwdFileName = OUTPUTFILEPATH + "coset_leaders_cwds.txt";
+    FileHandler cosetLeaderCwdFile(cosetLeaderCwdFileName);
+    cosetLeaderCwds = cosetLeaderCwdFile.read2DVector<int>(' ');
 
-    /* CRC encoder */
-    std::vector<int> info_crc(Ncrc, 0);
-    for (size_t i = 0; i < info.size(); i++) {
-      info_crc[i] = info[i];
-    }
-    std::vector<int> remainder = crc::remdr_slidingWindow(info_crc, CRC_VEC, false);
-    for (size_t i = 0; i < remainder.size(); i++) {
-      info_crc[Kcrc + i] = remainder[i];
+    std::vector<int> neightborList = {0, 8, 10, 12, 14, 16};
+    for (int hamming_dist : neightborList) {
+      std::string gabrielNeighborFileName = OUTPUTFILEPATH + std::format("gabriel_codeword_{}.txt", hamming_dist);
+      FileHandler gabrielNeighborFile(gabrielNeighborFileName);
+      std::vector<std::vector<int>> temp = gabrielNeighborFile.read2DVector<int>();
+      gabrielNeighbors.insert(gabrielNeighbors.end(), temp.begin(), temp.end());
     }
 
-    /* Convolutional encoder */
-    std::vector<int> modulatedCodeword = generateTransmittedMessage(info_crc, trellis);
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
 
-    /* Channel */
-    std::vector<float> receivedWord =
-        awgn::addAWNGNoise(modulatedCodeword, PUNCTURING_INDICES, esno_dB, NOISELESS);
-    float esno = pow(10.0, esno_dB / 10.0);
-    for (size_t i = 0; i < receivedWord.size(); i++) {
-      receivedWord[i] = receivedWord[i] / (4 * esno);
-    }
+  // std::cout << "cosetLeaderCwds[10]: ";
+  // utils::print_int_vector(cosetLeaderCwds[10]);
+  std::cout << "gabrielNeighbor size: " << gabrielNeighbors.size() << std::endl;
+  // std::cout << "gabrielNeighbor[0]: ";
+  // utils::print_int_vector(gabrielNeighbors[0]);
 
-
-    /* List decoding */
-    MessageInformation decodingResult;
-    decodingResult = decoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
-
-    // std::cout << "info: " << std::endl;
-    // utils::print_int_vector(info);
-    // std::cout << "info_crc: " << std::endl;
-    // utils::print_int_vector(info_crc);
-    // std::cout << "remainder: ";
-    // utils::print_int_vector(remainder);
-    // std::cout << "transmitted codeword: " << std::endl;
-    // utils::print_int_vector(modulatedCodeword);
-    // std::cout << "received sequence: " << std::endl;
-    // utils::print_float_vector(receivedWord);
-    // std::cout << "decoded codeword: " << std::endl;
-    // utils::print_int_vector(decodingResult.codeword);
-    // std::cout << "decoded message: " << std::endl;
-    // utils::print_int_vector(decodingResult.message);
-
-    /* Collect results */
-    if (!decodingResult.listSizeExceeded && decodingResult.message == info_crc) {
-      // correct decoding
-      // std::cout << "correct decoding! " << std::endl;
-    } else if(decodingResult.listSizeExceeded) {
-      // list size exceeded
-      num_erasures++;
-      std::cout << "List size exceeded! num_failures = " << num_erasures << std::endl;
-    } else { 
-      // incorrect decoding
-      num_errors++;
-      std::cout << "Undetected error! num_mistakes = " << num_errors << std::endl;
-    }
-  } // while (num_errors < MAX_ERRORS)
+  /* - esno_dB setup - */
+  float offset = 10 * log10((float) K / N);
   
+  for (size_t i_ebno = 0; i_ebno < EBN0.size(); i_ebno++) {
+    float esno_dB = EBN0[i_ebno] + offset;
+    std::cout << "esno_dB: " << std::fixed << std::setprecision(4) << esno_dB << std::endl;
+  
+  
+    int num_ssd_slvd_error = 0;
+    int num_slvd_error = 0;
+    int num_sims = 0;
 
-  std::cout << "number of simulations: " << num_sims << std::endl;
-  std::cout << "number of errors: " << num_errors << std::endl;
-  std::cout << "number of erasures: " << num_erasures << std::endl;
+    while (num_slvd_error < MAX_ERRORS) {
+      num_sims++;
+      if (num_sims % LOGGING_ITERS == 0) {
+        std::cout << "num_sims: " << num_sims << "; num_slvd_error: " << num_slvd_error << std::endl;
+      }
+
+      /* Generate info */
+      std::vector<int> info(K, 0);
+      for (size_t i = 0; i < info.size(); ++i) {
+        int bit = d(gen);
+        info[i] = bit;
+      }
+
+      /* CRC encoder */
+      std::vector<int> info_crc(Ncrc, 0);
+      for (size_t i = 0; i < info.size(); i++) {
+        info_crc[i] = info[i];
+      }
+      std::vector<int> remainder = crc::remdr_slidingWindow(info_crc, CRC_VEC, false);
+      for (size_t i = 0; i < remainder.size(); i++) {
+        info_crc[Kcrc + i] = remainder[i];
+      }
+
+      /* Convolutional encoder */
+      std::vector<int> modulatedCodeword = generateTransmittedMessage(info_crc, trellis);
+
+      /* Channel */
+      std::vector<float> receivedWord =
+          awgn::addAWNGNoise(modulatedCodeword, PUNCTURING_INDICES, esno_dB, NOISELESS);
+      float esno = pow(10.0, esno_dB / 10.0);
+      for (size_t i = 0; i < receivedWord.size(); i++) {
+        receivedWord[i] = receivedWord[i] / (4 * esno);
+      }
+
+      /* Correlation metric */
+      // float corr = 0.0f;
+      // for (size_t i = 0; i < receivedWord.size(); i++) {
+      //   corr += modulatedCodeword[i] * receivedWord[i];
+      // }
+      // std::cout << "transmitted codeword corr: " << corr << std::endl;
+
+      // std::cout << "info: " << std::endl;
+      // utils::print_int_vector(info);
+      // std::cout << "info_crc: " << std::endl;
+      // utils::print_int_vector(info_crc);
+      // std::cout << "remainder: ";
+      // utils::print_int_vector(remainder);
+      // std::cout << "transmitted codeword: " << std::endl;
+      // utils::print_int_vector(modulatedCodeword);
+      // std::cout << "received sequence: " << std::endl;
+      // utils::print_float_vector(receivedWord);
+      
+
+      /* SSD-SLVD decoding*/
+      // MessageInformation decodingResult;
+      // decodingResult = decoder.ssdSLVDDecoding(receivedWord, PUNCTURING_INDICES, modulatedCodeword, cosetLeaderMsgs, cosetLeaderCwds, gabrielNeighbors);
+      // if (decodingResult.codeword != modulatedCodeword) {
+      //   num_ssd_slvd_error++;
+      // }
+
+      /* SLVD decoding */
+      MessageInformation SLVDResult;
+      SLVDResult = decoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
+      if (SLVDResult.message != info_crc) {
+        // std::cout << "SLVD failed! " << std::endl;
+        num_slvd_error++;
+      }
+    } // while (num_ssd_slvd_error < MAX_ERRORS)
+
+    std::cout << "num_sim: " << num_sims << std::endl;
+    std::cout << "num_slvd_error: " << num_slvd_error << std::endl;
+    std::cout << "num_ssd_slvd_error: " << num_ssd_slvd_error << std::endl;
+  } // for (size_t i_ebno = 0; i_ebno < EBN0.size(); i_ebno++)
 }

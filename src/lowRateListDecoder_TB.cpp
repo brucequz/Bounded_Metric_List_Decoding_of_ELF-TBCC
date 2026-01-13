@@ -138,11 +138,11 @@ MessageInformation LowRateListDecoder::forceDecoding_MaxListsize(const std::vect
 
 		/* Computes Hamming & Euclidean distances */
 		int hamming_dist = 0;
-		float euclidean_dist = 0.0f;
+		// float euclidean_dist = 0.0f;
 		for (size_t i = 0; i < codeword.size(); i++) {
 			if (std::find(punctured_indices.begin(), punctured_indices.end(), i) == punctured_indices.end()) {
 				hamming_dist += (int)cand_codeword[i]!=codeword[i];
-				euclidean_dist += std::pow(std::abs(cand_codeword[i]-codeword[i]),2);
+				// euclidean_dist += std::pow(std::abs(cand_codeword[i]-codeword[i]),2);
 			}
 		}
 

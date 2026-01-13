@@ -101,7 +101,7 @@ MessageInformation LowRateListDecoder::ssdSLVDDecoding(const std::vector<float>&
 
       /* Computes ESD & ED */
       std::vector<int> ED = crc::remdr_slidingWindow(message, CRC_VEC);
-      int ESD = path[0] ^ path[this->lowrate_pathLength - 1];
+      // int ESD = path[0] ^ path[this->lowrate_pathLength - 1];
       int ED_int = utils::short_int_vector_to_int(ED);
 
       // std::cout << "candidate TBCC codeword: " << numTBPathsSearched << std::endl;
