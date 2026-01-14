@@ -2,8 +2,9 @@
 
 #include <cstddef>
 #include <exception>
-#include <format>
-#include <fstream>
+
+
+#include "../include/fmt/core.h"
 
 void LowRateListDecoder::generateNeighborList_sequential(const std::vector<float>& allZerosMessage,
                                                          std::string dir, double thre) {
@@ -478,8 +479,8 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
       /* Output to file if the latest codeword has a larger hamming weight */
       if (currmetric != last_curr_metric) {
         /* Write cwd&msg to files */
-        std::string codewordFileName = OUTPUTFILEPATH + std::format("codeword_{}.txt", last_curr_metric);
-        std::string messageFileName = OUTPUTFILEPATH + std::format("message_{}.txt", last_curr_metric);
+        std::string codewordFileName = OUTPUTFILEPATH + fmt::format("codeword_{}.txt", last_curr_metric);
+        std::string messageFileName = OUTPUTFILEPATH + fmt::format("message_{}.txt", last_curr_metric);
         try {
           FileHandler CwdFile(codewordFileName);
           CwdFile.write2DVector(neighbor_codewords);

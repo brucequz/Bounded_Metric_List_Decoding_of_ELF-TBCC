@@ -126,7 +126,7 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis,
   /* - Records messages that lead to weight 12 codewords */
   int hamming_weight_of_interest = 8;
   std::string LyndonMFile =
-      OUTPUTFILEPATH + std::format("lyndon_message_cwd_{}.txt", hamming_weight_of_interest);
+      OUTPUTFILEPATH + fmt::format("lyndon_message_cwd_{}.txt", hamming_weight_of_interest);
   std::vector<std::vector<int>> weight_12_messages;
 
   /* - Read in generator matrix */
@@ -334,7 +334,7 @@ void FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decode
 
     std::vector<int> neightborList = {0, 8, 10, 12, 14, 16};
     for (int hamming_dist : neightborList) {
-      std::string gabrielNeighborFileName = OUTPUTFILEPATH + std::format("gabriel_codeword_{}.txt", hamming_dist);
+      std::string gabrielNeighborFileName = OUTPUTFILEPATH + fmt::format("gabriel_codeword_{}.txt", hamming_dist);
       FileHandler gabrielNeighborFile(gabrielNeighborFileName);
       std::vector<std::vector<int>> temp = gabrielNeighborFile.read2DVector<int>();
       gabrielNeighbors.insert(gabrielNeighbors.end(), temp.begin(), temp.end());

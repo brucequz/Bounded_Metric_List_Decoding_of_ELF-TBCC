@@ -1,5 +1,5 @@
 CXX = mpicxx
-CXXFLAGS = -O2 -std=c++20 -Wall -Wextra -I include 
+CXXFLAGS = -O2 -std=c++20 -Wall -Wextra -DFMT_HEADER_ONLY -I include 
 LDFLAGS = 
 
 # Directories

@@ -1,23 +1,20 @@
 /* K16N48 PARAMETERS */
 #ifndef K16N48_PARAM
 #define K16N48_PARAM
-
 #include <vector>
 #include <string>
 
 #include "fmt/core.h"
-
-
 #define __INT_MAX__ 2147483647
 
 /* --- Convolutional Code Parameters --- */
 const int kconv = 1;  /* Number of input bits */
 const int nconv = 2;  /* Number of output bits */
-const int K = 21; /* Number of input bits */
+const int K = 26; /* Number of input bits */
 const int N = 62; /* Number of output bits */
 const int V = 6;  /* Number of memory elements */
-const int M = 10;  /* Degree of CRC */
-const int Kcrc = 21;
+const int M = 5;  /* Degree of CRC */
+const int Kcrc = 26;
 const int Ncrc = 31;
 const int Kconv = 31;
 const int Nconv = 62;
@@ -43,7 +40,7 @@ constexpr char ERROR_RUN_TYPE = 'U'; /* Accumulate which type of error: {U: unde
 /* --- Simulation Parameters --- */
 constexpr int MAX_ERRORS = 200;     /* Maximum number of errors */
 constexpr bool NOISELESS = false;    /* Noiseless simulation */
-constexpr int LOGGING_ITERS = 10000; /* Logging Interval*/
+constexpr int LOGGING_ITERS = 1000; /* Logging Interval*/
 constexpr int BASE_SEED = 42;       /* Fixed base seed for simulation */
-const std::vector<float> EBN0 = {3,3.5, 4, 4.5, 5};
+const std::vector<float> EBN0 = {3,3.5};
 #endif

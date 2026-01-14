@@ -2,9 +2,12 @@
 #ifndef K16N48_PARAM
 #define K16N48_PARAM
 
-#include <format>
 #include <vector>
 #include <string>
+
+
+#include "fmt/core.h"
+
 
 #define __INT_MAX__ 2147483647
 
