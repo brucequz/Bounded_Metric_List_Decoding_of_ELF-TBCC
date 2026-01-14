@@ -5,7 +5,6 @@
 
 MessageInformation LowRateListDecoder::ssdSLVDDecoding(const std::vector<float>& receivedMessage,
                                                        const std::vector<int>& punctured_indices,
-                                                       const std::vector<int>& transmittedWord,
                                                        const std::vector<std::vector<int>>& cosetLeadersMsgs,
                                                        const std::vector<std::vector<int>>& cosetLeadersCwds,
                                                        const std::vector<std::vector<int>>& gabrielNeighbors) {
@@ -33,7 +32,7 @@ MessageInformation LowRateListDecoder::ssdSLVDDecoding(const std::vector<float>&
   }
 
   int numPathsSearched = 0;
-  int numTBPathsSearched = 0;
+  // int numTBPathsSearched = 0;
 
   while (true) {
     
@@ -93,7 +92,7 @@ MessageInformation LowRateListDecoder::ssdSLVDDecoding(const std::vector<float>&
 
     /* If a TBCC is found */
     if (path[0] == path.back()) {
-      numTBPathsSearched++;
+      // numTBPathsSearched++;
 
       /* Translates path to msg and cwd */
       std::vector<int> message = pathToMessage(path);

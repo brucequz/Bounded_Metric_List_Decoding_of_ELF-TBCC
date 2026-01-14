@@ -192,7 +192,7 @@ void LowRateListDecoder::generateNeighborList_sequential(const std::vector<float
 }
 
 void LowRateListDecoder::generateNeighborList_sequential_TBonly(
-    const std::vector<float>& allZerosMessage, std::string dir, double thre) {
+    const std::vector<float>& allZerosMessage, double thre) {
 
   // trellisInfo is indexed [state][stage]
   std::vector<std::vector<cell>> trellisInfo;
@@ -389,7 +389,7 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
     detourTree.insert(detour);
   }
   int numPathsSearched = 0;
-  int numTBPathsSearched = 0;
+  // int numTBPathsSearched = 0;
 
   int currmetric = 0;
   int neighbors = 0;
@@ -445,12 +445,12 @@ LowRateListDecoder::lowrateDecoding_neighbors(const std::vector<float>& received
     std::vector<int> codeword = pathToCodeword(path);
 
     /* Computes EDS, ED to store message and codeword neighbors */
-    int ESD = path[0] ^ path[lowrate_pathLength - 1];
+    // int ESD = path[0] ^ path[lowrate_pathLength - 1];
     std::vector<int> ED = crc::remdr_slidingWindow(message, CRC_VEC);
 
     /* - Recoding TB Gabriel Neighbors */
     if (std::vector<int> all_zero(M, 0); path.front() == path.back() && ED == all_zero) {
-      numTBPathsSearched++;
+      // numTBPathsSearched++;
       // std::cout << "codeword " << numTBPathsSearched;
       // std::cout << ": path[0]: " << path[0] << "; path[Kconv]: " <<
       // path[this->lowrate_pathLength-1] << std::endl; std::cout << "printing candidate message: ";

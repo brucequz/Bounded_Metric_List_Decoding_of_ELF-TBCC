@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <exception>
 #include <iostream>
+#include <unordered_map>
 #include <map>
 #include <random>
 #include <utility>

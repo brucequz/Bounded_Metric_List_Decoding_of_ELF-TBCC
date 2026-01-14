@@ -1,6 +1,6 @@
 /* K16N48 PARAMETERS */
-#ifndef K16N48_PARAM
-#define K16N48_PARAM
+#ifndef K21N62_PARAM
+#define K21N62_PARAM
 
 #include <vector>
 #include <string>

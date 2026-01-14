@@ -37,7 +37,6 @@ public:
                                                             std::vector<int> punctured_indices);
   MessageInformation ssdSLVDDecoding(const std::vector<float>& receivedMessage,
                                      const std::vector<int>& punctured_indices,
-                                     const std::vector<int>& transmittedWord,
                                      const std::vector<std::vector<int>>& cosetLeadersMsgs,
                                      const std::vector<std::vector<int>>& cosetLeadersCwds,
                                      const std::vector<std::vector<int>>& gabrielNeighbors);
@@ -79,7 +78,7 @@ public:
   void generateNeighborList_sequential(const std::vector<float>& allZerosMessage, std::string dir,
                                        double thre);
   void generateNeighborList_sequential_TBonly(const std::vector<float>& allZerosMessage,
-                                              std::string dir, double thre);
+                                              double thre);
   MessageInformation lowrateDecoding_neighbors(const std::vector<float>& receivedMessage,
                                                std::vector<std::vector<int>> G_mat);
   bool isGabrielNeighbor(
