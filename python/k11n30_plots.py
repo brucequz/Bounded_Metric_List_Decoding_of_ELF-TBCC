@@ -115,15 +115,6 @@ def main():
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  esno_dB = SLVD_fer.ebno_dB - 10 * np.log10(30/11)
-  print("esno_dB: ", esno_dB)
-  esno_linear = 10**(0.1*esno_dB)
-  print("esno_linear: ", esno_linear)
-  no = 1/esno_linear
-  print("no: ", no)
-  sigma_sqrd = no/2
-  print("sigma_sqrd: ", sigma_sqrd)
-  
   N = 30
   K = 11
   # EsNo
@@ -132,11 +123,9 @@ def main():
   # EbNo
   ebno_linear = esno_linear * N / K
   ebno_dB = 10 * np.log10(ebno_linear)
-  print("ebno_dB: ", ebno_dB)
   # Es/sigma^2
   es_over_sigma_sqrd_linear = esno_linear * 2
   es_over_sigma_sqrd_dB = 10*np.log10(es_over_sigma_sqrd_linear)
-  print(es_over_sigma_sqrd_dB)
 
   ## - bounds
   dsub_10001 = dsu(ELF_10001, esno_linear)
@@ -148,10 +137,9 @@ def main():
   dsub_11101 = dsu(ELF_11101, esno_linear)
   dsub_11111 = dsu(CRC_11111, esno_linear)
   
-  rcu_filename = 'k11N30RCU.mat'
+  rcu_filename = 'k11n30_rcu.mat'
   mat_contents = scipy.io.loadmat(rcu_filename)
-  rcu = mat_contents['FER']
-  print(rcu)
+  rcu = mat_contents['k11n30_rcu']
 
   # NA
   P_na = []
@@ -159,29 +147,34 @@ def main():
     p_na = normal_approx(esno, N, K/N)
     P_na.append(p_na)
 
-  plt.figure(figsize=(7, 5.5))
+  
+  fig, ax = plt.subplots(figsize=(7, 5.5))
+
   # - union bounds
-  plt.semilogy(ebno_dB, dsub_11001, linewidth=1.5, marker='o', markerfacecolor='none', markevery=5, label=r'$p(x)=31$')
-  plt.semilogy(ebno_dB, dsub_11111, linewidth=1.5, marker='s', markerfacecolor='none', markevery=5, label=r'$p(x)=37$')
-  plt.semilogy(ebno_dB, dsub_10001, linewidth=1.5, marker='D', markerfacecolor='none', markevery=5, label=r'$p(x)=21$')
-  plt.semilogy(ebno_dB, dsub_11101, linewidth=1.5, marker='d', markerfacecolor='none', markevery=5, label=r'$p(x)=35$')
-  plt.semilogy(ebno_dB, dsub_10111, linewidth=1.5, marker='p', markerfacecolor='none', markevery=5, label=r'$p(x)=27$')
-  plt.semilogy(ebno_dB, dsub_10011, linewidth=1.5, marker='*', markerfacecolor='none', markevery=5, label=r'$p(x)=23$')
-  plt.semilogy(ebno_dB, dsub_11011, linewidth=1.5, marker='h', markerfacecolor='none', markevery=5, label=r'$p(x)=33$')
-  plt.semilogy(ebno_dB, dsub_10101, linewidth=1.5, marker='8', markerfacecolor='none', markevery=5, label=r'$p(x)=25$')
+  dsu1, = plt.semilogy(ebno_dB, dsub_11001, linewidth=1.5, marker='o', markerfacecolor='none', markevery=5, label=r'$p(x)=31$')
+  dsu2, = plt.semilogy(ebno_dB, dsub_11111, linewidth=1.5, marker='s', markerfacecolor='none', markevery=5, label=r'$p(x)=37$')
+  dsu3, = plt.semilogy(ebno_dB, dsub_10001, linewidth=1.5, marker='D', markerfacecolor='none', markevery=5, label=r'$p(x)=21$')
+  dsu4, = plt.semilogy(ebno_dB, dsub_11101, linewidth=1.5, marker='d', markerfacecolor='none', markevery=5, label=r'$p(x)=35$')
+  dsu5, = plt.semilogy(ebno_dB, dsub_10111, linewidth=1.5, marker='p', markerfacecolor='none', markevery=5, label=r'$p(x)=27$')
+  dsu6, = plt.semilogy(ebno_dB, dsub_10011, linewidth=1.5, marker='*', markerfacecolor='none', markevery=5, label=r'$p(x)=23$')
+  dsu7, = plt.semilogy(ebno_dB, dsub_11011, linewidth=1.5, marker='h', markerfacecolor='none', markevery=5, label=r'$p(x)=33$')
+  dsu8, = plt.semilogy(ebno_dB, dsub_10101, linewidth=1.5, marker='8', markerfacecolor='none', markevery=5, label=r'$p(x)=25$')
+  dsu_legend = ax.legend(handles=[dsu1, dsu2, dsu3, dsu4, dsu5, dsu6, dsu7, dsu8], loc='lower left', fontsize=12)
+  ax.add_artist(dsu_legend)
   
   # - random coding bound
-  plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
+  rcu, = plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
 
   # - normal approximation
-  plt.semilogy(ebno_dB, P_na, linestyle='--', linewidth=1.5, label='Normal Approximation')
-  
+  na, = plt.semilogy(ebno_dB, P_na, linestyle='--', linewidth=1.5, label='Normal Approximation')
+  ax.legend(handles=[rcu, na], loc='upper right', fontsize=12)
+
   plt.grid(True, which="both", linestyle='--', linewidth=0.5)
   plt.xlim([2, 6])
   plt.ylim([1e-6, 1e0])
   plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
-  plt.ylabel('Frame Error Rate', fontsize=15)
-  plt.legend(fontsize=12)
+  plt.ylabel(r'Probability of codeword error, $P_{cw}$', fontsize=15)
+  # plt.legend(fontsize=12)
   plt.tight_layout()
   plt.show()
 

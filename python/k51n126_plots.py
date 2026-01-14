@@ -37,12 +37,12 @@ class sim_result:
 
 def main():
 
-  N = 62
-  K = 21
+  N = 126
+  K = 51
   R = K / N
 
   # EbNo
-  ebno_dB = np.arange(2.5, 5.1, 0.1)
+  ebno_dB = np.arange(1, 5.1, 0.1)
   ebno_linear = 10**(0.1*ebno_dB)
   # EsNo
   esno_linear = ebno_linear * R
@@ -50,20 +50,10 @@ def main():
   # Es/sigma^2
   es_over_sigma_sqrd_linear = esno_linear * 2
   es_over_sigma_sqrd_dB = 10*np.log10(es_over_sigma_sqrd_linear)
-
-  # - K21N62
-  SLVD_K21N62_fer = sim_result(num_sims=np.array([134732, 506099, 3026802, 18684105, 165563627]),
-                                num_errors=np.array([200, 200, 200, 200, 200]),
-                                ebno_dB=np.array([3, 3.5, 4, 4.5, 5]))
-
-  # - K26N62
-  SLVD_K26N62_fer = sim_result(num_sims=np.array([113368, 486360, 3086557, 18338708, 129443731]),
-                                num_errors=np.array([200, 200, 200, 200, 200]),
-                                ebno_dB=np.array([3, 3.5, 4, 4.5, 5]))
   
-  rcu_filename = 'k21n62_rcu.mat'
+  rcu_filename = 'k51n126_rcu.mat'
   mat_contents = scipy.io.loadmat(rcu_filename)
-  rcu = mat_contents['k21n62_rcu']
+  rcu = mat_contents['k51n126_rcu']
 
   # NA
   P_na = []
@@ -73,10 +63,6 @@ def main():
   
 
   plt.figure(figsize=(7, 5.5))
-  plt.semilogy(SLVD_K21N62_fer.ebno_dB, SLVD_K21N62_fer.num_errors/SLVD_K21N62_fer.num_sims, '-o', 
-             linewidth=1, 
-             label=r'(62, 21), SLVD($L=1e8$)', 
-             markerfacecolor='none')
   # - random coding bound
   rcu, = plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
 
@@ -84,7 +70,7 @@ def main():
   na, = plt.semilogy(ebno_dB, P_na, linestyle='--', linewidth=1.5, label='Normal Approximation')
 
   plt.grid(True, which="both", linestyle='--', linewidth=0.5)
-  plt.xlim([2.5, 5])
+  plt.xlim([1, 5])
   plt.ylim([1e-8, 1e-1])
   plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
   plt.ylabel('Frame Error Rate', fontsize=15)

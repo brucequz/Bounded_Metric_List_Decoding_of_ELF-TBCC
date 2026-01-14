@@ -3,6 +3,7 @@
 #include "../consts.h"
 #include "namespace.h"
 #include "types.h"
+#include "fmt/core.h"
 
 #include <string>
 #include <vector>

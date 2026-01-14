@@ -279,6 +279,7 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::ve
 	} // while(numPathsSearched < this->listSize)
 
 	output.listSizeExceeded = true;
+	std::cout << "listsize exceeded!!!" << std::endl;
 	return output;
 }
 
