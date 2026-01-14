@@ -5,8 +5,6 @@
 #include <vector>
 #include <string>
 
-#include "fmt/core.h"
-
 
 #define __INT_MAX__ 2147483647
 

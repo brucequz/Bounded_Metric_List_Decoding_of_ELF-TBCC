@@ -1,12 +1,9 @@
 /* K16N48 PARAMETERS */
-#ifndef K16N48_PARAM
-#define K16N48_PARAM
+#ifndef K15N30_PARAM
+#define K15N30_PARAM
 
 #include <vector>
 #include <string>
-
-
-#include "fmt/core.h"
 
 
 #define __INT_MAX__ 2147483647
