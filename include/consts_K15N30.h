@@ -6,8 +6,6 @@
 #include <string>
 
 
-#define __INT_MAX__ 2147483647
-
 /* --- Convolutional Code Parameters --- */
 const int kconv = 1;  /* Number of input bits */
 const int nconv = 2;  /* Number of output bits */
