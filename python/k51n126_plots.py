@@ -60,9 +60,27 @@ def main():
   for esno in esno_linear:
     p_na = normal_approx(esno, N, R)
     P_na.append(p_na)
-  
+  P_na = np.array(P_na)
+
+  # - K51N126
+  SLVD_K51N126_fer = sim_result(num_sims=np.array([52934, 137818, 319086, 991788, 2727906, 9225120, 37343200]),
+                              num_errors=np.array([200, 200, 200, 200, 200, 200, 200]),
+                              ebno_dB=np.array([2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]))
+    
+  SLVD_K51N126v8_fer = sim_result(num_sims=np.array([12804, 63200, 159552, 432676, 18693847]),
+                                num_errors=np.array([200, 200, 200, 200, 200]),
+                                ebno_dB=np.array([1.5, 2, 2.25, 2.5, 3.25]))
 
   plt.figure(figsize=(7, 5.5))
+
+  plt.semilogy(SLVD_K51N126_fer.ebno_dB, SLVD_K51N126_fer.num_errors/SLVD_K51N126_fer.num_sims, '-o', 
+            linewidth=1, 
+            label=r'(126, 51), SLVD($L=1e8$)', 
+            markerfacecolor='none')
+  plt.semilogy(SLVD_K51N126v8_fer.ebno_dB, SLVD_K51N126v8_fer.num_errors/SLVD_K51N126v8_fer.num_sims, '-o', 
+            linewidth=1, 
+            label=r'(126, 51), \nu=8, SLVD($L=1e8$)', 
+            markerfacecolor='none')
   # - random coding bound
   rcu, = plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
 
@@ -75,6 +93,7 @@ def main():
   plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
   plt.ylabel('Frame Error Rate', fontsize=15)
   plt.legend(fontsize=12)
+  plt.title("(126, 51) Code")
   plt.tight_layout()
   plt.show()
 

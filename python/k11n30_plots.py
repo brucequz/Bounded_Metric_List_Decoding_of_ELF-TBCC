@@ -3,6 +3,17 @@ from bounds import dsu, normal_approx
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+
+# 1. Fix the Font Type (Type 42 is TrueType, avoids the Type 3 error)
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
+# 2. Set font family to Sans-Serif (like MATLAB's Helvetica/Arial)
+matplotlib.rcParams['font.family'] = 'sans-serif'
+matplotlib.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'Liberation Sans']
+
+
 from cycler import cycler
 gem12_colors = [
     '#0072BD', # Blue
@@ -117,12 +128,13 @@ def main():
   
   N = 30
   K = 11
-  # EsNo
-  esno_dB = np.arange(-5,2,0.1)
-  esno_linear = 10**(esno_dB/10)
+  R = K/N
   # EbNo
-  ebno_linear = esno_linear * N / K
-  ebno_dB = 10 * np.log10(ebno_linear)
+  ebno_dB = np.arange(1, 7.1, 0.1)
+  ebno_linear = 10**(0.1*ebno_dB)
+  # EsNo
+  esno_linear = ebno_linear * R
+  esno_dB = 10*np.log10(esno_linear)
   # Es/sigma^2
   es_over_sigma_sqrd_linear = esno_linear * 2
   es_over_sigma_sqrd_dB = 10*np.log10(es_over_sigma_sqrd_linear)
@@ -141,33 +153,45 @@ def main():
   mat_contents = scipy.io.loadmat(rcu_filename)
   rcu = mat_contents['k11n30_rcu']
 
+  random_coding_k11n30 = sim_result(num_sims=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
+              num_errors=np.array([0.1285, 0.0834, 5.28e-2, 2.87e-2, 1.61e-2, 8.34e-3, 3.37e-3, 1.47e-3, 6.19e-4, 2.45e-04, 9.01e-5]),
+              ebno_dB=np.array([1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6]))
+  
+
+
   # NA
   P_na = []
   for esno in esno_linear:
     p_na = normal_approx(esno, N, K/N)
     P_na.append(p_na)
 
+  # np.savez("k11n30_10011_dsub.npz", ebno_dB=ebno_dB, esno_linear=esno_linear, K=K, N=N, dsub=dsub_10011)
   
-  fig, ax = plt.subplots(figsize=(7, 5.5))
+  fig, ax = plt.subplots(figsize=(7, 5))
 
   # - union bounds
-  dsu1, = plt.semilogy(ebno_dB, dsub_11001, linewidth=1.5, marker='o', markerfacecolor='none', markevery=5, label=r'$p(x)=31$')
-  dsu2, = plt.semilogy(ebno_dB, dsub_11111, linewidth=1.5, marker='s', markerfacecolor='none', markevery=5, label=r'$p(x)=37$')
-  dsu3, = plt.semilogy(ebno_dB, dsub_10001, linewidth=1.5, marker='D', markerfacecolor='none', markevery=5, label=r'$p(x)=21$')
-  dsu4, = plt.semilogy(ebno_dB, dsub_11101, linewidth=1.5, marker='d', markerfacecolor='none', markevery=5, label=r'$p(x)=35$')
-  dsu5, = plt.semilogy(ebno_dB, dsub_10111, linewidth=1.5, marker='p', markerfacecolor='none', markevery=5, label=r'$p(x)=27$')
-  dsu6, = plt.semilogy(ebno_dB, dsub_10011, linewidth=1.5, marker='*', markerfacecolor='none', markevery=5, label=r'$p(x)=23$')
-  dsu7, = plt.semilogy(ebno_dB, dsub_11011, linewidth=1.5, marker='h', markerfacecolor='none', markevery=5, label=r'$p(x)=33$')
-  dsu8, = plt.semilogy(ebno_dB, dsub_10101, linewidth=1.5, marker='8', markerfacecolor='none', markevery=5, label=r'$p(x)=25$')
+  dsu1, = plt.semilogy(ebno_dB, dsub_11001, linewidth=1.5, marker='o', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=31$')
+  dsu2, = plt.semilogy(ebno_dB, dsub_11111, linewidth=1.5, marker='s', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=37$')
+  dsu3, = plt.semilogy(ebno_dB, dsub_10001, linewidth=1.5, marker='D', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=21$')
+  dsu4, = plt.semilogy(ebno_dB, dsub_11101, linewidth=1.5, marker='d', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=35$')
+  dsu5, = plt.semilogy(ebno_dB, dsub_10111, linewidth=1.5, marker='p', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=27$')
+  dsu6, = plt.semilogy(ebno_dB, dsub_10011, linewidth=1.5, marker='*', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=23$')
+  dsu7, = plt.semilogy(ebno_dB, dsub_11011, linewidth=1.5, marker='v', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=33$')
+  dsu8, = plt.semilogy(ebno_dB, dsub_10101, linewidth=1.5, marker='^', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=25$')
   dsu_legend = ax.legend(handles=[dsu1, dsu2, dsu3, dsu4, dsu5, dsu6, dsu7, dsu8], loc='lower left', fontsize=12)
   ax.add_artist(dsu_legend)
   
   # - random coding bound
   rcu, = plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
 
+  rcu_sim, = plt.semilogy(random_coding_k11n30.ebno_dB, random_coding_k11n30.num_errors/random_coding_k11n30.num_sims, ':s', 
+        linewidth=1,
+        color='k',
+        label=r'Random Coding Simulation')
+
   # - normal approximation
   na, = plt.semilogy(ebno_dB, P_na, linestyle='--', linewidth=1.5, label='Normal Approximation')
-  ax.legend(handles=[rcu, na], loc='upper right', fontsize=12)
+  ax.legend(handles=[rcu_sim, rcu, na], loc='upper right', fontsize=12)
 
   plt.grid(True, which="both", linestyle='--', linewidth=0.5)
   plt.xlim([2, 6])
@@ -178,47 +202,50 @@ def main():
   plt.tight_layout()
   plt.show()
 
-  plt.figure(figsize=(7, 5.5))
+  fig, ax = plt.subplots(figsize=(7, 4.5))
   # - sims
-  plt.semilogy(SSD_SLVD_HD_0_fer.ebno_dB, SSD_SLVD_HD_0_fer.num_errors/SSD_SLVD_HD_0_fer.num_sims, '-o', 
+  ssd_hd0, = plt.semilogy(SSD_SLVD_HD_0_fer.ebno_dB, SSD_SLVD_HD_0_fer.num_errors/SSD_SLVD_HD_0_fer.num_sims, '-o', 
              linewidth=1, 
-             label=r'SSD-SLVD($d_{H}=0$)', 
+             label=r'SSD ${\cal N} (W_\text{H} \leq 0)$', 
              markerfacecolor='none')
-  plt.semilogy(SSD_SLVD_HD_8_fer.ebno_dB, SSD_SLVD_HD_8_fer.num_errors/SSD_SLVD_HD_8_fer.num_sims, '-s', 
+  ssd_hd8, = plt.semilogy(SSD_SLVD_HD_8_fer.ebno_dB, SSD_SLVD_HD_8_fer.num_errors/SSD_SLVD_HD_8_fer.num_sims, '-s', 
              linewidth=1, 
-             label=r'SSD-SLVD($d_{H}=8$)', 
+             label=r'SSD ${\cal N} (W_\text{H} \leq 8)$', 
              markerfacecolor='none')
-  plt.semilogy(SSD_SLVD_HD_10_fer.ebno_dB, SSD_SLVD_HD_10_fer.num_errors/SSD_SLVD_HD_10_fer.num_sims, '-D', 
+  ssd_hd10, = plt.semilogy(SSD_SLVD_HD_10_fer.ebno_dB, SSD_SLVD_HD_10_fer.num_errors/SSD_SLVD_HD_10_fer.num_sims, '-D', 
              linewidth=1, 
-             label=r'SSD-SLVD($d_{H}=10$)', 
+             label=r'SSD ${\cal N} (W_\text{H} \leq 10)$', 
              markerfacecolor='none')
-  plt.semilogy(SSD_SLVD_HD_12_fer.ebno_dB, SSD_SLVD_HD_12_fer.num_errors/SSD_SLVD_HD_12_fer.num_sims, '-d', 
+  ssd_hd12, = plt.semilogy(SSD_SLVD_HD_12_fer.ebno_dB, SSD_SLVD_HD_12_fer.num_errors/SSD_SLVD_HD_12_fer.num_sims, '-d', 
              linewidth=1, 
-             label=r'SSD-SLVD($d_{H}=12$)', 
+             label=r'SSD ${\cal N} (W_\text{H} \leq 12)$', 
              markerfacecolor='none')
-  plt.semilogy(SSD_SLVD_HD_14_fer.ebno_dB, SSD_SLVD_HD_14_fer.num_errors/SSD_SLVD_HD_14_fer.num_sims, '-p', 
+  ssd_hd14, = plt.semilogy(SSD_SLVD_HD_14_fer.ebno_dB, SSD_SLVD_HD_14_fer.num_errors/SSD_SLVD_HD_14_fer.num_sims, '-p', 
              linewidth=1, 
-             label=r'SSD-SLVD($d_{H}=14$)', 
+             label=r'SSD ${\cal N} (W_\text{H} \leq 14)$', 
              markerfacecolor='none')
-  plt.semilogy(SSD_SLVD_HD_16_fer.ebno_dB, SSD_SLVD_HD_16_fer.num_errors/SSD_SLVD_HD_16_fer.num_sims, '-*', 
+  ssd_hd16, = plt.semilogy(SSD_SLVD_HD_16_fer.ebno_dB, SSD_SLVD_HD_16_fer.num_errors/SSD_SLVD_HD_16_fer.num_sims, '-*', 
              linewidth=1, 
-             label=r'SSD-SLVD($d_{H}=16$)', 
+             label=r'SSD ${\cal N} (W_\text{H} \leq 16)$', 
              markerfacecolor='none')
-  plt.semilogy(SLVD_fer.ebno_dB, SLVD_fer.num_errors/SLVD_fer.num_sims, '-', 
-             linewidth=1, 
+  slvd, = plt.semilogy(SLVD_fer.ebno_dB, SLVD_fer.num_errors/SLVD_fer.num_sims, '-', 
+             linewidth=2, 
              color='k',
-             label=r'SLVD($L=\infty$)', 
+             label=r'SLVD (ML Performance)', 
              markerfacecolor='none')
-  plt.semilogy(SSD_SLVD_Gabriel_16_fer.ebno_dB, SSD_SLVD_Gabriel_16_fer.num_errors/SSD_SLVD_Gabriel_16_fer.num_sims, '-h', 
+  ssd_gn, = plt.semilogy(SSD_SLVD_Gabriel_16_fer.ebno_dB, SSD_SLVD_Gabriel_16_fer.num_errors/SSD_SLVD_Gabriel_16_fer.num_sims, '--h', 
              linewidth=1, 
-             label=r'SSD-SLVD(All Gabriel Neighbors)', 
+             label=r'SSD ${\cal N} = {\cal G}$', 
              markerfacecolor='none')
+  ssd_legend = ax.legend(ncol=2, handles=[ssd_hd0, ssd_hd8, ssd_hd10, ssd_hd12, ssd_hd14, ssd_hd16], loc='upper right', fontsize=12)
+  ax.add_artist(ssd_legend)
+  ax.legend(handles=[ssd_gn, slvd], loc='lower left', fontsize=12)
+
   plt.grid(True, which="both", linestyle='--', linewidth=0.5)
   plt.xlim([3.5, 5.5])
-  plt.ylim([1e-6, 1e0])
+  plt.ylim([5e-5, 1e-1])
   plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
-  plt.ylabel('Frame Error Rate', fontsize=15)
-  plt.legend(fontsize=12)
+  plt.ylabel(r'Probability of codeword error, $P_{cw}$', fontsize=15)
   plt.tight_layout()
   plt.show()
 

@@ -42,7 +42,7 @@ def main():
   R = K / N
 
   # EbNo
-  ebno_dB = np.arange(2.5, 5.1, 0.1)
+  ebno_dB = np.arange(1, 6.1, 0.1)
   ebno_linear = 10**(0.1*ebno_dB)
   # EsNo
   esno_linear = ebno_linear * R
@@ -50,6 +50,12 @@ def main():
   # Es/sigma^2
   es_over_sigma_sqrd_linear = esno_linear * 2
   es_over_sigma_sqrd_dB = 10*np.log10(es_over_sigma_sqrd_linear)
+
+  CRC_11101101001 = dist_spectra(crc='11101101001', 
+                       hamming_dist=np.array([0,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,62]), 
+                       num_cwds=np.array([1,217,1457,9207,30969,87699,191301,315859,411866,411866,315859,191301,87699,30969,9207,1457,217,1]),
+                       dmin=16)
+  dsub_11101101001 = dsu(CRC_11101101001, esno_linear)
 
   # - K21N62
   SLVD_K21N62_fer = sim_result(num_sims=np.array([134732, 506099, 3026802, 18684105, 165563627]),
@@ -70,6 +76,12 @@ def main():
   for esno in esno_linear:
     p_na = normal_approx(esno, N, R)
     P_na.append(p_na)
+  # np.savez("k21n62_na.npz",
+  #          ebno_dB=ebno_dB,
+  #          esno_linear=esno_linear,
+  #          K=K,
+  #          N=N,
+  #          P_na=P_na)
   
 
   plt.figure(figsize=(7, 5.5))
@@ -77,6 +89,9 @@ def main():
              linewidth=1, 
              label=r'(62, 21), SLVD($L=1e8$)', 
              markerfacecolor='none')
+  dsub, = plt.semilogy(ebno_dB, dsub_11101101001, linewidth=1.5, markevery=5, label=r'$p(x)=11101101001$')
+  # np.savez("k21n62_11101101001_dsub.npz", ebno_dB=ebno_dB, esno_linear=esno_linear, K=K, N=N, dsub=dsub_11101101001)
+
   # - random coding bound
   rcu, = plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
 
@@ -84,7 +99,7 @@ def main():
   na, = plt.semilogy(ebno_dB, P_na, linestyle='--', linewidth=1.5, label='Normal Approximation')
 
   plt.grid(True, which="both", linestyle='--', linewidth=0.5)
-  plt.xlim([2.5, 5])
+  plt.xlim([1, 5])
   plt.ylim([1e-8, 1e-1])
   plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
   plt.ylabel('Frame Error Rate', fontsize=15)
