@@ -1,6 +1,6 @@
-CXX = mpicxx
-CXXFLAGS = -O2 -std=c++20 -Wall -Wextra -DFMT_HEADER_ONLY -I include 
-LDFLAGS = 
+CXX 		 := mpicxx
+CXXFLAGS := -O2 -std=c++20 -Wall -Wextra -Iinclude -I/opt/homebrew/include
+LDFLAGS  := -L/opt/homebrew/lib -lfmt
 
 # Directories
 SRC_DIR = src

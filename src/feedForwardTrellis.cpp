@@ -1,4 +1,6 @@
 #include "../include/feedForwardTrellis.h"
+#include "../consts.h"
+#include "../include/namespace.h"
 
 #include <cmath>
 #include <cstddef>

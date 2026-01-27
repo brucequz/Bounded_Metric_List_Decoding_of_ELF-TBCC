@@ -56,6 +56,12 @@ unsigned long remdr(const std::vector<int>& p, unsigned long crc, int n, int m);
 
 } // namespace crc
 
+namespace bpsk {
+
+std::vector<int> demodulate(const std::vector<int>& modulated_cwd);
+
+} // namespace bpsk
+
 namespace utils {
 
 // prints a vector of floats, with commas seperating elements

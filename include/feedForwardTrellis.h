@@ -1,11 +1,6 @@
 #ifndef FEEDFORWARDTRELLIS_H
 #define FEEDFORWARDTRELLIS_H
-#include "../consts.h"
-#include "namespace.h"
-#include "types.h"
-#include "fmt/core.h"
 
-#include <string>
 #include <vector>
 
 class FeedForwardTrellis {

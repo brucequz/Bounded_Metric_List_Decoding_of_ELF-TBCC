@@ -1,9 +1,9 @@
 #ifndef LOWRATELISTDECODER_H
 #define LOWRATELISTDECODER_H
 
-#include "feedForwardTrellis.h"
-#include "fileHandler.h"
-#include "minHeap.h"
+class FeedForwardTrellis;
+class MinHeap;
+class FileHandler;
 #include "types.h"
 
 #include <algorithm>
@@ -11,13 +11,14 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <vector>
 
 enum class METRIC_TYPE { PRODUCT_METRIC = 1, EUCLIDEAN_METRIC = 2, LOG_EUCLIDEAN_METRIC = 3 };
 
 class LowRateListDecoder {
 public:
-  LowRateListDecoder(FeedForwardTrellis FT, int listSize, int crcLength, int crc,
+  LowRateListDecoder(FeedForwardTrellis* FT, int listSize, int crcLength, int crc,
                      char stopping_rule);
 
   MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
@@ -25,21 +26,23 @@ public:
   // TB
   MessageInformation lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage,
                                                  const std::vector<int>& punctured_indices);
-  MessageInformation forceDecoding_MaxListsize(const std::vector<float>& receivedMessage,
-                                               const std::vector<int>& punctured_indices,
-                                               const std::vector<int>& codeword,
-                                               const int listsize);
+  MessageInformation findTBCosetLeaders(const std::vector<float>& receivedMessage,
+                                        const std::vector<int>& punctured_indices,
+                                        const std::vector<int>& codeword, const int listsize);
+  void findNonTBCosetLeaders(const std::vector<float>& receivedMessage,
+                             const std::vector<int>& punctured_indices, const int listsize);
   MessageInformation lowRateDecoding_MaxMetric(std::vector<float> receivedMessage,
                                                std::vector<int> punctured_indices);
   MessageInformation lowRateDecoding_MaxAngle(std::vector<float> receivedMessage,
                                               std::vector<int> punctured_indices);
   MessageInformation lowRateDecoding_MaxAngle_ProductMetric(std::vector<float> receivedMessage,
                                                             std::vector<int> punctured_indices);
-  MessageInformation ssdSLVDDecoding(const std::vector<float>& receivedMessage,
-                                     const std::vector<int>& punctured_indices,
-                                     const std::vector<std::vector<int>>& cosetLeadersMsgs,
-                                     const std::vector<std::vector<int>>& cosetLeadersCwds,
-                                     const std::vector<std::vector<int>>& gabrielNeighbors);
+  MessageInformation ssdSLVDDecoding(
+      const std::vector<float>& receivedMessage, const std::vector<int>& transmittedWord,
+      const std::vector<int>& punctured_indices,
+      const std::map<std::pair<int, int>, std::vector<std::vector<int>>>& cosetLeadersMsgs,
+      const std::map<std::pair<int, int>, std::vector<std::vector<int>>>& cosetLeadersCwds,
+      const std::vector<std::vector<int>>& gabrielNeighbors);
 
   // ZT
   MessageInformation lowRateDecoding_MaxListsize_ZT(std::vector<float>& receivedMessage);
@@ -100,26 +103,12 @@ private:
   int lowrate_symbolLength;
   int lowrate_pathLength;
 
-  // ROVA
-  std::vector<std::vector<float>> log_gammas_;
   struct cell {
     int optimalFatherState = -1;
     int suboptimalFatherState = -1;
     float pathMetric = std::numeric_limits<float>::max();
     float suboptimalPathMetric = std::numeric_limits<float>::max();
     bool init = false;
-  };
-
-  struct rova_cell : public cell {
-    // ROVA
-    float log_Gamma = -INFINITY;
-    float log_Z = -INFINITY;
-  };
-
-  struct bcjr_cell : public cell {
-    // BCJR
-    float _log_alpha = -INFINITY;
-    float _log_beta = -INFINITY;
   };
 
   std::vector<int> pathToMessage(const std::vector<int>& path) const;

@@ -1,10 +1,14 @@
 #include "../include/lowRateListDecoder.h"
+#include "../consts.h"
+#include "../include/namespace.h"
+#include "../include/minHeap.h"
+#include "../include/fileHandler.h"
 
 #include <cstddef>
 #include <exception>
+#include "fmt/core.h"
 
 
-#include "../include/fmt/core.h"
 
 void LowRateListDecoder::generateNeighborList_sequential(const std::vector<float>& allZerosMessage,
                                                          std::string dir, double thre) {

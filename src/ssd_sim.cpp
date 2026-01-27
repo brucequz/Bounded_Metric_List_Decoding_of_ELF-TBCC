@@ -3,18 +3,25 @@
 #include "../include/lowRateListDecoder.h"
 #include "../include/namespace.h"
 #include "../include/types.h"
+#include "../include/json.hpp"
+#include "../include/fileHandler.h"
 
 #include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
+#include <fmt/core.h>
+#include <fmt/os.h>
+#include <fmt/ranges.h>
 #include <iostream>
 #include <unordered_map>
 #include <map>
 #include <random>
 #include <utility>
 #include <vector>
+
+using json = nlohmann::json;
 
 std::vector<int> generateTransmittedMessage(std::vector<int> info_crc,
                                             const FeedForwardTrellis& encodingTrellis);
@@ -26,10 +33,12 @@ void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis,
 void compute_serial_coded_spectra(const FeedForwardTrellis& trellis);
 void FER_simulation(const FeedForwardTrellis& trellis,
                     LowRateListDecoder decoder);
-void find_coset_leaders(const FeedForwardTrellis& trellis,
-                        LowRateListDecoder decoder);
 
 int main() {
+
+  /* - Generator setup - */
+  std::mt19937 gen(BASE_SEED);
+  std::bernoulli_distribution d(0.5);
 
   /* - Code config - */
   CodeInformation code{.kconv = kconv,
@@ -44,11 +53,157 @@ int main() {
   FeedForwardTrellis encodingTrellis(code.kconv, code.nconv, code.v, code.numerators);
 
   /* - Decoder setup - */
-  LowRateListDecoder listDecoder(encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc,
+  LowRateListDecoder listDecoder(&encodingTrellis, MAX_LISTSIZE, code.crcLen, code.crc,
                                  STOPPING_RULE);
 
+
+  std::map<std::pair<int, int>, std::vector<std::vector<int>>> cosetLeadersMsgs;
+
+  std::ifstream Msg_inFile(OUTPUTFILEPATH + "nonTB_coset_leaders_msgs.json");
+  if (!Msg_inFile) {
+      fmt::print(stderr, "Error: Could not open file for reading!\n");
+      return 1;
+  }
+
+  // 2. Parse JSON
+  json j_msg_read;
+  Msg_inFile >> j_msg_read;
+
+  // 3. Convert JSON back to the complex map
+  for (auto const& [strKey, value] : j_msg_read.items()) {
+      // Find the comma we used as a delimiter
+      size_t commaPos = strKey.find(',');
+      if (commaPos != std::string::npos) {
+          // Extract the two integers from the string "10,20"
+          int x = std::stoi(strKey.substr(0, commaPos));
+          int y = std::stoi(strKey.substr(commaPos + 1));
+
+          // Convert the JSON array of arrays back to vector<vector<int>>
+          cosetLeadersMsgs[{x, y}] = value.get<std::vector<std::vector<int>>>();
+      }
+  }
+
+  std::map<std::pair<int, int>, std::vector<std::vector<int>>> cosetLeadersCwds;
+
+  std::ifstream Cwd_inFile(OUTPUTFILEPATH + "nonTB_coset_leaders_cwds.json");
+  if (!Cwd_inFile) {
+      fmt::print(stderr, "Error: Could not open file for reading!\n");
+      return 1;
+  }
+
+  // 2. Parse JSON
+  json j_cwd_read;
+  Cwd_inFile >> j_cwd_read;
+
+  // 3. Convert JSON back to the complex map
+  for (auto const& [strKey, value] : j_cwd_read.items()) {
+      // Find the comma we used as a delimiter
+      size_t commaPos = strKey.find(',');
+      if (commaPos != std::string::npos) {
+          // Extract the two integers from the string "10,20"
+          int x = std::stoi(strKey.substr(0, commaPos));
+          int y = std::stoi(strKey.substr(commaPos + 1));
+
+          // Convert the JSON array of arrays back to vector<vector<int>>
+          cosetLeadersCwds[{x, y}] = value.get<std::vector<std::vector<int>>>();
+      }
+  }
+
+  std::vector<std::vector<int>> gabrielNeighbors;
+  try {
+    std::vector<int> neightborList = {0, 8};
+    for (int hamming_dist : neightborList) {
+      std::string gabrielNeighborFileName = OUTPUTFILEPATH + fmt::format("codeword_{}.txt", hamming_dist);
+      FileHandler gabrielNeighborFile(gabrielNeighborFileName);
+      std::vector<std::vector<int>> temp = gabrielNeighborFile.read2DVector<int>();
+      gabrielNeighbors.insert(gabrielNeighbors.end(), temp.begin(), temp.end());
+    }
+
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
+
+  /* Simulation parameters */
+  for (size_t i_eb = 0; i_eb < EBN0.size(); i_eb++) {
+    int num_sim = 0;
+    int num_ssd_err = 0;
+    // int num_slvd_err = 0;
+
+    while (num_ssd_err < MAX_ERRORS) {
+      num_sim++;
+
+      /* Generate info */
+      std::vector<int> info(K, 0);
+      for (size_t i = 0; i < info.size(); ++i) {
+        int bit = d(gen);
+        info[i] = bit;
+      }
+
+      /* CRC encoder */
+      std::vector<int> info_crc(Ncrc, 0);
+      for (size_t i = 0; i < info.size(); i++) {
+        info_crc[i] = info[i];
+      }
+      std::vector<int> remainder = crc::remdr_slidingWindow(info_crc, CRC_VEC, false);
+      for (size_t i = 0; i < remainder.size(); i++) {
+        info_crc[Kcrc + i] = remainder[i];
+      }
+
+      /* Convolutional encoder */
+      std::vector<int> modulatedCodeword = generateTransmittedMessage(info_crc, encodingTrellis);
+
+      /* Channel */
+      float offset = 10 * log10((float) K / N);
+      float esno_dB = EBN0[i_eb] + offset;
+      float esno = pow(10.0, esno_dB / 10.0);
+      std::vector<float> receivedWord =
+          awgn::addAWNGNoise(modulatedCodeword, PUNCTURING_INDICES, esno_dB, NOISELESS);
+      for (size_t i = 0; i < receivedWord.size(); i++) {
+        receivedWord[i] = receivedWord[i] / (4 * esno);
+      }
+
+      // float transmittedCorr = 0.0f;
+      // for (size_t i = 0; i < modulatedCodeword.size(); i++) {
+      //   transmittedCorr += modulatedCodeword[i] * receivedWord[i];
+      // }
+      // fmt::print("transmittedCorr: {}\n", transmittedCorr);
+      
+      // std::cout << "info: " << std::endl;
+      // utils::print_int_vector(info);
+      // std::cout << "info_crc: " << std::endl;
+      // utils::print_int_vector(info_crc);
+      // std::cout << "remainder: ";
+      // utils::print_int_vector(remainder);
+      // std::cout << "transmitted codeword: " << std::endl;
+      // utils::print_int_vector(modulatedCodeword);
+      // std::cout << "received sequence: " << std::endl;
+      // utils::print_float_vector(receivedWord);
+
+      MessageInformation decodingResult;
+      decodingResult = listDecoder.ssdSLVDDecoding(receivedWord, modulatedCodeword, PUNCTURING_INDICES, cosetLeadersMsgs, cosetLeadersCwds, gabrielNeighbors);
+      if (decodingResult.codeword != modulatedCodeword) {
+        num_ssd_err++;
+      }
+
+      /* SLVD decoding */
+      // MessageInformation SLVDResult;
+      // SLVDResult = listDecoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
+      // if (SLVDResult.message != info_crc) {
+      //   num_slvd_err++;
+      // }
+    }
+    fmt::print("*-----------------\n");
+    fmt::print("ebno_dB: {}\n", EBN0[i_eb]);
+    fmt::print("num_sims: {}\n", num_sim);
+    fmt::print("num_ssd_err: {}\n", num_ssd_err);
+    // fmt::print("num_slvd_err: {}\n", num_slvd_err);
+  }
+
+  /* Find Coset Leaders */
+  // listDecoder.findNonTBCosetLeaders(receivedWord, PUNCTURING_INDICES, std::pow(2, 15));
+
   /* FER simulation */
-  FER_simulation(encodingTrellis, listDecoder);
+  // FER_simulation(encodingTrellis, listDecoder);
 
   // MessageInformation decodingResult;
   // decodingResult = listDecoder.forceDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES,
@@ -63,6 +218,8 @@ int main() {
 
   /* Search for Gabriel neighbors by using Lyndon messages */
   // search_message_gabriel_neighbors(encodingTrellis, listDecoder);
+
+  return 0;
 }
 
 std::vector<int> find_positive_divisor(int num) {
@@ -223,7 +380,7 @@ void find_gabriel_neighbors(const CodeInformation& code) {
   FeedForwardTrellis encodingTrellis(code.kconv, code.nconv, code.v, code.numerators);
 
   int listSize = 1e4; // normal Viterbi
-  LowRateListDecoder listDecoder(encodingTrellis, listSize, code.crcLen, code.crc, STOPPING_RULE);
+  LowRateListDecoder listDecoder(&encodingTrellis, listSize, code.crcLen, code.crc, STOPPING_RULE);
   std::cout << "beginning simulations" << std::endl;
   // simulate the comms system
   std::vector<std::vector<int>> G_mat = io::read2DVectorFromFile(GENMATRIXFILEPATH);
@@ -404,16 +561,6 @@ void FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decode
       // }
       // std::cout << "transmitted codeword corr: " << corr << std::endl;
 
-      // std::cout << "info: " << std::endl;
-      // utils::print_int_vector(info);
-      // std::cout << "info_crc: " << std::endl;
-      // utils::print_int_vector(info_crc);
-      // std::cout << "remainder: ";
-      // utils::print_int_vector(remainder);
-      // std::cout << "transmitted codeword: " << std::endl;
-      // utils::print_int_vector(modulatedCodeword);
-      // std::cout << "received sequence: " << std::endl;
-      // utils::print_float_vector(receivedWord);
       
 
       /* SSD-SLVD decoding*/

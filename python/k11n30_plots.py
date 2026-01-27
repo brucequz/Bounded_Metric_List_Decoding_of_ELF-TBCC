@@ -94,35 +94,63 @@ def main():
                        dmin=6)
   
   # - K11N30
-  SLVD_fer = sim_result(num_sims=np.array([30548, 69853, 183843, 270313, 1e6]),
-                   num_errors=np.array([211, 209, 201, 100, 94]),
-                   ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  # SLVD_fer = sim_result(num_sims=np.array([30548, 69853, 183843, 270313, 1e6]),
+  #                  num_errors=np.array([211, 209, 201, 100, 94]),
+  #                  ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SSD_SLVD_HD_16_fer = sim_result(num_sims=np.array([30548, 69863, 183843, 582422, 2028557]),
+  SLVD_fer = sim_result(num_sims=np.array([30487, 76864, 175821, 642491, 2093865]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SSD_SLVD_HD_14_fer = sim_result(num_sims=np.array([29990, 69379, 181539, 581798, 2011229]),
+  TB_SSD_SLVD_HD_16_fer = sim_result(num_sims=np.array([30548, 69863, 183843, 582422, 2028557]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SSD_SLVD_HD_12_fer = sim_result(num_sims=np.array([23421, 54558, 136343, 435260, 1503466]),
+  nonTB_SSD_SLVD_HD_16_fer = sim_result(num_sims=np.array([30487, 76864, 183843, 653068, 2039663]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SSD_SLVD_HD_10_fer = sim_result(num_sims=np.array([15462, 31433, 78293, 214108, 759293]),
+  TB_SSD_SLVD_HD_14_fer = sim_result(num_sims=np.array([29990, 69379, 181539, 581798, 2011229]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SSD_SLVD_HD_8_fer = sim_result(num_sims=np.array([8744, 19097, 42774, 97756, 378923]),
+  nonTB_SSD_SLVD_HD_14_fer = sim_result(num_sims=np.array([30403, 75700, 172940, 630573, 2087067]),
+                  num_errors=np.array([200, 200, 200, 200, 200]),
+                  ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  
+  TB_SSD_SLVD_HD_12_fer = sim_result(num_sims=np.array([23421, 54558, 136343, 435260, 1503466]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SSD_SLVD_HD_0_fer = sim_result(num_sims=np.array([6693, 14902, 32491, 76692, 272780]),
+  nonTB_SSD_SLVD_HD_12_fer = sim_result(num_sims=np.array([22042, 51088, 107732, 344975, 1048015]),
+                  num_errors=np.array([200, 200, 200, 200, 200]),
+                  ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  
+  TB_SSD_SLVD_HD_10_fer = sim_result(num_sims=np.array([15462, 31433, 78293, 214108, 759293]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SSD_SLVD_Gabriel_16_fer = sim_result(num_sims=np.array([26922, 61855, 156614, 509878, 1639903]),
+  nonTB_SSD_SLVD_HD_10_fer = sim_result(num_sims=np.array([9888, 17572, 33386, 68097, 187825]),
+                   num_errors=np.array([200, 200, 200, 200, 200]),
+                   ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  
+  TB_SSD_SLVD_HD_8_fer = sim_result(num_sims=np.array([8744, 16859, 42224, 104498, 412492]),
+                   num_errors=np.array([200, 200, 200, 200, 200]),
+                   ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  
+  nonTB_SSD_SLVD_HD_8_fer = sim_result(num_sims=np.array([4797, 7617, 14769, 26679, 73818]),
+                   num_errors=np.array([200, 200, 200, 200, 200]),
+                   ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  
+  TB_SSD_SLVD_HD_0_fer = sim_result(num_sims=np.array([6693, 13245, 34984, 81429, 286258]),
+                   num_errors=np.array([200, 200, 200, 200, 200]),
+                   ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  
+  nonTB_SSD_SLVD_HD_0_fer = sim_result(num_sims=np.array([2964, 5050, 8692, 17433, 38991]),
+                   num_errors=np.array([200, 200, 200, 200, 200]),
+                   ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  
+  TB_SSD_SLVD_Gabriel_16_fer = sim_result(num_sims=np.array([26922, 61855, 156614, 509878, 1639903]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
                    ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
@@ -204,27 +232,27 @@ def main():
 
   fig, ax = plt.subplots(figsize=(7, 4.5))
   # - sims
-  ssd_hd0, = plt.semilogy(SSD_SLVD_HD_0_fer.ebno_dB, SSD_SLVD_HD_0_fer.num_errors/SSD_SLVD_HD_0_fer.num_sims, '-o', 
+  ssd_hd0, = plt.semilogy(TB_SSD_SLVD_HD_0_fer.ebno_dB, TB_SSD_SLVD_HD_0_fer.num_errors/TB_SSD_SLVD_HD_0_fer.num_sims, '-o', 
              linewidth=1, 
              label=r'SSD ${\cal N} (W_\text{H} \leq 0)$', 
              markerfacecolor='none')
-  ssd_hd8, = plt.semilogy(SSD_SLVD_HD_8_fer.ebno_dB, SSD_SLVD_HD_8_fer.num_errors/SSD_SLVD_HD_8_fer.num_sims, '-s', 
+  ssd_hd8, = plt.semilogy(TB_SSD_SLVD_HD_8_fer.ebno_dB, TB_SSD_SLVD_HD_8_fer.num_errors/TB_SSD_SLVD_HD_8_fer.num_sims, '-s', 
              linewidth=1, 
              label=r'SSD ${\cal N} (W_\text{H} \leq 8)$', 
              markerfacecolor='none')
-  ssd_hd10, = plt.semilogy(SSD_SLVD_HD_10_fer.ebno_dB, SSD_SLVD_HD_10_fer.num_errors/SSD_SLVD_HD_10_fer.num_sims, '-D', 
+  ssd_hd10, = plt.semilogy(TB_SSD_SLVD_HD_10_fer.ebno_dB, TB_SSD_SLVD_HD_10_fer.num_errors/TB_SSD_SLVD_HD_10_fer.num_sims, '-D', 
              linewidth=1, 
              label=r'SSD ${\cal N} (W_\text{H} \leq 10)$', 
              markerfacecolor='none')
-  ssd_hd12, = plt.semilogy(SSD_SLVD_HD_12_fer.ebno_dB, SSD_SLVD_HD_12_fer.num_errors/SSD_SLVD_HD_12_fer.num_sims, '-d', 
+  ssd_hd12, = plt.semilogy(TB_SSD_SLVD_HD_12_fer.ebno_dB, TB_SSD_SLVD_HD_12_fer.num_errors/TB_SSD_SLVD_HD_12_fer.num_sims, '-d', 
              linewidth=1, 
              label=r'SSD ${\cal N} (W_\text{H} \leq 12)$', 
              markerfacecolor='none')
-  ssd_hd14, = plt.semilogy(SSD_SLVD_HD_14_fer.ebno_dB, SSD_SLVD_HD_14_fer.num_errors/SSD_SLVD_HD_14_fer.num_sims, '-p', 
+  ssd_hd14, = plt.semilogy(TB_SSD_SLVD_HD_14_fer.ebno_dB, TB_SSD_SLVD_HD_14_fer.num_errors/TB_SSD_SLVD_HD_14_fer.num_sims, '-p', 
              linewidth=1, 
              label=r'SSD ${\cal N} (W_\text{H} \leq 14)$', 
              markerfacecolor='none')
-  ssd_hd16, = plt.semilogy(SSD_SLVD_HD_16_fer.ebno_dB, SSD_SLVD_HD_16_fer.num_errors/SSD_SLVD_HD_16_fer.num_sims, '-*', 
+  ssd_hd16, = plt.semilogy(TB_SSD_SLVD_HD_16_fer.ebno_dB, TB_SSD_SLVD_HD_16_fer.num_errors/TB_SSD_SLVD_HD_16_fer.num_sims, '-*', 
              linewidth=1, 
              label=r'SSD ${\cal N} (W_\text{H} \leq 16)$', 
              markerfacecolor='none')
@@ -233,7 +261,7 @@ def main():
              color='k',
              label=r'SLVD (ML Performance)', 
              markerfacecolor='none')
-  ssd_gn, = plt.semilogy(SSD_SLVD_Gabriel_16_fer.ebno_dB, SSD_SLVD_Gabriel_16_fer.num_errors/SSD_SLVD_Gabriel_16_fer.num_sims, '--h', 
+  ssd_gn, = plt.semilogy(TB_SSD_SLVD_Gabriel_16_fer.ebno_dB, TB_SSD_SLVD_Gabriel_16_fer.num_errors/TB_SSD_SLVD_Gabriel_16_fer.num_sims, '--h', 
              linewidth=1, 
              label=r'SSD ${\cal N} = {\cal G}$', 
              markerfacecolor='none')
@@ -249,7 +277,53 @@ def main():
   plt.tight_layout()
   plt.show()
 
+  fig, ax = plt.subplots(figsize=(7, 4.5))
+  # - sims
 
+  nontb_ssd_hd0, = plt.semilogy(nonTB_SSD_SLVD_HD_0_fer.ebno_dB, nonTB_SSD_SLVD_HD_0_fer.num_errors/nonTB_SSD_SLVD_HD_0_fer.num_sims, '-o', 
+             linewidth=1, 
+             label=r'nonTB SSD ${\cal N} (W_\text{H} \leq 0)$', 
+             markerfacecolor='none')
+  
+  nontb_ssd_hd8, = plt.semilogy(nonTB_SSD_SLVD_HD_8_fer.ebno_dB, nonTB_SSD_SLVD_HD_8_fer.num_errors/nonTB_SSD_SLVD_HD_8_fer.num_sims, '-s', 
+             linewidth=1, 
+             label=r'nonTB SSD ${\cal N} (W_\text{H} \leq 8)$', 
+             markerfacecolor='none')
+  
+  nontb_ssd_hd10, = plt.semilogy(nonTB_SSD_SLVD_HD_10_fer.ebno_dB, nonTB_SSD_SLVD_HD_10_fer.num_errors/nonTB_SSD_SLVD_HD_10_fer.num_sims, '-D', 
+             linewidth=1, 
+             label=r'nonTB SSD ${\cal N} (W_\text{H} \leq 10)$', 
+             markerfacecolor='none')
+  
+  nontb_ssd_hd12, = plt.semilogy(nonTB_SSD_SLVD_HD_12_fer.ebno_dB, nonTB_SSD_SLVD_HD_12_fer.num_errors/nonTB_SSD_SLVD_HD_12_fer.num_sims, '-d', 
+             linewidth=1, 
+             label=r'nonTB SSD ${\cal N} (W_\text{H} \leq 12)$', 
+             markerfacecolor='none')
+  
+  nontb_ssd_hd14, = plt.semilogy(nonTB_SSD_SLVD_HD_14_fer.ebno_dB, nonTB_SSD_SLVD_HD_14_fer.num_errors/nonTB_SSD_SLVD_HD_14_fer.num_sims, '-p', 
+             linewidth=1, 
+             label=r'nonTB SSD ${\cal N} (W_\text{H} \leq 14)$', 
+             markerfacecolor='none')
+  
+  nontb_ssd_hd16, = plt.semilogy(nonTB_SSD_SLVD_HD_16_fer.ebno_dB, nonTB_SSD_SLVD_HD_16_fer.num_errors/nonTB_SSD_SLVD_HD_16_fer.num_sims, '-*', 
+             linewidth=1, 
+             label=r'nonTB SSD ${\cal N} (W_\text{H} \leq 16)$', 
+             markerfacecolor='none')
+  
+  slvd, = plt.semilogy(SLVD_fer.ebno_dB, SLVD_fer.num_errors/SLVD_fer.num_sims, '-', 
+            linewidth=2, 
+            color='k',
+            label=r'SLVD (ML Performance)', 
+            markerfacecolor='none')
+
+  plt.grid(True, which="both", linestyle='--', linewidth=0.5)
+  plt.xlim([3.5, 5.5])
+  plt.ylim([5e-5, 1e-1])
+  plt.legend(fontsize=12, ncol=2, loc='lower left')
+  plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
+  plt.ylabel(r'Probability of codeword error, $P_{cw}$', fontsize=15)
+  plt.tight_layout()
+  plt.show()
 
   return
 

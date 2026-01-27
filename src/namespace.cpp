@@ -277,6 +277,17 @@ namespace crc
 
 } // namespace crc
 
+namespace bpsk {
+
+  std::vector<int> demodulate(const std::vector<int>& modulated_cwd) {
+    std::vector<int> cwd(modulated_cwd.size(), 0);
+    for (size_t i = 0; i < cwd.size(); i++) {
+      cwd[i] = (1 - modulated_cwd[i]) / 2;
+    }
+    return cwd;
+  }
+}
+
 namespace utils
 {
 
