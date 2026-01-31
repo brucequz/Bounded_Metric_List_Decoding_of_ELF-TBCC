@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from bounds import dsu, normal_approx
+from matplotlib.patches import Ellipse
+from typing import Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,6 +47,8 @@ class sim_result:
   num_sims: np.array
   num_errors: np.array
   ebno_dB: np.array
+  max_list_size: Optional[np.array] = None
+  avg_list_size: Optional[np.array] = None
 
 
 
@@ -98,9 +102,11 @@ def main():
   #                  num_errors=np.array([211, 209, 201, 100, 94]),
   #                  ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
   
-  SLVD_fer = sim_result(num_sims=np.array([30487, 76864, 175821, 642491, 2093865]),
-                   num_errors=np.array([200, 200, 200, 200, 200]),
-                   ebno_dB=np.array([3.5, 4, 4.5, 5, 5.5]))
+  SLVD_fer = sim_result(num_sims=np.array([15091, 30487, 76864, 175821, 642491, 2093865, 7870474]),
+                   num_errors=np.array([200, 200, 200, 200, 200, 200, 200]),
+                   ebno_dB=np.array([3, 3.5, 4, 4.5, 5, 5.5, 6]),
+                   max_list_size=np.array([3445, 3159, 2726, 2948, 2150, 1550, 1004]),
+                   avg_list_size=np.array([16.61911, 9.062486, 4.662989, 2.5275877, 1.6250532, 1.2495171, 1.100459]))
   
   TB_SSD_SLVD_HD_16_fer = sim_result(num_sims=np.array([30548, 69863, 183843, 582422, 2028557]),
                    num_errors=np.array([200, 200, 200, 200, 200]),
@@ -196,34 +202,92 @@ def main():
   # np.savez("k11n30_10011_dsub.npz", ebno_dB=ebno_dB, esno_linear=esno_linear, K=K, N=N, dsub=dsub_10011)
   
   fig, ax = plt.subplots(figsize=(7, 5))
-
+  ax.set_yscale('log')
   # - union bounds
-  dsu1, = plt.semilogy(ebno_dB, dsub_11001, linewidth=1.5, marker='o', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=31$')
-  dsu2, = plt.semilogy(ebno_dB, dsub_11111, linewidth=1.5, marker='s', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=37$')
-  dsu3, = plt.semilogy(ebno_dB, dsub_10001, linewidth=1.5, marker='D', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=21$')
-  dsu4, = plt.semilogy(ebno_dB, dsub_11101, linewidth=1.5, marker='d', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=35$')
-  dsu5, = plt.semilogy(ebno_dB, dsub_10111, linewidth=1.5, marker='p', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=27$')
-  dsu6, = plt.semilogy(ebno_dB, dsub_10011, linewidth=1.5, marker='*', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=23$')
-  dsu7, = plt.semilogy(ebno_dB, dsub_11011, linewidth=1.5, marker='v', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=33$')
-  dsu8, = plt.semilogy(ebno_dB, dsub_10101, linewidth=1.5, marker='^', markerfacecolor='none', markevery=5, label=r'$g_{\text{BCH}}=25$')
+  dsu1, = plt.semilogy(ebno_dB, dsub_11001, linewidth=1.5, marker='o', markerfacecolor='none', markevery=5, label=r'$g_e(x)=31, A_{6}=45$')
+  dsu2, = plt.semilogy(ebno_dB, dsub_11111, linewidth=1.5, marker='s', markerfacecolor='none', markevery=5, label=r'$g_e(x)=37, A_{6}=30$')
+  dsu3, = plt.semilogy(ebno_dB, dsub_10001, linewidth=1.5, marker='D', markerfacecolor='none', markevery=5, label=r'$g_e(x)=21, A_{6}=4$')
+  dsu4, = plt.semilogy(ebno_dB, dsub_11101, linewidth=1.5, marker='d', markerfacecolor='none', markevery=5, label=r'$g_e(x)=35, A_{6}=4$')
+  dsu5, = plt.semilogy(ebno_dB, dsub_10111, linewidth=1.5, marker='p', markerfacecolor='none', markevery=5, label=r'$g_e(x)=27, A_{6}=3$')
+  dsu6, = plt.semilogy(ebno_dB, dsub_10011, linewidth=1.5, marker='*', markerfacecolor='none', markevery=5, label=r'$g_e(x)=23, A_{8}=30$')
+  dsu7, = plt.semilogy(ebno_dB, dsub_11011, linewidth=1.5, marker='v', markerfacecolor='none', markevery=5, label=r'$g_e(x)=33, A_{8}=21$')
+  dsu8, = plt.semilogy(ebno_dB, dsub_10101, linewidth=1.5, marker='^', markerfacecolor='none', markevery=5, label=r'$g_e(x)=25, A_{8}=20$')
   dsu_legend = ax.legend(handles=[dsu1, dsu2, dsu3, dsu4, dsu5, dsu6, dsu7, dsu8], loc='lower left', fontsize=12)
   ax.add_artist(dsu_legend)
   
   # - random coding bound
-  rcu, = plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
+  # rcu, = plt.semilogy(rcu[:,1], rcu[:,3], color='k', linestyle='-.', linewidth=1.5, label='Random Coding Union Bound')
 
-  rcu_sim, = plt.semilogy(random_coding_k11n30.ebno_dB, random_coding_k11n30.num_errors/random_coding_k11n30.num_sims, ':s', 
-        linewidth=1,
-        color='k',
-        label=r'Random Coding Simulation')
+  # rcu_sim, = plt.semilogy(random_coding_k11n30.ebno_dB, random_coding_k11n30.num_errors/random_coding_k11n30.num_sims, ':s', 
+        # linewidth=1,
+        # color='k',
+        # label=r'Random Coding Simulation')
 
   # - normal approximation
-  na, = plt.semilogy(ebno_dB, P_na, linestyle='--', linewidth=1.5, label='Normal Approximation')
-  ax.legend(handles=[rcu_sim, rcu, na], loc='upper right', fontsize=12)
+  # na, = plt.semilogy(ebno_dB, P_na, linestyle='--', linewidth=1.5, label='Normal Approximation')
+  # ax.legend(handles=[rcu_sim, rcu, na], loc='upper right', fontsize=12)
+
+  # ellipses and arrows
+  plt.annotate(
+    r'$31$',      # The text
+    xy=(6.52, 2.1e-4),       # Tip of the arrow (x, y)
+    xytext=(6.68, 2.1e-4),   # Start of the text (x, y)
+    arrowprops=dict(
+        arrowstyle='->', # Arrow shape
+        color='black',     # Arrow color
+        lw=1.5           # Line width
+    ),
+    va='center',         # Center text vertically with arrow
+    ha='left'           # Align text to the right of the xytext point
+  )
+
+  plt.annotate(
+    r'$37$',      # The text
+    xy=(6.48, 1.4e-4),       # Tip of the arrow (x, y)
+    xytext=(6.35, 1.4e-4),   # Start of the text (x, y)
+    arrowprops=dict(
+        arrowstyle='->', # Arrow shape
+        color='black',     # Arrow color
+        lw=1.5           # Line width
+    ),
+    va='center',         # Center text vertically with arrow
+    ha='right'           # Align text to the right of the xytext point
+  )
+
+  cx, cy = 6.5, 2e-5
+  h = cy * (10**0.10 - 10**-0.10)
+  ax.add_patch(Ellipse((cx, cy), 0.4, h, edgecolor='k', fc='none', lw=2))
+  ax.text(6.8, 2.5e-5, "21, 35, 27", color='black', fontsize=11, ha='center')
+
+  plt.annotate(
+    r'$23$',      # The text
+    xy=(6.52, 5e-6),       # Tip of the arrow (x, y)
+    xytext=(6.68, 5e-6),   # Start of the text (x, y)
+    arrowprops=dict(
+        arrowstyle='->', # Arrow shape
+        color='black',     # Arrow color
+        lw=1.5           # Line width
+    ),
+    va='center',         # Center text vertically with arrow
+    ha='left'           # Align text to the right of the xytext point
+  )
+
+  plt.annotate(
+    r'$33,25$',      # The text
+    xy=(6.48, 3.8e-6),       # Tip of the arrow (x, y)
+    xytext=(6.35, 3.8e-6),   # Start of the text (x, y)
+    arrowprops=dict(
+        arrowstyle='->', # Arrow shape
+        color='black',     # Arrow color
+        lw=1.5           # Line width
+    ),
+    va='center',         # Center text vertically with arrow
+    ha='right'           # Align text to the right of the xytext point
+  )
 
   plt.grid(True, which="both", linestyle='--', linewidth=0.5)
-  plt.xlim([2, 6])
-  plt.ylim([1e-6, 1e0])
+  plt.xlim([4, 7])
+  plt.ylim([1e-6, 1e-2])
   plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
   plt.ylabel(r'Probability of codeword error, $P_{cw}$', fontsize=15)
   # plt.legend(fontsize=12)
@@ -322,6 +386,46 @@ def main():
   plt.legend(fontsize=12, ncol=2, loc='lower left')
   plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
   plt.ylabel(r'Probability of codeword error, $P_{cw}$', fontsize=15)
+  plt.tight_layout()
+  plt.show()
+
+
+  fig, ax = plt.subplots(figsize=(7, 4.5))
+  ax.set_yscale('log')
+  plt.semilogy(SLVD_fer.ebno_dB, SLVD_fer.max_list_size, '.', linestyle='-', lw=1.5)
+  plt.semilogy(SLVD_fer.ebno_dB, SLVD_fer.avg_list_size, '.', linestyle='-', lw=1.5)
+
+  plt.annotate(
+    r'$\text{Max List Size}$',      # The text
+    xy=(4.65, 3e3),       # Tip of the arrow (x, y)
+    xytext=(5.0, 4e3),   # Start of the text (x, y)
+    arrowprops=dict(
+        arrowstyle='->', # Arrow shape
+        color='black',     # Arrow color
+        lw=1.5           # Line width
+    ),
+    va='bottom',         # Center text vertically with arrow
+    ha='center',           # Align text to the right of the xytext point
+  )
+
+  plt.annotate(
+    r'$\text{Average List Size}$',      # The text
+    xy=(4.8, 2e0),       # Tip of the arrow (x, y)
+    xytext=(5.0, 4e0),   # Start of the text (x, y)
+    arrowprops=dict(
+        arrowstyle='->', # Arrow shape
+        color='black',     # Arrow color
+        lw=1.5           # Line width
+    ),
+    va='bottom',         # Center text vertically with arrow
+    ha='center',           # Align text to the right of the xytext point
+  )
+
+  plt.xlim([3, 6])
+  plt.ylim([1e-0, 1e+4])
+  plt.grid(True, which="both", linestyle='--', linewidth=0.5)
+  plt.xlabel(r'$\frac{E_b}{N_o} (\mathrm{dB})$', fontsize=15)
+  plt.ylabel(r'List Size', fontsize=15)
   plt.tight_layout()
   plt.show()
 
