@@ -30,6 +30,7 @@ std::vector<std::vector<int>> find_lyndon_words(int s, size_t n);
 void search_message_gabriel_neighbors(const FeedForwardTrellis& trellis, const LowRateListDecoder& decoder);
 void compute_serial_coded_spectra(const FeedForwardTrellis& trellis);
 void FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decoder);
+void Beryl_FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decoder);
 
 int main() {
   /* - Generator setup - */
@@ -109,36 +110,41 @@ int main() {
   //   }
   // } catch (const std::exception& e) { std::cerr << "Error: " << e.what() << std::endl; }
 
-  /* Simulation parameters */
+  /* Simulation begins */
   for (size_t i_eb = 0; i_eb < EBN0.size(); i_eb++) {
     int num_sim = 0;
-    // int num_tbcc_ssd_err    = 0;
-    // int num_trellis_ssd_err = 0;
+  //   // int num_tbcc_ssd_err    = 0;
+  //   // int num_trellis_ssd_err = 0;
 
-    // int num_tbcc_same_err    = 0;
-    // int num_trellis_same_err = 0;
+  //   // int num_tbcc_same_err    = 0;
+  //   // int num_trellis_same_err = 0;
 
-    // int num_tbcc_diff_err    = 0;
-    // int num_trellis_diff_err = 0;
+  //   // int num_tbcc_diff_err    = 0;
+  //   // int num_trellis_diff_err = 0;
 
     int num_slvd_err        = 0;
     int max_slvd_listsize   = 0;
     float avg_slvd_listsize = 0;
 
-    // int num_tbcc_trellis_same = 0;
+  //   // int num_tbcc_trellis_same = 0;
 
-    std::vector<int> confusion_matrix(4, 0);
+  //   std::vector<int> confusion_matrix(4, 0);
 
-    std::vector<float> TrellisCstar_to_received_vec;
-    std::vector<float> TBCstar_to_received_vec;
+  //   std::vector<float> TrellisCstar_to_received_vec;
+  //   std::vector<float> TBCstar_to_received_vec;
 
     while (num_slvd_err < MAX_ERRORS) {
       num_sim++;
 
+      if (num_sim % 100000 == 0) {
+        fmt::println("num_sim: {}", num_sim);
+        fmt::println("num_slvd_err: {}", num_slvd_err);
+      }
+
       /* Generate info */
       std::vector<int> info(K, 0);
       for (size_t i = 0; i < info.size(); ++i) {
-        int bit = d(gen);
+        int bit = 0;
         info[i] = bit;
       }
 
@@ -153,7 +159,7 @@ int main() {
 
       /* Channel */
       float offset                    = 10 * log10((float)K / N);
-      float esno_dB                   = EBN0[i_eb] + offset;
+      float esno_dB                   = EBN0[0] + offset;
       float esno                      = pow(10.0, esno_dB / 10.0);
       std::vector<float> receivedWord = awgn::addAWNGNoise(modulatedCodeword, PUNCTURING_INDICES, esno_dB, NOISELESS);
       for (size_t i = 0; i < receivedWord.size(); i++) { receivedWord[i] = receivedWord[i] / (4 * esno); }
@@ -178,87 +184,86 @@ int main() {
       /* SLVD decoding */
       MessageInformation SLVDResult;
       SLVDResult = listDecoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
-      /* processing avg and max listsize */
-      if (SLVDResult.listSize > max_slvd_listsize) { max_slvd_listsize = SLVDResult.listSize; }
-      avg_slvd_listsize += SLVDResult.listSize;
-      if (SLVDResult.message != info_crc) {
+      if (SLVDResult.message != info_crc){
         num_slvd_err++;
-        continue;
       }
-
-      /* SSD decoding */
-      // MessageInformation trellisBasedResult;
-      // trellisBasedResult = listDecoder.ssdSLVDDecoding(receivedWord,
-      //                                                  modulatedCodeword,
-      //                                                  PUNCTURING_INDICES,
-      //                                                  cosetLeadersMsgs,
-      //                                                  cosetLeadersCwds,
-      //                                                  gabrielNeighbors,
-      //                                                  SSD_TYPE::TRELLIS_TYPE);
-      // if (trellisBasedResult.codeword != modulatedCodeword) { num_trellis_ssd_err++; }
-      // bool Trelliscorrect = (trellisBasedResult.codeword == modulatedCodeword) ? true : false;
-      // float TrellisCstar_to_received = distance::compute_euclidean_distance(trellisBasedResult.codeword, receivedWord, PUNCTURING_INDICES);
-      // TrellisCstar_to_received_vec.push_back(TrellisCstar_to_received);
-
-      // MessageInformation TBBasedResult;
-      // TBBasedResult = listDecoder.ssdSLVDDecoding(receivedWord,
-      //                                             modulatedCodeword,
-      //                                             PUNCTURING_INDICES,
-      //                                             cosetLeadersMsgs,
-      //                                             cosetLeadersCwds,
-      //                                             gabrielNeighbors,
-      //                                             SSD_TYPE::TBCC_TYPE);
-      // if (TBBasedResult.codeword != modulatedCodeword) { num_tbcc_ssd_err++; }
-      // bool TBcorrect = (TBBasedResult.codeword == modulatedCodeword) ? true : false;
-      // float TBCstar_to_received = distance::compute_euclidean_distance(TBBasedResult.codeword, receivedWord, PUNCTURING_INDICES);
-      // TBCstar_to_received_vec.push_back(TBCstar_to_received);
-
-      // if ( TBcorrect && Trelliscorrect) {
-      //   confusion_matrix[0]++;
-      // } else if (TBcorrect && !Trelliscorrect) {
-      //   confusion_matrix[1]++;
-      // } else if (!TBcorrect && Trelliscorrect) {
-      //   confusion_matrix[2]++;
-      // } else {
-      //   confusion_matrix[3]++;
-      // }
-
-      // if (trellisBasedResult.codeword == TBBasedResult.codeword) {
-      //   num_tbcc_trellis_same++;
-      //   if (TBBasedResult.codeword != modulatedCodeword) {
-      //     num_tbcc_same_err++;
-      //     num_trellis_same_err++;
-      //   }
-      // } else {
-
-      //   if (TBBasedResult.codeword != modulatedCodeword) {
-      //     num_tbcc_diff_err++;
-      //   } else {
-      //     std::string s = (TrellisCstar_to_received > TBCstar_to_received) ? "TrellisCstar_to_received \n"   : "TBCstar_to_received \n";
-      //     if (s == "TBCstar_to_received \n") {
-      //       fmt::print("stop");
-      //       fmt::print("modulatedCodeword:\n {}\n", modulatedCodeword);
-      //       fmt::print("TBBasedResult.codeword:\n {}\n", TBBasedResult.codeword);
-      //       fmt::print("trellisBasedResult.codeword:\n {}\n", trellisBasedResult.codeword);
-      //       fmt::print(fmt::runtime(s));
-      //     }
-
-      //   }
-
-      //   if (trellisBasedResult.codeword != modulatedCodeword) {
-      //     num_trellis_diff_err++;
-      //   } else {
-      //     std::string s = (TrellisCstar_to_received > TBCstar_to_received) ? "A: TrellisCstar_to_received \n"   : "A: TBCstar_to_received \n";
-      //     fmt::print(fmt::runtime(s));
-      //   }
-      // }
+      max_slvd_listsize = SLVDResult.listSize > max_slvd_listsize ? SLVDResult.listSize : max_slvd_listsize;
+      avg_slvd_listsize += SLVDResult.listSize;
     }
 
-    // auto trellis_dist_out = fmt::output_file(OUTPUTFILEPATH + "trellis_cstar_to_received.txt");
-    // auto tbcc_dist_out = fmt::output_file(OUTPUTFILEPATH + "tbcc_cstar_to_received.txt");
+  //     /* SSD decoding */
+  //     // MessageInformation trellisBasedResult;
+  //     // trellisBasedResult = listDecoder.ssdSLVDDecoding(receivedWord,
+  //     //                                                  modulatedCodeword,
+  //     //                                                  PUNCTURING_INDICES,
+  //     //                                                  cosetLeadersMsgs,
+  //     //                                                  cosetLeadersCwds,
+  //     //                                                  gabrielNeighbors,
+  //     //                                                  SSD_TYPE::TRELLIS_TYPE);
+  //     // if (trellisBasedResult.codeword != modulatedCodeword) { num_trellis_ssd_err++; }
+  //     // bool Trelliscorrect = (trellisBasedResult.codeword == modulatedCodeword) ? true : false;
+  //     // float TrellisCstar_to_received = distance::compute_euclidean_distance(trellisBasedResult.codeword, receivedWord, PUNCTURING_INDICES);
+  //     // TrellisCstar_to_received_vec.push_back(TrellisCstar_to_received);
 
-    // trellis_dist_out.print("{}\n", fmt::join(TrellisCstar_to_received_vec, " "));
-    // tbcc_dist_out.print("{}\n", fmt::join(TBCstar_to_received_vec, " "));
+  //     // MessageInformation TBBasedResult;
+  //     // TBBasedResult = listDecoder.ssdSLVDDecoding(receivedWord,
+  //     //                                             modulatedCodeword,
+  //     //                                             PUNCTURING_INDICES,
+  //     //                                             cosetLeadersMsgs,
+  //     //                                             cosetLeadersCwds,
+  //     //                                             gabrielNeighbors,
+  //     //                                             SSD_TYPE::TBCC_TYPE);
+  //     // if (TBBasedResult.codeword != modulatedCodeword) { num_tbcc_ssd_err++; }
+  //     // bool TBcorrect = (TBBasedResult.codeword == modulatedCodeword) ? true : false;
+  //     // float TBCstar_to_received = distance::compute_euclidean_distance(TBBasedResult.codeword, receivedWord, PUNCTURING_INDICES);
+  //     // TBCstar_to_received_vec.push_back(TBCstar_to_received);
+
+  //     // if ( TBcorrect && Trelliscorrect) {
+  //     //   confusion_matrix[0]++;
+  //     // } else if (TBcorrect && !Trelliscorrect) {
+  //     //   confusion_matrix[1]++;
+  //     // } else if (!TBcorrect && Trelliscorrect) {
+  //     //   confusion_matrix[2]++;
+  //     // } else {
+  //     //   confusion_matrix[3]++;
+  //     // }
+
+  //     // if (trellisBasedResult.codeword == TBBasedResult.codeword) {
+  //     //   num_tbcc_trellis_same++;
+  //     //   if (TBBasedResult.codeword != modulatedCodeword) {
+  //     //     num_tbcc_same_err++;
+  //     //     num_trellis_same_err++;
+  //     //   }
+  //     // } else {
+
+  //     //   if (TBBasedResult.codeword != modulatedCodeword) {
+  //     //     num_tbcc_diff_err++;
+  //     //   } else {
+  //     //     std::string s = (TrellisCstar_to_received > TBCstar_to_received) ? "TrellisCstar_to_received \n"   : "TBCstar_to_received \n";
+  //     //     if (s == "TBCstar_to_received \n") {
+  //     //       fmt::print("stop");
+  //     //       fmt::print("modulatedCodeword:\n {}\n", modulatedCodeword);
+  //     //       fmt::print("TBBasedResult.codeword:\n {}\n", TBBasedResult.codeword);
+  //     //       fmt::print("trellisBasedResult.codeword:\n {}\n", trellisBasedResult.codeword);
+  //     //       fmt::print(fmt::runtime(s));
+  //     //     }
+
+  //     //   }
+
+  //     //   if (trellisBasedResult.codeword != modulatedCodeword) {
+  //     //     num_trellis_diff_err++;
+  //     //   } else {
+  //     //     std::string s = (TrellisCstar_to_received > TBCstar_to_received) ? "A: TrellisCstar_to_received \n"   : "A: TBCstar_to_received \n";
+  //     //     fmt::print(fmt::runtime(s));
+  //     //   }
+  //     // }
+  //   }
+
+  //   // auto trellis_dist_out = fmt::output_file(OUTPUTFILEPATH + "trellis_cstar_to_received.txt");
+  //   // auto tbcc_dist_out = fmt::output_file(OUTPUTFILEPATH + "tbcc_cstar_to_received.txt");
+
+  //   // trellis_dist_out.print("{}\n", fmt::join(TrellisCstar_to_received_vec, " "));
+  //   // tbcc_dist_out.print("{}\n", fmt::join(TBCstar_to_received_vec, " "));
 
     avg_slvd_listsize = avg_slvd_listsize / num_sim;
 
@@ -278,16 +283,17 @@ int main() {
     // fmt::print("confusion matrix: {}\n", confusion_matrix);
   }
 
+  /* Find TB Offsets */
+  // listDecoder.findTBOffsets();
+
+  /* Beryl Simulation */
+  // Beryl_FER_simulation(encodingTrellis, listDecoder);
+
   /* Find Coset Leaders */
   // listDecoder.findNonTBCosetLeaders(receivedWord, PUNCTURING_INDICES, std::pow(2, 15));
 
   /* FER simulation */
   // FER_simulation(encodingTrellis, listDecoder);
-
-  // MessageInformation decodingResult;
-  // decodingResult = listDecoder.forceDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES,
-  //                                                        modulatedCodeword, std::pow(2,15));
-  // utils::print_int_vector(decodingResult.message);
 
   /* Compute distance spectra for serially-concatenated code */
   // compute_serial_coded_spectra(encodingTrellis);
@@ -297,7 +303,7 @@ int main() {
 
   /* Search for Gabriel neighbors by using Lyndon messages */
   // search_message_gabriel_neighbors(encodingTrellis, listDecoder);
-
+  
   return 0;
 }
 
@@ -522,33 +528,68 @@ void FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decode
   std::mt19937 gen(BASE_SEED);
   std::bernoulli_distribution d(0.5);
 
-  /* Reading in coset leaders */
-  std::vector<std::vector<int>> cosetLeaderMsgs;
-  std::vector<std::vector<int>> cosetLeaderCwds;
+  std::map<std::pair<int, int>, std::vector<std::vector<int>>> cosetLeadersMsgs;
+
+  std::ifstream Msg_inFile(OUTPUTFILEPATH + "nonTB_coset_leaders_msgs.json");
+  if (!Msg_inFile) {
+    fmt::print(stderr, "Error: Could not open file for reading!\n");
+    return;
+  }
+
+  // 2. Parse JSON
+  json j_msg_read;
+  Msg_inFile >> j_msg_read;
+
+  // 3. Convert JSON back to the complex map
+  for (auto const& [strKey, value] : j_msg_read.items()) {
+    // Find the comma we used as a delimiter
+    size_t commaPos = strKey.find(',');
+    if (commaPos != std::string::npos) {
+      // Extract the two integers from the string "10,20"
+      int x = std::stoi(strKey.substr(0, commaPos));
+      int y = std::stoi(strKey.substr(commaPos + 1));
+
+      // Convert the JSON array of arrays back to vector<vector<int>>
+      cosetLeadersMsgs[{x, y}] = value.get<std::vector<std::vector<int>>>();
+    }
+  }
+
+  std::map<std::pair<int, int>, std::vector<std::vector<int>>> cosetLeadersCwds;
+
+  std::ifstream Cwd_inFile(OUTPUTFILEPATH + "nonTB_coset_leaders_cwds.json");
+  if (!Cwd_inFile) {
+    fmt::print(stderr, "Error: Could not open file for reading!\n");
+    return;
+  }
+
+  // 2. Parse JSON
+  json j_cwd_read;
+  Cwd_inFile >> j_cwd_read;
+
+  // 3. Convert JSON back to the complex map
+  for (auto const& [strKey, value] : j_cwd_read.items()) {
+    // Find the comma we used as a delimiter
+    size_t commaPos = strKey.find(',');
+    if (commaPos != std::string::npos) {
+      // Extract the two integers from the string "10,20"
+      int x = std::stoi(strKey.substr(0, commaPos));
+      int y = std::stoi(strKey.substr(commaPos + 1));
+
+      // Convert the JSON array of arrays back to vector<vector<int>>
+      cosetLeadersCwds[{x, y}] = value.get<std::vector<std::vector<int>>>();
+    }
+  }
+
   std::vector<std::vector<int>> gabrielNeighbors;
   try {
-    std::string cosetLeaderMsgName = OUTPUTFILEPATH + "coset_leaders_msgs.txt";
-    FileHandler cosetLeaderMsgFile(cosetLeaderMsgName);
-    cosetLeaderMsgs = cosetLeaderMsgFile.read2DVector<int>();
-
-    std::string cosetLeaderCwdFileName = OUTPUTFILEPATH + "coset_leaders_cwds.txt";
-    FileHandler cosetLeaderCwdFile(cosetLeaderCwdFileName);
-    cosetLeaderCwds = cosetLeaderCwdFile.read2DVector<int>(' ');
-
-    std::vector<int> neightborList = {0, 8, 10, 12, 14, 16};
+    std::vector<int> neightborList = {0, 8};
     for (int hamming_dist : neightborList) {
-      std::string gabrielNeighborFileName = OUTPUTFILEPATH + fmt::format("gabriel_codeword_{}.txt", hamming_dist);
+      std::string gabrielNeighborFileName = OUTPUTFILEPATH + fmt::format("codeword_{}.txt", hamming_dist);
       FileHandler gabrielNeighborFile(gabrielNeighborFileName);
       std::vector<std::vector<int>> temp = gabrielNeighborFile.read2DVector<int>();
       gabrielNeighbors.insert(gabrielNeighbors.end(), temp.begin(), temp.end());
     }
   } catch (const std::exception& e) { std::cerr << "Error: " << e.what() << std::endl; }
-
-  // std::cout << "cosetLeaderCwds[10]: ";
-  // utils::print_int_vector(cosetLeaderCwds[10]);
-  std::cout << "gabrielNeighbor size: " << gabrielNeighbors.size() << std::endl;
-  // std::cout << "gabrielNeighbor[0]: ";
-  // utils::print_int_vector(gabrielNeighbors[0]);
 
   /* - esno_dB setup - */
   float offset = 10 * log10((float)K / N);
@@ -561,10 +602,10 @@ void FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decode
     int num_slvd_error     = 0;
     int num_sims           = 0;
 
-    while (num_slvd_error < MAX_ERRORS) {
+    while (num_ssd_slvd_error < MAX_ERRORS) {
       num_sims++;
       if (num_sims % LOGGING_ITERS == 0) {
-        std::cout << "num_sims: " << num_sims << "; num_slvd_error: " << num_slvd_error << std::endl;
+        std::cout << "num_sims: " << num_sims << "; num_ssd_slvd_error: " << num_ssd_slvd_error << std::endl;
       }
 
       /* Generate info */
@@ -596,23 +637,171 @@ void FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decode
       // std::cout << "transmitted codeword corr: " << corr << std::endl;
 
       /* SSD-SLVD decoding*/
-      // MessageInformation decodingResult;
-      // decodingResult = decoder.ssdSLVDDecoding(receivedWord, PUNCTURING_INDICES, modulatedCodeword, cosetLeaderMsgs, cosetLeaderCwds, gabrielNeighbors);
-      // if (decodingResult.codeword != modulatedCodeword) {
-      //   num_ssd_slvd_error++;
-      // }
+      MessageInformation decodingResult;
+      decodingResult = decoder.ssdSLVDDecoding(receivedWord, modulatedCodeword, PUNCTURING_INDICES, cosetLeadersMsgs, cosetLeadersCwds, gabrielNeighbors, SSD_TYPE::TBCC_TYPE);
+      if (decodingResult.codeword != modulatedCodeword) {
+        num_ssd_slvd_error++;
+      }
 
       /* SLVD decoding */
-      MessageInformation SLVDResult;
-      SLVDResult = decoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
-      if (SLVDResult.message != info_crc) {
-        // std::cout << "SLVD failed! " << std::endl;
-        num_slvd_error++;
-      }
+      // MessageInformation SLVDResult;
+      // SLVDResult = decoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
+      // if (SLVDResult.message != info_crc) {
+      //   // std::cout << "SLVD failed! " << std::endl;
+      //   num_slvd_error++;
+      // }
     } // while (num_ssd_slvd_error < MAX_ERRORS)
 
     std::cout << "num_sim: " << num_sims << std::endl;
     std::cout << "num_slvd_error: " << num_slvd_error << std::endl;
     std::cout << "num_ssd_slvd_error: " << num_ssd_slvd_error << std::endl;
   } // for (size_t i_ebno = 0; i_ebno < EBN0.size(); i_ebno++)
+}
+
+void Beryl_FER_simulation(const FeedForwardTrellis& trellis, LowRateListDecoder decoder) {
+  /* - Generator setup - */
+  std::mt19937 gen(BASE_SEED);
+  std::bernoulli_distribution d(0.5);
+
+  std::vector<std::map<int, std::vector<std::vector<int>>>> TB_Offsets_MSG;
+
+  // 1. Read the file into a JSON object
+  std::ifstream in_msg_file(OUTPUTFILEPATH + "TB_Offsets_MSG.json");
+  nlohmann::json j_msg_in;
+  in_msg_file >> j_msg_in;
+
+  // 2. Ensure the top level is an array
+  if (j_msg_in.is_array()) {
+    for (const auto& item : j_msg_in) {
+      std::map<int, std::vector<std::vector<int>>> current_map;
+
+      // 3. Iterate through the object keys (the "dist" strings)
+      for (auto it = item.begin(); it != item.end(); ++it) {
+        // Convert string key back to int
+        int dist = std::stoi(it.key());
+        
+        // Get the vector<vector<int>> directly
+        current_map[dist] = it.value().get<std::vector<std::vector<int>>>();
+      }
+
+      // 4. Add the map to our vector
+      TB_Offsets_MSG.push_back(current_map);
+    }
+  }
+
+  std::vector<std::map<int, std::vector<std::vector<int>>>> TB_Offsets_CWD;
+
+  // 1. Read the file into a JSON object
+  std::ifstream in_cwd_file(OUTPUTFILEPATH + "TB_Offsets_CWD.json");
+  nlohmann::json j_cwd_in;
+  in_cwd_file >> j_cwd_in;
+
+  // 2. Ensure the top level is an array
+  if (j_cwd_in.is_array()) {
+    for (const auto& item : j_cwd_in) {
+      std::map<int, std::vector<std::vector<int>>> current_map;
+
+      // 3. Iterate through the object keys (the "dist" strings)
+      for (auto it = item.begin(); it != item.end(); ++it) {
+        // Convert string key back to int
+        int dist = std::stoi(it.key());
+        
+        // Get the vector<vector<int>> directly
+        current_map[dist] = it.value().get<std::vector<std::vector<int>>>();
+      }
+
+      // 4. Add the map to our vector
+      TB_Offsets_CWD.push_back(current_map);
+    }
+  }
+
+  // /* Count the number of codewords */
+  // for (int i = 0; auto const& m : TB_Offsets_CWD) {
+  //   int number_of_hr_cwds = 0;
+  //   std::vector<std::pair<int, int>> hr_cwds;
+  //   for (auto const& [dist, vv_cwds] : m) {
+  //     if (dist <= 10) {
+  //       hr_cwds.push_back(std::make_pair(dist, vv_cwds.size()));
+  //       number_of_hr_cwds += vv_cwds.size();
+  //     }
+  //   }
+  //   fmt::print("Syndrome {}: number of highrate cwds: {}; spectrum: {}\n", i, number_of_hr_cwds, hr_cwds);
+  //   i++;
+  // }
+
+  float offset = 10 * log10((float)K / N);
+  fmt::print("OFFSET_SPHERE_RADIUS: {}\n", OFFSET_SPHERE_RADIUS);
+  for (size_t i_ebno = 0; i_ebno < EBN0.size(); i_ebno++) {
+    float esno_dB = EBN0[i_ebno] + offset;
+    
+
+    int num_beryl_ssd_errs = 0;
+    int num_slvd_error = 0;
+    int num_sims = 0;
+
+    while (num_beryl_ssd_errs < MAX_ERRORS) { 
+      num_sims++;
+
+      /* Generate info */
+      std::vector<int> info(K, 0);
+      for (size_t i = 0; i < info.size(); ++i) {
+        int bit = d(gen);
+        info[i] = bit;
+      }
+
+      /* CRC encoder */
+      std::vector<int> info_crc(Ncrc, 0);
+      for (size_t i = 0; i < info.size(); i++) { info_crc[i] = info[i]; }
+      std::vector<int> remainder = crc::remdr_slidingWindow(info_crc, CRC_VEC, false);
+      for (size_t i = 0; i < remainder.size(); i++) { info_crc[Kcrc + i] = remainder[i]; }
+
+      /* Convolutional encoder */
+      std::vector<int> modulatedCodeword = generateTransmittedMessage(info_crc, trellis);
+
+      /* Channel */
+      std::vector<float> receivedWord = awgn::addAWNGNoise(modulatedCodeword, PUNCTURING_INDICES, esno_dB, NOISELESS);
+      float esno                      = pow(10.0, esno_dB / 10.0);
+      for (size_t i = 0; i < receivedWord.size(); i++) { receivedWord[i] = receivedWord[i] / (4 * esno); }
+
+
+      // std::cout << "info: " << std::endl;
+      // utils::print_int_vector(info);
+      // std::cout << "info_crc: " << std::endl;
+      // utils::print_int_vector(info_crc);
+      // std::cout << "remainder: ";
+      // utils::print_int_vector(remainder);
+      // std::cout << "transmitted codeword: " << std::endl;
+      // utils::print_int_vector(modulatedCodeword);
+      // std::cout << "received sequence: " << std::endl;
+      // utils::print_float_vector(receivedWord);
+      // float transmittedCorr = 0.0f;
+      // for (size_t i = 0; i < modulatedCodeword.size(); i++) {
+      //   transmittedCorr += modulatedCodeword[i] * receivedWord[i];
+      // }
+      // fmt::print("transmittedCorr: {}\n", transmittedCorr);
+
+      /* Beryl SSD Decoding */
+      auto result = decoder.BerylSSDDecoding(receivedWord, TB_Offsets_CWD, TB_Offsets_MSG);
+
+      /* SLVD decoding */
+      auto SLVDResult = decoder.lowRateDecoding_MaxListsize(receivedWord, PUNCTURING_INDICES);
+      if (SLVDResult.message != info_crc) {
+        // std::cout << "SLVD failed! " << std::endl;
+        num_slvd_error++;
+      }
+      
+      if (result.codeword != bpsk::demodulate(modulatedCodeword)) {
+        num_beryl_ssd_errs++;
+      }
+    }
+
+    fmt::print("*-----------------\n");
+    fmt::print("ebno_dB: {}\n", EBN0[i_ebno]);
+    fmt::print("num_sims: {}\n", num_sims);
+    fmt::print("num_slvd_error: {}\n", num_slvd_error);
+    fmt::print("num_beryl_ssd_errs: {}\n", num_beryl_ssd_errs);
+    
+
+  }
+
 }

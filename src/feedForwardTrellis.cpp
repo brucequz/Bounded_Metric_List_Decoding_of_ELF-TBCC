@@ -54,15 +54,15 @@ void FeedForwardTrellis::computeNextStates() {
         output[i] = 0;
       }
       for (int x_bit = 0; x_bit < nconv; x_bit++) {
-        for (int m_bit = 0; m_bit < V + 1; m_bit++) {
+        for (int m_bit = 0; m_bit < v + 1; m_bit++) {
           if (bin_numerators[x_bit][m_bit] == 1) {
             output[x_bit] ^= mem_elements[m_bit];
           }
         }
       }
       outputs[currentState][input] = bin2Dec(output);
-      std::vector<int> temp(V);
-      for (int i = 0; i < V; i++) {
+      std::vector<int> temp(v);
+      for (int i = 0; i < v; i++) {
         temp[i] = mem_elements[i];
         // std::cout << temp[i] << std::endl;
       }

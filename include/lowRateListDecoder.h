@@ -26,10 +26,7 @@ class LowRateListDecoder {
   // TB
   MessageInformation lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage,
                                                  const std::vector<int>& punctured_indices);
-  MessageInformation findTBCosetLeaders(const std::vector<float>& receivedMessage,
-                                        const std::vector<int>& punctured_indices,
-                                        const std::vector<int>& codeword,
-                                        const int listsize);
+  void findTBOffsets();
   void findNonTBCosetLeaders(const std::vector<float>& receivedMessage,
                              const std::vector<int>& punctured_indices,
                              const int listsize);
@@ -45,6 +42,10 @@ class LowRateListDecoder {
       const std::map<std::pair<int, int>, std::vector<std::vector<int>>>& cosetLeadersCwds,
       const std::vector<std::vector<int>>& gabrielNeighbors,
       SSD_TYPE type);
+
+  MessageInformation BerylSSDDecoding(const std::vector<float>& receivedMessage,
+                                      const std::vector<std::map<int, std::vector<std::vector<int>>>>& TB_Offsets_CWD,
+                                      const std::vector<std::map<int, std::vector<std::vector<int>>>>& TB_Offsets_MSG);
 
   // ZT
   MessageInformation lowRateDecoding_MaxListsize_ZT(std::vector<float>& receivedMessage);

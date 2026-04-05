@@ -25,7 +25,7 @@ const std::string OUTPUTFILEPATH = "output/K31N62/";
 const std::vector<int> PUNCTURING_INDICES = {};
 
 /* --- List Decoder Parameters --- */
-constexpr int MAX_LISTSIZE = 1e3;      /* Maximum list size */
+constexpr int MAX_LISTSIZE = 1e8;      /* Maximum list size */
 constexpr double MAX_METRIC = 26.7669; /* Maximum decoding metric */
 const std::vector<float> MAX_METRIC_VEC = {18.54, 20.05, 21.25, 22.35, 23.35, 24.16, 25.16, 25.96};
 const std::vector<float> MAX_ANGLE_VEC = {0.515, 0.52, 0.525, 0.53, 0.535, 0.54};
@@ -35,10 +35,13 @@ constexpr char DECODING_RULE = 'N'; /* Decoding rule: {P: projected, N: non-proj
 constexpr char STOPPING_RULE = 'L'; /* Stopping rule: {M: metric, L: listsize, A: angle, R: rova} */
 constexpr char ERROR_RUN_TYPE = 'U'; /* Accumulate which type of error: {U: undetected, T: total}*/
 
+/* --- SSD Decoder Parameters --- */
+constexpr int OFFSET_SPHERE_RADIUS = 6;
+
 /* --- Simulation Parameters --- */
-constexpr int MAX_ERRORS = 200;     /* Maximum number of errors */
+constexpr int MAX_ERRORS = 30;     /* Maximum number of errors */
 constexpr bool NOISELESS = false;    /* Noiseless simulation */
 constexpr int LOGGING_ITERS = 10000; /* Logging Interval*/
 constexpr int BASE_SEED = 42;       /* Fixed base seed for simulation */
-const std::vector<float> EBN0 = {3,3.5, 4, 4.5, 5};
+const std::vector<float> EBN0 = {5};
 #endif

@@ -19,3 +19,6 @@ ssd
 *.dSYM/
 run_tests
 *.pyc
+*.npy
+*.mat
+*.npz
