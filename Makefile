@@ -14,7 +14,7 @@ COMMON_SRC_FILES = $(SRC_DIR)/minHeap.cpp $(SRC_DIR)/namespace.cpp $(SRC_DIR)/fe
 BALD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/bald_sim.cpp
 ROVA_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/rova_sim.cpp
 COLLECT_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/collect_sim.cpp $(SRC_DIR)/genieAidedListDecoder_TB.cpp
-SSD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_sim.cpp $(SRC_DIR)/linearityDecoding.cpp $(SRC_DIR)/ssdSLVDDecoding.cpp
+SSD_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_sim.cpp $(SRC_DIR)/ssd_decoding.cpp $(SRC_DIR)/ssd_table_gen.cpp
 GEN_SRC_FILES = $(COMMON_SRC_FILES) $(SRC_DIR)/ssd_table_gen.cpp $(SRC_DIR)/linearityDecoding.cpp
 
 BALD_OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(BALD_SRC_FILES))

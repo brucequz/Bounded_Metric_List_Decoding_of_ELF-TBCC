@@ -21,7 +21,7 @@ const unsigned int CRC              = 0b10011; /* CRC polynomial */
 const std::vector<int> CRC_VEC      = {1, 0, 0, 1, 1};
 const std::vector<int> NUMERATORS   = {133, 171}; /* in octal */
 const std::string GENMATRIXFILEPATH = "params/K15N30_TBCC_GenMatrix.txt";
-const std::string OUTPUTFILEPATH    = "output/K15N30/";
+const std::string OUTPUTFILEPATH    = "output/K11N30/";
 
 // const std::vector<int> PUNCTURING_INDICES = {3,  4,  9,  10, 15, 16, 21, 22, 27,
 //                                              28, 33, 34, 39, 40, 45, 46};
@@ -39,12 +39,12 @@ constexpr char STOPPING_RULE            = 'L';  /* Stopping rule: {M: metric, L:
 constexpr char ERROR_RUN_TYPE           = 'U';  /* Accumulate which type of error: {U: undetected, T: total}*/
 
 /* --- SSD Decoder Parameters --- */
-constexpr int OFFSET_SPHERE_RADIUS = 6;
+constexpr int OFFSET_SPHERE_RADIUS = 12;
 
 /* --- Simulation Parameters --- */
-constexpr int MAX_ERRORS      = 200;   /* Maximum number of errors */
+constexpr int MAX_ERRORS      = 100;   /* Maximum number of errors */
 constexpr bool NOISELESS      = false; /* Noiseless simulation */
 constexpr int LOGGING_ITERS   = 1000;  /* Logging Interval*/
 constexpr int BASE_SEED       = 42;    /* Fixed base seed for simulation */
-const std::vector<float> EBN0 = {6.5, 7};
+const std::vector<float> EBN0 = {3, 3.5, 4, 4.5, 5, 5.5, 6};
 #endif

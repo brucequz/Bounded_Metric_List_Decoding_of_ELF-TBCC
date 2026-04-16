@@ -4,25 +4,25 @@
 #include <vector>
 
 class FeedForwardTrellis {
-public:
+  public:
   FeedForwardTrellis(int kconv, int nconv, int v, std::vector<int> numerators);
 
   std::vector<int> encode(const std::vector<int>& originalMessage) const;
   std::vector<int> encode_zt(const std::vector<int>& originalMessage) const;
 
-  std::vector<std::vector<int>> getNextStates();
-  std::vector<std::vector<int>> getOutputs();
+  std::vector<std::vector<int>> getNextStates() const;
+  std::vector<std::vector<int>> getOutputs() const;
 
   /* generator matrix for TBCC code */
   void computeGeneratorMatrix();
 
-  int getNumInputSymbols();
-  int getNumOutputSymbols();
-  int getNumStates();
-  int getV();
-  int getN();
+  int getNumInputSymbols() const;
+  int getNumOutputSymbols() const;
+  int getNumStates() const;
+  int getV() const;
+  int getN() const;
 
-private:
+  private:
   int kconv;
   int nconv;
   int v;

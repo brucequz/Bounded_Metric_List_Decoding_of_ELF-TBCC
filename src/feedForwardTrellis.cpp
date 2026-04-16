@@ -10,15 +10,13 @@
 FeedForwardTrellis::FeedForwardTrellis(int kconv, int nconv, int v, std::vector<int> numerators) {
   this->kconv = kconv;
   this->nconv = nconv;
-  this->v = v;
-  for (size_t i = 0; i < numerators.size(); i++) {
-    this->numerators.push_back(numerators[i]);
-  }
-  this->numInputSymbols = pow(2.0, kconv);
+  this->v     = v;
+  for (size_t i = 0; i < numerators.size(); i++) { this->numerators.push_back(numerators[i]); }
+  this->numInputSymbols  = pow(2.0, kconv);
   this->numOutputSymbols = pow(2.0, nconv);
-  this->numStates = pow(2.0, v);
-  this->nextStates = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
-  this->outputs = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
+  this->numStates        = pow(2.0, v);
+  this->nextStates       = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
+  this->outputs          = std::vector<std::vector<int>>(numStates, std::vector<int>(numInputSymbols));
 
   if (v != V) {
     std::cout << "MAJOR ISSUE: CONST V DOES NOT MATCH v. EDIT IN FeedForwardTrellis" << std::endl;
@@ -31,11 +29,10 @@ void FeedForwardTrellis::computeNextStates() {
   // convert to binary numerators
   std::vector<std::vector<int>> bin_numerators(nconv, std::vector<int>(v + 1));
   for (int i = 0; i < nconv; i++) {
-    int tempNum = numerators[i]; // octal number in numerator(135)
-    int decIn = 0;
+    int tempNum    = numerators[i]; // octal number in numerator(135)
+    int decIn      = 0;
     std::string in = std::to_string(tempNum);
-    for (int p = (in.length() - 1); p >= 0; p--)
-      decIn += (int) (in[p] - '0') * pow(8, (in.length() - p - 1));
+    for (int p = (in.length() - 1); p >= 0; p--) decIn += (int)(in[p] - '0') * pow(8, (in.length() - p - 1));
     for (int j = v; j >= 0; j--) {
       if (decIn % 2 == 0)
         bin_numerators[i][j] = 0;
@@ -50,14 +47,10 @@ void FeedForwardTrellis::computeNextStates() {
     for (int input = 0; input < numInputSymbols; input++) {
       mem_elements[0] = input;
       std::vector<int> output(nconv);
-      for (int i = 0; i < nconv; i++) {
-        output[i] = 0;
-      }
+      for (int i = 0; i < nconv; i++) { output[i] = 0; }
       for (int x_bit = 0; x_bit < nconv; x_bit++) {
         for (int m_bit = 0; m_bit < v + 1; m_bit++) {
-          if (bin_numerators[x_bit][m_bit] == 1) {
-            output[x_bit] ^= mem_elements[m_bit];
-          }
+          if (bin_numerators[x_bit][m_bit] == 1) { output[x_bit] ^= mem_elements[m_bit]; }
         }
       }
       outputs[currentState][input] = bin2Dec(output);
@@ -91,14 +84,10 @@ std::vector<int> FeedForwardTrellis::encode_zt(const std::vector<int>& originalM
   int State = 0;
   for (size_t i = 0; i < originalMessage.size(); i += kconv) {
     int decimal = 0;
-    for (int j = 0; j < kconv; j++) {
-      decimal += (originalMessage[i + j] * pow(2, kconv - j - 1));
-    }
+    for (int j = 0; j < kconv; j++) { decimal += (originalMessage[i + j] * pow(2, kconv - j - 1)); }
     std::vector<int> outputBinary = crc::get_point(outputs[State][decimal], nconv);
-    State = nextStates[State][decimal];
-    for (int j = 0; j < nconv; j++) {
-      output.push_back(outputBinary[j]);
-    }
+    State                         = nextStates[State][decimal];
+    for (int j = 0; j < nconv; j++) { output.push_back(outputBinary[j]); }
   }
   return output;
 }
@@ -113,18 +102,12 @@ std::vector<int> FeedForwardTrellis::encode(const std::vector<int>& originalMess
     int State = m;
     for (size_t i = 0; i < originalMessage.size(); i += kconv) {
       int decimal = 0;
-      for (int j = 0; j < kconv; j++) {
-        decimal += (originalMessage[i + j] * pow(2, kconv - j - 1));
-      }
+      for (int j = 0; j < kconv; j++) { decimal += (originalMessage[i + j] * pow(2, kconv - j - 1)); }
       std::vector<int> outputBinary = crc::get_point(outputs[State][decimal], nconv);
-      State = nextStates[State][decimal];
-      for (int j = 0; j < nconv; j++) {
-        output.push_back(outputBinary[j]);
-      }
+      State                         = nextStates[State][decimal];
+      for (int j = 0; j < nconv; j++) { output.push_back(outputBinary[j]); }
     }
-    if (m == State) {
-      return output;
-    }
+    if (m == State) { return output; }
   }
   return originalMessage;
 }
@@ -143,22 +126,20 @@ std::vector<int> FeedForwardTrellis::dec2Bin(int decimal, int length) {
 
 int FeedForwardTrellis::bin2Dec(std::vector<int> binary) {
   int decimal = 0;
-  for (int i = (binary.size() - 1); i >= 0; i--) {
-    decimal += (binary[i] * pow(2, (binary.size() - i - 1)));
-  }
+  for (int i = (binary.size() - 1); i >= 0; i--) { decimal += (binary[i] * pow(2, (binary.size() - i - 1))); }
   return decimal;
 }
 
-std::vector<std::vector<int>> FeedForwardTrellis::getNextStates() { return nextStates; }
+std::vector<std::vector<int>> FeedForwardTrellis::getNextStates() const { return nextStates; }
 
-std::vector<std::vector<int>> FeedForwardTrellis::getOutputs() { return outputs; }
+std::vector<std::vector<int>> FeedForwardTrellis::getOutputs() const { return outputs; }
 
-int FeedForwardTrellis::getNumInputSymbols() { return numInputSymbols; }
+int FeedForwardTrellis::getNumInputSymbols() const { return numInputSymbols; }
 
-int FeedForwardTrellis::getNumOutputSymbols() { return numOutputSymbols; }
+int FeedForwardTrellis::getNumOutputSymbols() const { return numOutputSymbols; }
 
-int FeedForwardTrellis::getNumStates() { return numStates; }
+int FeedForwardTrellis::getNumStates() const { return numStates; }
 
-int FeedForwardTrellis::getV() { return v; }
+int FeedForwardTrellis::getV() const { return v; }
 
-int FeedForwardTrellis::getN() { return nconv; }
+int FeedForwardTrellis::getN() const { return nconv; }

@@ -3,7 +3,6 @@
 
 class FeedForwardTrellis;
 class MinHeap;
-class FileHandler;
 #include "types.h"
 
 #include <algorithm>
@@ -19,14 +18,14 @@ enum class SSD_TYPE { TRELLIS_TYPE = 1, TBCC_TYPE = 2 };
 
 class LowRateListDecoder {
   public:
-  LowRateListDecoder(FeedForwardTrellis* FT, int listSize, int crcLength, int crc, char stopping_rule);
+  LowRateListDecoder(const FeedForwardTrellis& FT, int listSize, int crcLength, int crc, char stopping_rule);
 
   MessageInformation decode(std::vector<float> receivedMessage, std::vector<int> punctured_indices);
 
   // TB
   MessageInformation lowRateDecoding_MaxListsize(const std::vector<float>& receivedMessage,
                                                  const std::vector<int>& punctured_indices);
-  void findTBOffsets();
+
   void findNonTBCosetLeaders(const std::vector<float>& receivedMessage,
                              const std::vector<int>& punctured_indices,
                              const int listsize);
@@ -43,9 +42,9 @@ class LowRateListDecoder {
       const std::vector<std::vector<int>>& gabrielNeighbors,
       SSD_TYPE type);
 
-  MessageInformation BerylSSDDecoding(const std::vector<float>& receivedMessage,
-                                      const std::vector<std::map<int, std::vector<std::vector<int>>>>& TB_Offsets_CWD,
-                                      const std::vector<std::map<int, std::vector<std::vector<int>>>>& TB_Offsets_MSG);
+  MessageInformation ssd_TrellisPath(const std::vector<float>& receivedMessage,
+                                     const std::vector<std::map<int, std::vector<std::vector<int>>>>& TB_Offsets_CWD,
+                                     const std::vector<std::map<int, std::vector<std::vector<int>>>>& TB_Offsets_MSG);
 
   // ZT
   MessageInformation lowRateDecoding_MaxListsize_ZT(std::vector<float>& receivedMessage);
@@ -84,7 +83,12 @@ class LowRateListDecoder {
   std::vector<float> average_listsize_upto_metric;
   std::vector<float> max_lower_envelop;
 
-  // Linearity
+  /* SSD */
+  void findTBOffsets();
+
+  // HR is trellis paths, and offsets contains all possible ELF and TB syndromes
+  void genNonTBOffsets();
+
   void generateNeighborList_sequential(const std::vector<float>& allZerosMessage, std::string dir, double thre);
   void generateNeighborList_sequential_TBonly(const std::vector<float>& allZerosMessage, double thre);
   MessageInformation lowrateDecoding_neighbors(const std::vector<float>& receivedMessage,

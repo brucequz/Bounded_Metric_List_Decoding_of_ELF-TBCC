@@ -10,11 +10,11 @@
 #include <fmt/core.h>
 
 LowRateListDecoder::LowRateListDecoder(
-    FeedForwardTrellis* feedforwardTrellis, int listSize, int crcLength, int crc, char stopping_rule) {
-  this->lowrate_nextStates   = feedforwardTrellis->getNextStates();
-  this->lowrate_outputs      = feedforwardTrellis->getOutputs();
-  this->lowrate_numStates    = feedforwardTrellis->getNumStates();
-  this->lowrate_symbolLength = feedforwardTrellis->getN();
+    const FeedForwardTrellis& feedforwardTrellis, int listSize, int crcLength, int crc, char stopping_rule) {
+  this->lowrate_nextStates   = feedforwardTrellis.getNextStates();
+  this->lowrate_outputs      = feedforwardTrellis.getOutputs();
+  this->lowrate_numStates    = feedforwardTrellis.getNumStates();
+  this->lowrate_symbolLength = feedforwardTrellis.getN();
   this->numForwardPaths      = lowrate_nextStates[0].size();
   this->listSize             = listSize;
   this->crcLength            = crcLength;
@@ -149,7 +149,6 @@ MessageInformation LowRateListDecoder::lowRateDecoding_MaxListsize(const std::ve
       output.metric     = forwardPartialPathMetric;
       output.TBListSize = TBPathsSearched + 1;
       return output;
-
     }
 
     numPathsSearched++;
